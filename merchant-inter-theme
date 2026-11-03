@@ -1,0 +1,46 @@
+/* Papalita Merchant: Inter + dark minimalist merchant design. Scoped to merchant shell. */
+:root{--merchant-accent:#087F32;--merchant-surface:#fff;--merchant-canvas:#fafafa;--merchant-ink:#18181b;--merchant-muted:#71717a;--merchant-border:#e4e4e7}
+body:has(.papa-reference-shell),.papa-reference-shell,.papa-reference-shell button,.papa-reference-shell input,.papa-reference-shell select,.papa-reference-shell textarea{font-family:Inter,system-ui,sans-serif!important}
+.papa-reference-shell{background:var(--merchant-canvas)!important;grid-template-columns:256px minmax(0,1fr)!important;color:var(--merchant-ink)!important}
+.papa-reference-shell .papa-side{background:#09090b!important;color:#a1a1aa!important;border-right:1px solid #27272a!important;padding:0 12px 16px!important}
+.papa-reference-shell .papa-brand-row{padding:18px 12px!important;margin:0 0 16px!important;border-bottom:1px solid #27272a!important;min-height:72px!important}
+.papa-reference-shell .papa-brand-row strong{color:#fafafa!important;font-size:14px!important;font-weight:650!important}
+.papa-reference-shell .papa-brand-row small{color:#a1a1aa!important}
+.papa-reference-shell .papa-brand-mark{width:37px!important;height:37px!important;object-fit:contain!important;border-radius:9px!important}
+.papa-reference-shell .wharf-sidebar-search{background:#18181b!important;border:1px solid #3f3f46!important;border-radius:9px!important;color:#a1a1aa!important}
+.papa-reference-shell .wharf-sidebar-search input{color:#fafafa!important;background:transparent!important}
+.papa-reference-shell .wharf-nav-label{color:#71717a!important;font-size:10px!important;letter-spacing:.1em!important}
+.papa-reference-shell .papa-nav{border-radius:8px!important;font-size:13px!important;font-weight:500!important;color:#a1a1aa!important;padding:10px 12px!important}
+.papa-reference-shell .papa-nav:hover{background:#18181b!important;color:#fff!important}
+.papa-reference-shell .papa-nav.active{background:#27272a!important;color:#fff!important;box-shadow:inset 3px 0 var(--merchant-accent)!important}
+.papa-reference-shell .papa-nav.active .papa-nav-icon{color:var(--merchant-accent)!important}
+.papa-reference-shell .papa-side-bottom{border-top:1px solid #27272a!important}
+.papa-reference-shell .papa-work,.papa-reference-shell .papa-main{background:var(--merchant-canvas)!important;color:var(--merchant-ink)!important}
+.papa-reference-shell .papa-main{max-width:none!important;padding:25px 28px!important}
+.papa-reference-shell .papa-top{background:var(--merchant-surface)!important;border-bottom:1px solid var(--merchant-border)!important;min-height:68px!important}
+.papa-reference-shell .papa-identity strong,.papa-reference-shell .papa-heading h1,.papa-reference-shell .papa-card h2{color:var(--merchant-ink)!important}
+.papa-reference-shell .papa-identity small,.papa-reference-shell .papa-muted,.papa-reference-shell .papa-heading p{color:var(--merchant-muted)!important}
+.papa-reference-shell .papa-card{background:var(--merchant-surface)!important;border:1px solid var(--merchant-border)!important;border-radius:12px!important;box-shadow:0 1px 3px #00000008!important;padding:20px!important}
+.papa-reference-shell .papa-dashboard-heading{display:flex!important}
+.papa-reference-shell .papa-heading h1{font-size:23px!important;letter-spacing:-.035em!important;font-weight:650!important}
+.papa-reference-shell .papa-kpi strong{color:var(--merchant-ink)!important}
+.papa-reference-shell .btn.p,.papa-reference-shell button[data-papa-next-status]:not(.d){background:var(--merchant-accent)!important;border-color:var(--merchant-accent)!important;color:#fff!important}
+.papa-reference-shell .papa-filter.active{background:var(--merchant-accent)!important;border-color:var(--merchant-accent)!important;color:#fff!important}
+.papa-reference-shell .papa-table th{background:var(--merchant-canvas)!important;color:var(--merchant-muted)!important;border-bottom:1px solid var(--merchant-border)!important}
+.papa-reference-shell .papa-table td{border-bottom:1px solid var(--merchant-border)!important}
+.papa-reference-shell .papa-order-card{border-radius:12px!important}
+.papa-reference-shell .papa-live-dot{background:var(--merchant-accent)!important}
+.papa-reference-shell .papa-appearance-settings .papa-setting-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.papa-reference-shell .papa-appearance-settings h3{font-size:14px;margin:20px 0 5px;color:var(--merchant-ink)}
+.papa-theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,160px));gap:12px;margin-top:18px}
+.papa-theme-option{display:grid;gap:10px;text-align:center;padding:10px;border:2px solid var(--merchant-border);border-radius:12px;background:var(--merchant-surface);color:var(--merchant-ink);cursor:pointer}
+.papa-theme-option.selected{border-color:var(--merchant-accent)}
+.papa-theme-mini{height:75px;border-radius:7px;background:#fafafa;display:grid;grid-template-columns:27% 1fr;gap:6px;padding:7px;position:relative}
+.papa-theme-mini i{background:#18181b;border-radius:4px;grid-row:span 2}.papa-theme-mini b,.papa-theme-mini em{background:#e4e4e7;border-radius:4px}.papa-theme-mini.dark{background:#18181b}.papa-theme-mini.dark b,.papa-theme-mini.dark em{background:#3f3f46}.papa-theme-mini.system{background:linear-gradient(90deg,#fafafa 50%,#18181b 50%)}
+.papa-accent-grid{display:flex;flex-wrap:wrap;gap:15px;margin-top:16px}.papa-accent-option{background:transparent;border:0;display:grid;justify-items:center;gap:7px;cursor:pointer;color:var(--merchant-muted);font-size:12px}.papa-accent-option span{background:var(--swatch);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:20px}.papa-accent-option.selected span{outline:2px solid var(--merchant-ink);outline-offset:3px}
+html[data-merchant-appearance=dark]{--merchant-surface:#27272a;--merchant-canvas:#18181b;--merchant-ink:#fafafa;--merchant-muted:#a1a1aa;--merchant-border:#3f3f46}
+html[data-merchant-appearance=dark] .papa-reference-shell .papa-card input,html[data-merchant-appearance=dark] .papa-reference-shell .papa-card select,html[data-merchant-appearance=dark] .papa-reference-shell .papa-card textarea{background:#18181b!important;color:#fafafa!important;border-color:#52525b!important}
+html[data-merchant-appearance=dark] .papa-reference-shell .papa-availability{background:#27272a!important;border-color:#3f3f46!important}
+html[data-merchant-appearance=dark] .papa-reference-shell .papa-table,html[data-merchant-appearance=dark] .papa-reference-shell .papa-table td{color:#fafafa!important}
+html[data-merchant-appearance=dark] .papa-reference-shell .papa-order-toolbar{color:#fafafa}
+@media(max-width:800px){.papa-reference-shell .papa-main{padding:16px!important}.papa-theme-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
