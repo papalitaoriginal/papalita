@@ -1,0 +1,396 @@
+/* Visual-only theme for existing Papalita Merchant Portal. No JS or DB modifications. */
+/* minimal copy of the portal's structural rules (from store.html) so the theme is tested against real class names */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:system-ui}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.in{width:100%;padding:11px 14px;font-size:15px}
+.row{display:flex;align-items:center;gap:10px}.row.sp{justify-content:space-between}.row.wrap{flex-wrap:wrap}
+.papa-shell{display:grid;grid-template-columns:246px minmax(0,1fr);min-height:100vh}
+.papa-side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:24px 14px}
+.papa-brand-row{display:flex;align-items:center;gap:11px}
+.papa-side nav{display:flex;flex-direction:column}
+.papa-nav{display:flex;align-items:center;width:100%;text-align:left;border:0;cursor:pointer;font:inherit}
+.papa-top{display:flex;align-items:center;justify-content:space-between}
+.papa-identity{display:flex;align-items:center;gap:12px}
+.papa-top-right{display:flex;gap:12px;align-items:center}
+.papa-avatar{display:grid;place-items:center}
+.papa-owner-avatar{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;font-size:12px}
+.papa-mobile-menu{display:none}
+.papa-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.papa-kpi small,.papa-kpi strong,.papa-kpi span{display:block}
+.papa-data-columns{display:grid;grid-template-columns:1.25fr 1fr;gap:15px}
+.papa-table{width:100%;border-collapse:collapse}.papa-table th,.papa-table td{text-align:left}
+.papa-table-wrap{overflow-x:auto}
+.papa-availability-title{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.papa-store-icon{display:grid;place-items:center}
+.papa-availability-body{display:grid;grid-template-columns:1fr 1.85fr;gap:24px}
+.papa-close-row{display:flex;gap:14px;align-items:end}.papa-close-input{flex:1}
+.papa-state{display:inline-flex}
+.papa-product-cell{display:flex;align-items:center;gap:9px}.papa-product-placeholder{width:35px;height:35px;display:grid;place-items:center}
+.papa-orders-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.papa-order-card{display:flex;flex-direction:column;gap:12px}
+.papa-order-head{display:flex;justify-content:space-between;gap:10px}
+.papa-order-actions{display:flex;gap:7px}
+.papa-sales-bars{height:170px;display:flex;align-items:flex-end;gap:10px}
+.papa-sales-day{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px}
+.papa-sales-day .bar{width:min(100%,60px)}
+.papa-nav-count{display:inline-block}
+
+.papa-text-link{background:none;border:0;cursor:pointer;font:inherit}
+.papa-brand-row strong,.papa-brand-row small{display:block}
+.papa-order-meta{display:grid;gap:6px;font-size:12px}
+.papa-order-card .papa-order-items{border-top:1px dashed;border-bottom:1px dashed;padding:7px 0}
+.papa-order-head{align-items:flex-start}
+.papa-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.papa-side-bottom{margin-top:auto}
+.view{display:none}.view.on{display:block}
+.swatch{display:inline-flex;gap:6px;align-items:center;font:600 12px 'Plus Jakarta Sans',sans-serif;color:#5d5a52}
+.swatch button{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #e6e1d4;cursor:pointer}
+@media(max-width:1150px){.papa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.papa-data-columns{grid-template-columns:1fr}.papa-orders-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.papa-reference-shell .papa-side{display:none;position:fixed;top:68px;left:0;bottom:0;width:min(280px,85vw);height:auto;z-index:50}
+.papa-reference-shell .papa-side.open{display:flex}.papa-mobile-menu{display:inline-flex!important}
+.papa-availability-body{grid-template-columns:1fr}.papa-orders-grid{grid-template-columns:1fr}.papa-owner-label{display:none}}
+/* ==========================================================================
+   Papalita Merchant Portal — "Wharf" theme
+   Load this LAST in <head>, after every inline <style> block:
+     <link rel="stylesheet" href="merchant-wharf-theme.css">
+   CSS only. No changes to Supabase, auth, orders, products or realtime logic.
+   Scoped to the signed-in portal (.papa-shell); sign-in and register are untouched.
+
+   Accent: change --accent / --accent-ink / --accent-soft below, or set
+   <html data-accent="blush"> for the Wharf pink.
+   ========================================================================== */
+
+:root{
+  --w-bg:#f7f5ef;
+  --w-paper:#fffdf8;
+  --w-sunk:#efebe0;
+  --w-ink:#1f1d1a;
+  --w-ink-2:#5d5a52;
+  --w-ink-3:#8b877c;
+  --w-line:#e6e1d4;
+  --w-line-2:#eeeade;
+
+  --accent:#087f45;
+  --accent-strong:#06683a;
+  --accent-ink:#ffffff;
+  --accent-soft:#e3efe5;
+
+  --good-bg:#e1efdc;  --good-fg:#2c6a38;
+  --warn-bg:#fbecc8;  --warn-fg:#855a09;
+  --info-bg:#dde8f8;  --info-fg:#2d4f8a;
+  --mute-bg:#ece8dc;  --mute-fg:#68645a;
+  --bad-bg:#f9dcd6;   --bad-fg:#a1382a;
+
+  --r-card:16px;
+  --r-ctl:10px;
+  --w-shadow:0 1px 0 rgba(31,29,26,.03);
+}
+html[data-accent="blush"]{
+  --accent:#f7b1c9;
+  --accent-strong:#ef98b6;
+  --accent-ink:#2a1620;
+  --accent-soft:#fbe4ed;
+}
+
+/* ---------- Base ---------- */
+body:has(.papa-shell){background:var(--w-bg)!important;color:var(--w-ink)}
+html body .papa-reference-shell{
+  background:var(--w-bg)!important;
+  color:var(--w-ink)!important;
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif!important;
+  grid-template-columns:248px minmax(0,1fr)!important;
+  -webkit-font-smoothing:antialiased;
+}
+html body .papa-reference-shell .papa-main::before{display:none!important}
+html body .papa-reference-shell :where(a,button,input,select,textarea,summary):focus-visible{
+  outline:2px solid var(--accent-strong)!important;outline-offset:2px!important;
+}
+html body .papa-reference-shell .papa-muted,
+html body .papa-reference-shell .mu{color:var(--w-ink-2)!important}
+
+/* ---------- Sidebar ---------- */
+html body .papa-reference-shell .papa-side{
+  background:var(--w-bg)!important;
+  border-right:1px solid var(--w-line)!important;
+  padding:20px 14px 16px!important;
+  box-shadow:none!important;
+  color:var(--w-ink)!important;
+}
+html body .papa-reference-shell .papa-brand-row{padding:2px 10px 22px!important;min-height:0!important;gap:10px!important}
+html body .papa-reference-shell .papa-brand-mark{width:34px!important;height:auto!important}
+html body .papa-reference-shell .papa-brand-row strong{
+  color:var(--w-ink)!important;font-size:20px!important;font-weight:800!important;letter-spacing:-.02em;
+}
+html body .papa-reference-shell .papa-brand-row small{color:var(--w-ink-3)!important;font-size:12px!important;margin-top:1px!important}
+
+html body .papa-reference-shell .papa-side nav{gap:2px!important}
+html body .papa-reference-shell .papa-nav{
+  position:relative;
+  min-height:40px!important;
+  padding:9px 12px!important;
+  gap:12px!important;
+  border-radius:10px!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  color:var(--w-ink-2)!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  border:1px solid transparent!important;
+  transition:background-color .15s,color .15s,border-color .15s;
+}
+html body .papa-reference-shell .papa-nav:hover{background:rgba(31,29,26,.05)!important;color:var(--w-ink)!important}
+html body .papa-reference-shell .papa-nav.active{
+  background:var(--w-paper)!important;
+  color:var(--w-ink)!important;
+  font-weight:700!important;
+  border-color:var(--w-line)!important;
+  box-shadow:var(--w-shadow)!important;
+}
+html body .papa-reference-shell .papa-nav.active::after{
+  content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--accent);
+}
+html body .papa-reference-shell .papa-nav-icon{font-size:18px!important;width:20px!important;opacity:.8}
+html body .papa-reference-shell .papa-nav.active .papa-nav-icon{opacity:1}
+html body .papa-reference-shell .papa-nav-count{
+  margin-left:auto;min-width:22px;padding:2px 7px;border-radius:999px;
+  background:var(--accent)!important;color:var(--accent-ink)!important;font-size:11px;font-weight:800;text-align:center;
+}
+html body .papa-reference-shell .papa-side-bottom{
+  border-top:1px solid var(--w-line)!important;padding-top:12px!important;margin-top:auto;
+}
+html body .papa-reference-shell .papa-side-bottom .papa-nav{font-size:13px!important;min-height:36px!important;font-weight:550!important}
+
+/* ---------- Top bar ---------- */
+html body .papa-reference-shell .papa-top{
+  background:var(--w-bg)!important;
+  border-bottom:1px solid var(--w-line)!important;
+  min-height:68px!important;
+  padding:12px 32px!important;
+  box-shadow:none!important;
+}
+html body .papa-reference-shell .papa-avatar{
+  width:40px!important;height:40px!important;border-radius:12px!important;object-fit:cover;
+}
+html body .papa-reference-shell .papa-empty-avatar{background:#f1c7a3!important;color:var(--w-ink)!important}
+html body .papa-reference-shell .papa-identity strong{font-size:15px!important;font-weight:700!important;color:var(--w-ink)!important}
+html body .papa-reference-shell .papa-identity small{color:var(--w-ink-2)!important;font-size:12px!important}
+html body .papa-reference-shell .papa-header-status{
+  background:var(--good-bg)!important;color:var(--good-fg)!important;border-radius:999px!important;
+  padding:3px 10px!important;font-size:11px!important;font-weight:700!important;
+}
+html body .papa-reference-shell .papa-header-status.is-closed{background:var(--bad-bg)!important;color:var(--bad-fg)!important}
+html body .papa-reference-shell .papa-owner-avatar{background:#cdd9f3!important;color:var(--w-ink)!important;font-weight:800}
+html body .papa-reference-shell .papa-owner-label{color:var(--w-ink-2)!important}
+html body .papa-reference-shell .papa-notify-toggle,
+html body .papa-reference-shell .papa-mobile-menu{
+  background:var(--w-paper)!important;color:var(--w-ink)!important;
+  border:1px solid var(--w-line)!important;border-radius:var(--r-ctl)!important;font-weight:650;
+}
+
+/* ---------- Page area + headings ---------- */
+html body .papa-reference-shell .papa-main{
+  max-width:1320px!important;margin:0 auto!important;padding:28px 36px 56px!important;
+}
+html body .papa-reference-shell .papa-heading{
+  background:none!important;border:0!important;box-shadow:none!important;min-height:0!important;
+  padding:0 0 22px!important;margin:0!important;overflow:visible!important;
+}
+html body .papa-reference-shell .papa-heading::after{display:none!important}
+html body .papa-reference-shell .papa-heading h1{
+  color:var(--w-ink)!important;font-size:30px!important;font-weight:750!important;letter-spacing:-.03em!important;line-height:1.15;margin:0 0 6px!important;
+}
+html body .papa-reference-shell .papa-heading p{color:var(--w-ink-2)!important;font-size:14px!important;margin:0}
+
+/* ---------- Cards ---------- */
+html body .papa-reference-shell .papa-card,
+html body .papa-reference-shell .panel,
+html body .papa-reference-shell .tw{
+  background:var(--w-paper)!important;
+  border:1px solid var(--w-line)!important;
+  border-radius:var(--r-card)!important;
+  box-shadow:var(--w-shadow)!important;
+  color:var(--w-ink);
+}
+html body .papa-reference-shell .papa-card{padding:20px 22px!important;margin-bottom:16px}
+html body .papa-reference-shell .papa-card h2{
+  color:var(--w-ink)!important;font-size:16px!important;font-weight:700!important;letter-spacing:-.01em;margin:0 0 12px!important;
+}
+
+/* ---------- KPI minis ---------- */
+html body .papa-reference-shell .papa-kpis{gap:14px!important;margin:0 0 16px!important}
+html body .papa-reference-shell .papa-kpi{
+  min-height:0!important;padding:18px 20px!important;border:1px solid var(--w-line)!important;border-top:1px solid var(--w-line)!important;
+  background:var(--w-paper)!important;color:var(--w-ink)!important;border-radius:var(--r-card)!important;box-shadow:var(--w-shadow)!important;
+}
+html body .papa-reference-shell .papa-kpi::after{display:none!important}
+html body .papa-reference-shell .papa-kpi small{color:var(--w-ink-2)!important;font-size:13px!important;font-weight:600}
+html body .papa-reference-shell .papa-kpi strong{
+  color:var(--w-ink)!important;font-size:32px!important;font-weight:750!important;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;margin:8px 0 6px!important;
+}
+html body .papa-reference-shell .papa-kpi span{color:var(--w-ink-3)!important;font-size:12px!important}
+
+/* ---------- Store status card ---------- */
+html body .papa-reference-shell .papa-availability{
+  background:var(--accent-soft)!important;border-color:var(--w-line)!important;padding:22px!important;margin-bottom:16px!important;
+}
+html body .papa-reference-shell .papa-store-icon{
+  width:46px!important;height:46px!important;border-radius:14px!important;background:var(--w-paper)!important;color:var(--w-ink)!important;font-size:22px!important;
+  border:1px solid var(--w-line);
+}
+html body .papa-reference-shell .papa-current-state{border-right:1px solid rgba(31,29,26,.1)!important}
+html body .papa-reference-shell .papa-state{border-radius:999px!important;font-size:14px!important;font-weight:750!important;padding:7px 14px!important}
+html body .papa-reference-shell .papa-state.is-open{background:var(--good-bg)!important;color:var(--good-fg)!important}
+html body .papa-reference-shell .papa-state.is-closed{background:var(--bad-bg)!important;color:var(--bad-fg)!important}
+html body .papa-reference-shell .papa-field-title{color:var(--w-ink-2)!important;font-weight:650!important}
+html body .papa-reference-shell .papa-closure-controls h3{color:var(--w-ink)!important;font-weight:700}
+
+/* ---------- Buttons ---------- */
+html body .papa-reference-shell .btn{
+  font-family:inherit!important;font-weight:650!important;font-size:14px!important;
+  min-height:42px!important;padding:0 16px!important;border-radius:var(--r-ctl)!important;
+  box-shadow:none!important;border:1px solid transparent!important;
+  transition:background-color .15s,border-color .15s,transform .08s;
+}
+html body .papa-reference-shell .btn.sm{min-height:36px!important;padding:0 12px!important;font-size:13px!important}
+html body .papa-reference-shell .btn.p{background:var(--accent)!important;color:var(--accent-ink)!important}
+html body .papa-reference-shell .btn.p:hover:not(:disabled){background:var(--accent-strong)!important}
+html body .papa-reference-shell .btn.s{background:var(--w-paper)!important;color:var(--w-ink)!important;border-color:var(--w-line)!important}
+html body .papa-reference-shell .btn.s:hover:not(:disabled){background:var(--w-sunk)!important}
+html body .papa-reference-shell .btn.d{background:var(--bad-bg)!important;color:var(--bad-fg)!important;border-color:transparent!important}
+html body .papa-reference-shell .btn.d:hover:not(:disabled){background:#f4c9c0!important}
+html body .papa-reference-shell .papa-text-link{color:var(--w-ink)!important;font-weight:650;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--w-line)}
+html body .papa-reference-shell .papa-text-link:hover{text-decoration-color:var(--accent-strong)}
+
+/* ---------- Forms ---------- */
+html body .papa-reference-shell .in{
+  background:var(--w-paper)!important;border:1px solid var(--w-line)!important;border-radius:var(--r-ctl)!important;
+  color:var(--w-ink)!important;min-height:42px;box-shadow:none!important;
+}
+html body .papa-reference-shell .in:hover{border-color:#d4cdb9!important}
+html body .papa-reference-shell .in:focus{border-color:var(--accent-strong)!important;box-shadow:0 0 0 3px var(--accent-soft)!important;outline:none!important}
+html body .papa-reference-shell .field label,
+html body .papa-reference-shell .papa-close-input label{color:var(--w-ink)!important;font-weight:650!important;font-size:13px!important}
+html body .papa-reference-shell small{color:var(--w-ink-3)}
+html body .papa-reference-shell .err{color:var(--bad-fg)!important}
+html body .papa-reference-shell input[type=checkbox],
+html body .papa-reference-shell input[type=radio]{accent-color:var(--accent-strong)}
+html body .papa-reference-shell .papa-cover{background-color:var(--w-sunk)!important;color:var(--w-ink-2)!important;border-radius:14px!important}
+
+/* ---------- Tables ---------- */
+html body .papa-reference-shell .papa-table th,
+html body .papa-reference-shell .tw thead th{
+  background:transparent!important;color:var(--w-ink-3)!important;font-size:12px!important;font-weight:650!important;
+  text-transform:none!important;letter-spacing:0;padding:10px 12px!important;border-bottom:1px solid var(--w-line)!important;
+}
+html body .papa-reference-shell .papa-table td,
+html body .papa-reference-shell .tw td{
+  color:var(--w-ink)!important;font-size:13px!important;padding:12px!important;border-bottom:1px solid var(--w-line-2)!important;
+  font-variant-numeric:tabular-nums;
+}
+html body .papa-reference-shell .papa-table tbody tr:hover,
+html body .papa-reference-shell .tw tbody tr:hover{background:rgba(31,29,26,.025)!important}
+html body .papa-reference-shell .papa-table tbody tr:last-child td{border-bottom:0!important}
+html body .papa-reference-shell .papa-table-empty{color:var(--w-ink-3)!important}
+html body .papa-reference-shell .papa-product-cell img,
+html body .papa-reference-shell .papa-product-placeholder{border-radius:10px!important;background:var(--w-sunk)!important;color:var(--w-ink-3)!important}
+
+/* ---------- Status pills (with leading dot) ---------- */
+html body .papa-reference-shell .papa-order-status,
+html body .papa-reference-shell .status{
+  display:inline-flex!important;align-items:center;gap:6px;border-radius:999px!important;
+  padding:4px 10px!important;font-size:12px!important;font-weight:700!important;align-self:flex-start;white-space:nowrap;
+  background:var(--warn-bg)!important;color:var(--warn-fg)!important;text-transform:capitalize;letter-spacing:0;
+}
+html body .papa-reference-shell .papa-order-status::before,
+html body .papa-reference-shell .status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+html body .papa-reference-shell .papa-order-status.completed,
+html body .papa-reference-shell .papa-order-status.delivered,
+html body .papa-reference-shell .status.open{background:var(--good-bg)!important;color:var(--good-fg)!important}
+html body .papa-reference-shell .papa-order-status.cancelled,
+html body .papa-reference-shell .status.closed{background:var(--bad-bg)!important;color:var(--bad-fg)!important}
+html body .papa-reference-shell .papa-order-status.preparing{background:var(--warn-bg)!important;color:var(--warn-fg)!important}
+html body .papa-reference-shell .papa-order-status.out_for_delivery,
+html body .papa-reference-shell .papa-order-status.confirmed{background:var(--info-bg)!important;color:var(--info-fg)!important}
+html body .papa-reference-shell .papa-good{color:var(--good-fg)!important}
+html body .papa-reference-shell .papa-warn{color:var(--warn-fg)!important}
+html body .papa-reference-shell .papa-danger{color:var(--bad-fg)!important}
+
+/* ---------- Order filters as a segmented control ---------- */
+html body .papa-reference-shell .papa-order-toolbar{
+  display:flex;align-items:center;gap:2px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+  background:var(--w-sunk);padding:4px;border-radius:12px;width:fit-content;max-width:100%;margin-bottom:18px!important;
+}
+html body .papa-reference-shell .papa-order-toolbar::-webkit-scrollbar{display:none}
+html body .papa-reference-shell .papa-filter{
+  flex:none;background:transparent!important;border:0!important;border-radius:9px!important;
+  padding:8px 13px!important;font-family:inherit;font-size:13px!important;font-weight:650!important;color:var(--w-ink-2)!important;white-space:nowrap;
+}
+html body .papa-reference-shell .papa-filter:hover{color:var(--w-ink)!important}
+html body .papa-reference-shell .papa-filter.active{
+  background:var(--w-paper)!important;color:var(--w-ink)!important;box-shadow:0 1px 2px rgba(31,29,26,.12)!important;
+}
+html body .papa-reference-shell .papa-order-count{color:var(--w-ink-3)!important;padding:0 12px 0 8px;white-space:nowrap}
+
+/* ---------- Order cards ---------- */
+html body .papa-reference-shell .papa-orders-grid{gap:16px!important;margin-top:0!important}
+html body .papa-reference-shell .papa-order-card{
+  border-top:1px solid var(--w-line)!important;border-left:3px solid var(--w-line)!important;
+  padding:18px 20px!important;transition:border-color .15s;
+}
+html body .papa-reference-shell .papa-order-card:hover{transform:none!important;box-shadow:var(--w-shadow)!important;border-color:#d4cdb9!important}
+html body .papa-reference-shell .papa-order-card.is-new{border-left-color:#f4c24a!important}
+html body .papa-reference-shell .papa-order-card.is-preparing{border-left-color:#9fc9f3!important}
+html body .papa-reference-shell .papa-order-card.is-ready{border-left-color:#7fcf9e!important}
+html body .papa-reference-shell .papa-order-card .papa-order-items{border-color:var(--w-line)!important}
+html body .papa-reference-shell .papa-order-card .papa-order-meta{color:var(--w-ink-2)!important}
+html body .papa-reference-shell .papa-live-dot{background:var(--accent-strong)!important;box-shadow:0 0 0 4px var(--accent-soft)!important}
+
+/* ---------- Sales bars ---------- */
+html body .papa-reference-shell .papa-sales-bars{border-bottom:1px solid var(--w-line)!important}
+html body .papa-reference-shell .papa-sales-day .bar{background:var(--accent-soft)!important;border:1px solid var(--accent)!important;border-bottom:0!important;border-radius:6px 6px 0 0!important;box-shadow:none!important}
+html body .papa-reference-shell .papa-sales-day:last-child .bar{background:var(--accent)!important}
+html body .papa-reference-shell .papa-sales-day small,
+html body .papa-reference-shell .papa-sales-amount{color:var(--w-ink-2)!important}
+html body .papa-reference-shell .papa-sales-item{background:var(--w-sunk)!important;border:0!important;border-radius:10px!important}
+html body .papa-reference-shell .papa-sales-item strong{color:var(--w-ink)!important}
+
+/* ---------- Products screen (shared .chip / .tw / .panel) ---------- */
+html body .papa-reference-shell .chip{
+  background:var(--w-paper)!important;border:1px solid var(--w-line)!important;color:var(--w-ink-2)!important;border-radius:999px!important;font-weight:650!important;
+}
+html body .papa-reference-shell .chip.on{background:var(--w-ink)!important;color:var(--w-paper)!important;border-color:var(--w-ink)!important}
+html body .papa-reference-shell .empty{background:var(--w-paper)!important;border:1px dashed var(--w-line)!important;border-radius:var(--r-card)!important}
+
+/* ---------- New-order popup ---------- */
+.papa-popup-backdrop{background:rgba(31,29,26,.55)!important;backdrop-filter:none!important}
+.papa-popup{background:var(--w-paper)!important;border:1px solid var(--w-line);border-radius:18px!important;box-shadow:0 24px 60px rgba(31,29,26,.25)!important}
+.papa-popup-header{background:var(--accent)!important;color:var(--accent-ink)!important}
+.papa-popup-header h2,.papa-popup-header p{color:var(--accent-ink)!important}
+.papa-popup-close{background:rgba(255,255,255,.28)!important;color:var(--accent-ink)!important;border-radius:8px!important}
+.papa-popup-body{color:var(--w-ink)}
+.papa-popup-body strong{color:var(--w-ink)!important}
+.papa-popup .btn{border-radius:10px!important}
+
+/* ---------- Tablet / mobile ---------- */
+@media(max-width:1150px){
+  html body .papa-reference-shell .papa-main{padding:24px 24px 48px!important}
+}
+@media(max-width:800px){
+  html body .papa-reference-shell{display:block!important}
+  html body .papa-reference-shell .papa-side{
+    background:var(--w-bg)!important;
+    box-shadow:12px 0 32px rgba(31,29,26,.14)!important;
+  }
+  html body .papa-reference-shell .papa-nav.active::after{left:-14px}
+  html body .papa-reference-shell .papa-top{padding:12px 16px!important}
+  html body .papa-reference-shell .papa-main{padding:18px 16px 40px!important}
+  html body .papa-reference-shell .papa-heading h1{font-size:25px!important}
+  html body .papa-reference-shell .papa-kpi strong{font-size:26px!important}
+  html body .papa-reference-shell .papa-current-state{border-right:0!important;border-bottom:1px solid rgba(31,29,26,.1)!important}
+  html body .papa-reference-shell .papa-order-toolbar{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  html body .papa-reference-shell *{transition:none!important;animation:none!important}
+}
