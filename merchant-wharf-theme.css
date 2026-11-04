@@ -1,7 +1,68 @@
 /* Papalita Merchant Portal — consolidated FINAL visual corrections (2026-11-04)
    Visual styling only; does not change Supabase, DOM IDs or event handlers.
-   This stylesheet must be the LAST stylesheet in <head>. *
+   This stylesheet must be the LAST stylesheet in <head>. */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* =========================================================
+   1. BASE DASHBOARD GRID (.rf-* CLASSES) - RESTORED LAYOUT
+   ========================================================= */
+:root{--rf-green:#0a7a3b;--rf-green-d:#075c2d;--rf-ink:#14231b;--rf-mute:#68786e;--rf-line:#e3ebe5;--rf-card:#fff;--rf-canvas:#f6f9f7}
+.rf-card{background:var(--rf-card);border:1px solid var(--rf-line);border-radius:14px;box-shadow:0 2px 10px #0f2c1a0a;padding:18px 20px}
+.rf-card h2{margin:0;font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;color:var(--rf-ink)}
+.rf-card h2 svg{color:var(--rf-green)}
+.rf-link{background:none;border:0;color:var(--rf-green);font-weight:700;font-size:13px;cursor:pointer;padding:0}
+.rf-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.rf-kpi{display:flex;align-items:center;gap:16px;padding:18px;border-radius:14px;border:1px solid var(--rf-line)}
+.rf-kpi.g{background:#eef8f1}.rf-kpi.b{background:#edf5fc}.rf-kpi.p{background:#f3effb}.rf-kpi.o{background:#fdf5ea}
+.rf-kpi-ico{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;flex:none}
+.rf-kpi.g .rf-kpi-ico{background:#d7efdf;color:#0a8a43}.rf-kpi.b .rf-kpi-ico{background:#d8e9f8;color:#1f7bd0}.rf-kpi.p .rf-kpi-ico{background:#e5dcf6;color:#7447c4}.rf-kpi.o .rf-kpi-ico{background:#fbe6c8;color:#e8870c}
+.rf-kpi span{font-size:13px;color:#33433a;font-weight:600}.rf-kpi strong{display:block;font-size:28px;line-height:1.15;color:var(--rf-ink);margin:2px 0}
+.rf-kpi small{font-size:12px;color:var(--rf-mute)}.rf-kpi em{font-style:normal;font-weight:700;color:#0d8a45}.rf-kpi em.dn{color:#c93a2f}
+.rf-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.rf-stack{display:grid;gap:16px;align-content:start}
+.rf-banner{position:relative;overflow:hidden;min-height:150px;padding:26px 28px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(100deg,#e6f5ec 0%,#d6efde 45%,#0b7a3c 46%,#0a6b34 100%);background-size:cover;background-position:center}
+.rf-banner.has-img{background:linear-gradient(90deg,#eaf6ee 0%,#eaf6eecc 45%,#0a6b3488 100%),var(--cover) center/cover}
+.rf-banner h2{font-size:24px;line-height:1.15;display:block}
+.rf-banner p{margin:8px 0 14px;color:#33433a;font-size:14px}.rf-banner p b{color:#0a7a3b}
+.rf-btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--rf-line);background:#fff;color:var(--rf-ink)}
+.rf-btn.p{background:var(--rf-green);border-color:var(--rf-green);color:#fff}
+.rf-status-card{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;min-height:150px}
+.rf-status-ico{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;color:#0a7a3b;background:#eaf6ee}
+.rf-pill-open{display:inline-flex;gap:7px;align-items:center;background:#e7f6ec;color:#0a7a3b;font-weight:700;font-size:13px;border-radius:8px;padding:4px 12px;margin:5px 0 8px}
+.rf-pill-open.off{background:#fdeceb;color:#c93a2f}
+.rf-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.rf-chip{border:1px solid #d9e3dc;background:#fff;color:#25352c;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer}
+.rf-chip.on{background:var(--rf-green);border-color:var(--rf-green);color:#fff}
+.rf-table-wrap{overflow-x:auto}
+.rf-table{width:100%;border-collapse:collapse;min-width:560px}
+.rf-table th{background:#f3f7f4;color:#33433a;font-size:12px;text-align:left;padding:10px 12px;font-weight:700}
+.rf-table td{padding:12px;border-bottom:1px solid #edf2ee;font-size:13px;color:var(--rf-ink);white-space:nowrap}
+.rf-table tr:last-child td{border-bottom:0}
+.rf-pill{display:inline-flex;align-items:center;padding:4px 14px;border-radius:7px;font-size:12px;font-weight:700;text-transform:capitalize;background:#eef1f3;color:#46515c}
+.rf-pill.confirmed,.rf-pill.completed{background:#d9f2e1;color:#0c7a3a}.rf-pill.cancelled{background:#fcd6d3;color:#c0332a}
+.rf-pill.pending,.rf-pill.preparing{background:#fdebc8;color:#b46a00}.rf-pill.ready,.rf-pill.out_for_delivery{background:#dbe9fb;color:#2458a8}
+.rf-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.rf-actions button{display:grid;justify-items:center;gap:7px;padding:14px 6px;border:1px solid var(--rf-line);border-radius:11px;background:#fff;font-size:12px;font-weight:600;color:var(--rf-ink);cursor:pointer}
+.rf-actions button.first{background:#e9f7ee;border-color:#8bd4a6;color:#0a7a3b}
+.rf-top-item{display:grid;grid-template-columns:42px 1fr auto auto;gap:12px;align-items:center;padding:7px 0}
+.rf-top-item img,.rf-top-item .rf-ph{width:42px;height:42px;border-radius:8px;object-fit:cover;background:#eaf0ec;display:grid;place-items:center}
+.rf-top-item b{font-size:13px;text-transform:uppercase}.rf-top-item span{font-size:12.5px;color:#46564c}.rf-top-item strong{font-size:13px}
+.rf-chart{display:grid;grid-template-columns:48px 1fr;gap:6px;margin-top:14px}
+.rf-y{display:flex;flex-direction:column;justify-content:space-between;height:150px;font-size:11px;color:var(--rf-mute);text-align:right}
+.rf-bars{display:grid;grid-template-columns:repeat(7,1fr);gap:18px;align-items:end;height:150px;border-bottom:1px solid var(--rf-line);background:repeating-linear-gradient(#0000 0 29px,#eef3ef 29px 30px)}
+.rf-bar{background:#86d99f;border-radius:3px 3px 0 0;min-height:4px}.rf-bar.today{background:#0a8a43}
+.rf-x{grid-column:2;display:grid;grid-template-columns:repeat(7,1fr);gap:18px;text-align:center;font-size:12px;color:#33433a}
+.rf-insights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.rf-insight{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--rf-line);border-radius:11px}
+.rf-insight i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;font-style:normal}
+.rf-insight strong{display:block;font-size:18px}.rf-insight small{color:var(--rf-mute);font-size:12px}
+@media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
+@media(max-width:800px){html body .papa-reference-shell{display:block!important}.rf-search{display:none}.rf-actions{grid-template-columns:repeat(2,1fr)}.rf-status-card{grid-template-columns:auto 1fr}}
+@media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-insights{grid-template-columns:1fr}}
+
+/* =========================================================
+   2. WHARF V2 VISUAL OVERRIDES & APPEARANCE (YOUR EXISTING CODE)
+   ========================================================= */
 :root {--merchant-accent:#087f32;--merchant-surface:#fff;--merchant-canvas:#f7f9fb;--merchant-ink:#17251e;--merchant-muted:#66766c;--merchant-border:#e2e8e4;}
 html[data-merchant-accent="indigo"]{--merchant-accent:#4f46e5}
 html[data-merchant-accent="blue"]{--merchant-accent:#2563eb}
@@ -61,7 +122,6 @@ html[data-merchant-mode="dark"] body .papa-reference-shell .papa-table tr:hover 
 html[data-merchant-mode="dark"] body .papa-reference-shell input,html[data-merchant-mode="dark"] body .papa-reference-shell select,html[data-merchant-mode="dark"] body .papa-reference-shell textarea{background:#1c2620!important;color:#f5f8f6!important;border-color:#526357!important}
 @media(max-width:1050px){html body .papa-reference-shell .wf-premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:740px){html body .papa-reference-shell{display:block!important}html body .papa-reference-shell .papa-side{position:sticky!important;top:0!important;height:auto!important;z-index:20!important;padding:8px!important}html body .papa-reference-shell .papa-side nav{display:flex!important;overflow-x:auto!important}html body .papa-reference-shell .papa-main{padding:16px 12px 32px!important}.papa-theme-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-
 
 /* WHARF V2 — clean, light, readable, and responsive. Intentionally scoped. */
 html body .papa-reference-shell .papa-work,html body .papa-reference-shell .papa-main{background:#f7f6f2!important;color:#202024!important}
