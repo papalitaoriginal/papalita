@@ -19,7 +19,6 @@ main{max-width:980px;margin:0 auto;padding:16px 16px 60px}.tabs{position:sticky;
 </style>
 
 <style id="design-polish">
-/* ===== Design polish: same green palette + Plus Jakarta Sans ===== */
 :root{
   --g-900:#073f2c;--g-800:#064b33;--g-700:#087f45;--g-600:#0a8b50;--g-100:#e6f5ec;--g-50:#f3f8f4;
   --ink:#152e25;--ink-soft:#5f7367;--line:#dde8df;--danger:#c0392b;
@@ -206,7 +205,7 @@ main.auth>*{min-width:0}
 </style>
 
 <style id="reference-theme">
-/* Papalita Merchant Portal — FINAL IMAGE & GRID FIX (2026-11-04) */
+/* Papalita Merchant Portal — FINAL POLISH (2026-11-04) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* =========================================================
@@ -396,16 +395,12 @@ html body .papa-reference-shell .rf-side-foot {
   gap: 10px !important;
   border-top: 1px solid var(--merchant-border) !important;
 }
-html body .papa-reference-shell .rf-store-toggle,
 html body .papa-reference-shell .rf-owner {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
   padding: 8px 10px !important;
 }
-html body .papa-reference-shell .rf-store-toggle span { display: flex !important; flex-direction: column !important; }
-html body .papa-reference-shell .rf-store-toggle b { font-size: 13px !important; }
-html body .papa-reference-shell .rf-store-toggle small { font-size: 11px !important; color: var(--merchant-muted) !important; }
 
 @media(max-width: 800px) {
   html body .papa-reference-shell { display: block !important; }
@@ -446,29 +441,27 @@ html body .papa-reference-shell .papa-top {
   border-bottom: 1px solid var(--merchant-border) !important;
   min-height: 70px !important;
 }
-html body .papa-reference-shell .papa-top .rf-title { flex: 1 !important; }
-html body .papa-reference-shell .papa-top .rf-title h1 { font-size: 20px !important; font-weight: 700 !important; margin: 0 !important; }
-html body .papa-reference-shell .papa-top .rf-title p { font-size: 13px !important; color: var(--merchant-muted) !important; margin: 2px 0 0 !important; }
+html body .papa-reference-shell .papa-top .rf-title { flex: 1 !important; display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 480px; }
 
-/* FIX: GLOBAL SEARCH BAR & ORDERS SEARCH BAR */
+/* FIX: GLOBAL SEARCH BAR & ORDERS SEARCH BAR (Centered & Polished) */
 html body .papa-reference-shell .rf-search,
 html body .papa-reference-shell .wf-order-search {
   display: inline-flex !important;
   align-items: center !important;
   background: var(--merchant-canvas) !important;
   border: 1px solid var(--merchant-border) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
   border-radius: 999px !important;
   padding: 0 16px !important;
   height: 42px !important;
   width: 100% !important;
-  max-width: 320px !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.25s ease !important;
   cursor: text !important;
 }
 html body .papa-reference-shell .rf-search:focus-within,
 html body .papa-reference-shell .wf-order-search:focus-within {
   border-color: var(--merchant-accent) !important;
-  box-shadow: 0 0 0 3px rgba(8, 127, 50, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(8, 127, 50, 0.15), inset 0 1px 2px rgba(0,0,0,0.01) !important;
   background: var(--merchant-surface) !important;
 }
 html body .papa-reference-shell .rf-search input,
@@ -480,7 +473,7 @@ html body .papa-reference-shell .wf-order-search input {
   color: var(--merchant-ink) !important;
   width: 100% !important;
   font-size: 14px !important;
-  padding: 0 0 0 8px !important;
+  padding: 0 0 0 10px !important;
 }
 html body .papa-reference-shell .rf-search i,
 html body .papa-reference-shell .wf-order-search span {
@@ -490,6 +483,55 @@ html body .papa-reference-shell .wf-order-search span {
   font-size: 18px !important;
 }
 
+/* TOP BAR CONTROLS */
+html body .papa-reference-shell .papa-top-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-left: auto;
+}
+
+.papa-header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--merchant-border);
+  background: var(--merchant-surface);
+  transition: all 0.2s ease;
+}
+.papa-header-status:hover { background: var(--merchant-canvas); }
+.papa-header-status .indicator { width: 10px; height: 10px; border-radius: 50%; }
+.papa-header-status.open .indicator { background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+.papa-header-status.closed .indicator { background: #ef4444; }
+
+html body .papa-reference-shell .papa-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--merchant-surface);
+  border: 1px solid var(--merchant-border);
+  color: var(--merchant-ink);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+html body .papa-reference-shell .papa-icon-btn:hover { background: var(--merchant-canvas); border-color: #d1d5db; }
+html body .papa-reference-shell .papa-icon-btn i { width: 20px; height: 20px; color: var(--merchant-muted); }
+html body .papa-reference-shell .papa-icon-btn:hover i { color: var(--merchant-ink); }
+html body .papa-reference-shell .papa-icon-btn .badge {
+  position: absolute; top: -2px; right: -2px; width: 12px; height: 12px;
+  background: #ef4444; border: 2px solid var(--merchant-surface); border-radius: 50%;
+}
+
 html body .papa-reference-shell .papa-heading {
   background: transparent !important;
   color: var(--merchant-ink) !important;
@@ -497,7 +539,7 @@ html body .papa-reference-shell .papa-heading {
   border: 0 !important;
   padding: 0 !important;
   min-height: 0 !important;
-  margin-bottom: 18px !important;
+  margin-bottom: 24px !important;
   display: flex !important;
   align-items: flex-start !important;
   justify-content: flex-end !important;
@@ -558,7 +600,7 @@ html body .papa-reference-shell .panel {
 .rf-actions button.first { background: var(--merchant-accent); border-color: var(--merchant-accent); color: #fff; }
 .rf-actions button.first svg { color: #fff; }
 
-.rf-btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--merchant-border); background: var(--merchant-surface); color: var(--merchant-ink); }
+.rf-btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--merchant-border); background: var(--merchant-surface); color: var(--merchant-ink); transition: all 0.2s; }
 .rf-btn.p, html body .papa-reference-shell .btn.p { background: var(--merchant-accent) !important; border-color: var(--merchant-accent) !important; color: #fff !important; }
 
 /* FIX: INVENTORY STATUS PILLS (DARK MODE ADAPTIVE) */
@@ -576,10 +618,14 @@ html body .papa-reference-shell .panel {
 .papa-status-pill.low { background: #fef3c7; color: #b45309; }
 .papa-status-pill.ok { background: #d1fae5; color: #047857; }
 
+.papa-timer-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; background: var(--merchant-canvas); color: var(--merchant-muted); }
+.papa-timer-badge.urgent { background: #fee2e2; color: #ef4444; }
+
 /* Dark mode version for Pills */
 html[data-merchant-mode="dark"] .papa-status-pill.out { background: #7f1d1d; color: #fca5a5; }
 html[data-merchant-mode="dark"] .papa-status-pill.low { background: #78350f; color: #fcd34d; }
 html[data-merchant-mode="dark"] .papa-status-pill.ok { background: #064e3b; color: #6ee7b7; }
+html[data-merchant-mode="dark"] .papa-timer-badge.urgent { background: #7f1d1d; color: #fca5a5; }
 
 /* FIX: TABLE SCROLLING / PAGINATION ALTERNATIVE */
 .papa-table-wrapper {
@@ -638,7 +684,7 @@ html[data-merchant-mode="dark"] body .papa-reference-shell textarea {
 }
 
 html body .papa-reference-shell .wf-order-tools { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: flex-end; }
-html body .papa-reference-shell .wf-order-tools .btn { height: 40px; padding: 0 16px; border-radius: 9px; }
+html body .papa-reference-shell .wf-order-tools .btn { height: 42px; padding: 0 16px; border-radius: 9px; }
 
 /* FIX: POPUP ANIMATION */
 @keyframes slideInUp {
@@ -649,6 +695,16 @@ html body .papa-reference-shell .wf-order-tools .btn { height: 40px; padding: 0 
   animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* MODAL / DRAWER POLISH */
+.papa-drawer-content { font-family: Inter, system-ui, sans-serif; color: var(--merchant-ink); }
+.papa-drawer-content h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.papa-drawer-content h3 { margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--merchant-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.papa-drawer-content .info-grid { display: grid; gap: 8px; font-size: 14px; line-height: 1.5; }
+.papa-drawer-content .info-grid b { color: var(--merchant-ink); font-weight: 600; }
+.papa-drawer-content .item-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--merchant-border); }
+.papa-drawer-content .item-row:last-child { border-bottom: none; padding-bottom: 0; }
+.papa-drawer-content .total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; margin-top: 16px; border-top: 2px dashed var(--merchant-border); font-size: 20px; font-weight: 800; color: var(--merchant-accent); }
+
 /* MISC UI ELEMENTS */
 html body .papa-reference-shell .wf-welcome-banner { background: linear-gradient(110deg, #07552d, #0b7e3d 65%, #19a052) !important; color: #fff !important; }
 html body .papa-reference-shell .wf-welcome-banner h2, html body .papa-reference-shell .wf-welcome-banner .wf-welcome-eyebrow { color: #fff !important; }
@@ -656,10 +712,6 @@ html body .papa-reference-shell .wf-welcome-banner p { color: #e4f9e9 !important
 
 html body .papa-reference-shell .papa-filter.active { background: var(--merchant-accent) !important; border-color: var(--merchant-accent) !important; color: #fff !important; }
 html body .papa-reference-shell .papa-filter:not(.active) { background: var(--merchant-surface) !important; color: var(--merchant-ink) !important; border: 1px solid var(--merchant-border) !important; }
-
-.papa-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 160px)); gap: 12px; margin-top: 18px; }
-.papa-theme-option { display: grid; gap: 10px; text-align: center; padding: 10px; border: 2px solid var(--merchant-border); border-radius: 12px; background: var(--merchant-surface); color: var(--merchant-ink); cursor: pointer; }
-.papa-theme-option.selected { border-color: var(--merchant-accent); }
 
 @media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
 @media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-actions{grid-template-columns:1fr}}
@@ -673,14 +725,12 @@ html body .papa-reference-shell .papa-filter:not(.active) { background: var(--me
 <script src="js/supabase.js"></script>
 <script src="js/images.js"></script>
 <script src="js/data.js"></script>
-<script src="js/ops.js?v=merchant-orders-accept-v1"></script>
+<script src="js/ops.js?v=merchant-orders-accept-v2"></script>
 <script>
 (() => { 'use strict';
 const LOGO={mark:'images/papalita_mark_color.png',white:'images/papalita_full_white.png'};
-/* Supabase seller authentication. Existing order/menu screens remain local demo until migrated. */
-const { $, $$, esc, peso, load, save, stageOf, STEPS, R, live, setLive, update, tell, toast, addrBrgy, items, modeBar, ov, setOv, printHTML, avg } = OPS;
 let papaUserEmail = '';
-let me = null, tab = 'cat', storeUuid = null, sellerStores = [], realCatering = [], db = null;
+let me = null, tab = 'dashboard', storeUuid = null, sellerStores = [], realCatering = [], db = null;
 function client(){
   if(window.PAPALITA_DB?.auth)return window.PAPALITA_DB;
   const c=window.FOODIE_CONFIG?.supabase;
@@ -690,6 +740,7 @@ function client(){
 const TERMS_VERSION='2026-10-22-v1';
 const TERMS_HTML='<h3 style="margin:16px 0 6px">1. Introduction and Acceptance</h3><p style="line-height:1.65">By registering, you agree to the merchant rules governing Papalita participation and understand that registration does not guarantee approval.</p><h3 style="margin:16px 0 6px">2. Eligibility</h3><p style="line-height:1.65">Applicants must have legal capacity and authority to represent the store and comply with Philippine laws and local requirements.</p><h3 style="margin:16px 0 6px">3. Truthful Information</h3><p style="line-height:1.65">Provide accurate owner, contact, address and store information. Fraudulent or misleading applications may be rejected.</p><h3 style="margin:16px 0 6px">4. Business Verification</h3><p style="line-height:1.65">Business permits and supporting documents are optional at initial registration but may be requested before approval. Applicable legal requirements remain mandatory.</p><h3 style="margin:16px 0 6px">5. Review and Approval</h3><p style="line-height:1.65">New applications remain pending until reviewed. Papalita may request corrections, approve, or reject applications based on reasonable criteria.</p><h3 style="margin:16px 0 6px">6. Account Security</h3><p style="line-height:1.65">Protect credentials and report unauthorized access. You are responsible for activity by authorized staff.</p><h3 style="margin:16px 0 6px">7. Product Listings</h3><p style="line-height:1.65">Menu descriptions, images, prices, ingredients and availability must be accurate and lawful.</p><h3 style="margin:16px 0 6px">8. Food Safety</h3><p style="line-height:1.65">Follow sanitation, hygiene, safe storage and food handling rules. Do not offer unsafe or spoiled food.</p><h3 style="margin:16px 0 6px">9. Allergen Information</h3><p style="line-height:1.65">Disclose relevant known ingredients and allergen information and respond accurately to customer inquiries.</p><h3 style="margin:16px 0 6px">10. Pricing</h3><p style="line-height:1.65">Disclose prices and applicable charges before confirmation. Do not mislead customers or impose undisclosed charges.</p><h3 style="margin:16px 0 6px">11. Order Fulfillment</h3><p style="line-height:1.65">Review orders promptly, prepare accepted items correctly, and communicate material delays or substitutions.</p><h3 style="margin:16px 0 6px">12. Cancellations and Refunds</h3><p style="line-height:1.65">Cooperate with legitimate complaints and follow applicable consumer law and published refund policies.</p><h3 style="margin:16px 0 6px">13. Catering Bookings</h3><p style="line-height:1.65">Provide clear packages, guest counts, schedules, deposits and cancellation terms. An inquiry alone is not a confirmed booking.</p><h3 style="margin:16px 0 6px">14. Delivery Handover</h3><p style="line-height:1.65">Package orders securely and verify order identification when releasing items to delivery personnel.</p><h3 style="margin:16px 0 6px">15. Fees and Settlements</h3><p style="line-height:1.65">Any commission, subscription or transaction fee must be separately disclosed and agreed before it applies.</p><h3 style="margin:16px 0 6px">16. Taxes and Permits</h3><p style="line-height:1.65">Merchants remain responsible for required taxes, permits, registration and financial records.</p><h3 style="margin:16px 0 6px">17. Customer Privacy</h3><p style="line-height:1.65">Use customer personal information only for legitimate order and service purposes; comply with the Data Privacy Act of 2012.</p><h3 style="margin:16px 0 6px">18. Security and Data Handling</h3><p style="line-height:1.65">Use reasonable technical and organizational safeguards; do not sell or publicly disclose customer information.</p><h3 style="margin:16px 0 6px">19. Prohibited Conduct</h3><p style="line-height:1.65">Fraud, harassment, fake reviews, unlawful products, impersonation and interference with the platform are prohibited.</p><h3 style="margin:16px 0 6px">20. Reviews</h3><p style="line-height:1.65">Do not intimidate reviewers or manipulate ratings. Legitimate feedback may be moderated under published rules.</p><h3 style="margin:16px 0 6px">21. Intellectual Property</h3><p style="line-height:1.65">Upload only content you have rights to use; grant Papalita permission to display it for platform operations.</p><h3 style="margin:16px 0 6px">22. Suspension and Termination</h3><p style="line-height:1.65">Serious violations, safety concerns or fraud may lead to restrictions, subject to applicable law and appropriate review.</p><h3 style="margin:16px 0 6px">23. Service Availability and Liability</h3><p style="line-height:1.65">Service interruptions may occur. Neither party waives non-excludable rights or remedies under Philippine law.</p><h3 style="margin:16px 0 6px">24. Changes, Disputes and Governing Law</h3><p style="line-height:1.65">Material changes should be communicated. Disputes should first be raised through support; Philippine law governs these terms.</p>';
 let termsReviewed=false;
+const { $, $$, esc, peso, toast, printHTML } = OPS;
 function showTerms(){
  const dlg=document.createElement('dialog');dlg.className='merchant-dialog';
  dlg.innerHTML=`<div class="merchant-dialog-head"><img class="dlg-logo" src="${LOGO.white}" alt="Papalita"><div class="merchant-pill">MERCHANT AGREEMENT</div><h2 style="margin-top:12px">Papalita Terms & Conditions</h2><p>Version ${TERMS_VERSION}</p></div><div id="termsScroll" class="merchant-terms-scroll" tabindex="0">${TERMS_HTML}<p style="padding:14px;background:#eff7f1;border-radius:12px"><b>End of Merchant Agreement.</b> The terms are a draft pending legal review.</p></div><div class="merchant-dialog-foot"><div class="merchant-progress"><span id="termsProgress"></span></div><div id="readBox"><p id="termsStatus" class="merchant-help" style="margin:0 0 12px">Scroll down to read the agreement. The agree and disagree buttons appear at the end.</p><div class="merchant-actions"><button type="button" class="btn s" id="cancelTerms">Close</button></div></div><div id="askBox" style="display:none"><p class="ask-title">Do you agree to the Papalita Merchant Terms & Conditions?</p><div class="merchant-actions"><button type="button" class="btn d" id="disagreeTerms">Disagree</button><button type="button" class="btn p" id="agreeTerms">I agree</button></div></div></div>`;
@@ -708,7 +759,7 @@ function showTerms(){
 }
 function registerForm(message=''){
 termsReviewed=false;
-$('#root').innerHTML=`<main class="merchant-wrap"><div class="merchant-hero"><img class="hero-logo" src="${LOGO.white}" alt="Papalita"><span class="merchant-pill">MERCHANT PARTNER PROGRAM</span><h1>Grow your business<br>with Papalita.</h1><p>Join local food businesses in Alegria. Create your merchant profile, submit your application, and get verified before accepting orders.</p></div><form id="register" novalidate><div class="merchant-sheet"><div class="merchant-section-head"><span class="merchant-num">01</span><div><h2>Owner information</h2><p>Who will manage this store account?</p></div></div><div class="two"><div class="field"><label>Owner full name *</label><input class="in" id="owner" autocomplete="name" required placeholder="Full legal name"></div><div class="field"><label>Mobile number *</label><input class="in" id="phone" type="tel" required placeholder="09XXXXXXXXX"></div></div><div class="two"><div class="field"><label>Email address *</label><input class="in" id="regemail" type="email" autocomplete="email" required placeholder="owner@example.com"></div><div class="field"><label>Create password *</label><input class="in" id="regpass" type="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters"></div></div></div><div class="merchant-sheet"><div class="merchant-section-head"><span class="merchant-num">02</span><div><h2>Business details</h2><p>Tell us about your food establishment.</p></div></div><div class="field"><label>Store name *</label><input class="in" id="storename" required placeholder="Registered or trading name"></div><div class="two"><div class="field"><label>Barangay *</label><input class="in" id="barangay" required placeholder="Barangay in Alegria"></div><div class="field"><label>Business type *</label><select class="in" id="type"><option>Restaurant</option><option>Carinderia</option><option>Bakery</option><option>Catering</option><option>Food stall</option><option>Other food business</option></select></div></div><div class="field"><label>Complete business address *</label><textarea class="in" id="address" required rows="2" placeholder="Street, purok, landmarks, barangay"></textarea></div><div style="padding:14px 16px;background:#f3f8f4;border-radius:12px"><b style="color:#23563a;font-size:13px">Business permit · Optional</b><p class="merchant-help" style="margin:4px 0 0">Document upload is not yet available in this version. Our team may request documents privately during review. Legal permits may still be required to operate.</p></div></div><div class="merchant-sheet"><div class="merchant-section-head"><span class="merchant-num">03</span><div><h2>Merchant agreement</h2><p>Please review the full terms before consenting.</p></div></div><div class="merchant-consent"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><b>Merchant Terms & Conditions</b><p class="merchant-help" style="margin:3px 0 0">Version ${TERMS_VERSION}</p></div><button type="button" class="btn s" id="termsBtn">Read terms</button></div><p class="terms-state" id="consentHint">Not yet agreed. Tap “Read terms” to review and respond.</p></div><p class="merchant-help" style="margin-top:12px">Your application will remain pending until reviewed by Papalita Admin. A separate Privacy Policy will be required before public launch.</p></div><p class="err" id="regerr">${esc(message)}</p><div class="merchant-actions"><button class="btn s" type="button" id="backLogin">← Back to sign in</button><button class="btn p" id="submitReg">Submit application →</button></div></form></main>`;
+$('#root').innerHTML=`<main class="merchant-wrap"><div class="merchant-hero"><img class="hero-logo" src="${LOGO.white}" alt="Papalita"><span class="merchant-pill">MERCHANT PARTNER PROGRAM</span><h1>Grow your business<br>with Papalita.</h1><p>Join local food businesses in Alegria. Create your merchant profile, submit your application, and get verified before accepting orders.</p></div><form id="register" novalidate><div class="merchant-sheet"><div class="merchant-section-head"><span class="merchant-num">01</span><div><h2>Owner information</h2><p>Who will manage this store account?</p></div></div><div class="two"><div class="field"><label>Owner full name *</label><input class="in" id="owner" autocomplete="name" required placeholder="Full legal name"></div><div class="field"><label>Mobile number *</label><input class="in" id="phone" type="tel" required placeholder="09XXXXXXXXX"></div></div><div class="two"><div class="field"><label>Email address *</label><input class="in" id="regemail" type="email" autocomplete="email" required placeholder="owner@example.com"></div><div class="field"><label>Create password *</label><input class="in" id="regpass" type="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters"></div></div></div><div class="merchant-sheet"><div class="merchant-section-head"><span class="merchant-num">02</span><div><h2>Business details</h2><p>Tell us about your food establishment.</p></div></div><div class="field"><label>Store name *</label><input class="in" id="storename" required placeholder="Registered or trading name"></div><div class="two"><div class="field"><label>Barangay *</label><input class="in" id="barangay" required placeholder="Barangay in Alegria"></div><div class="field"><label>Business type *</label><select class="in" id="type"><option>Restaurant</option><option>Carinderia</option><option>Bakery</option><option>Catering</option><option>Food stall</option><option>Other food business</option></select></div></div><div class="field"><label>Complete business address *</label><textarea class="in" id="address" required rows="2" placeholder="Street, purok, landmarks, barangay"></textarea></div></div><div class="merchant-sheet"><div class="merchant-section-head"><span class="merchant-num">03</span><div><h2>Merchant agreement</h2><p>Please review the full terms before consenting.</p></div></div><div class="merchant-consent"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><b>Merchant Terms & Conditions</b><p class="merchant-help" style="margin:3px 0 0">Version ${TERMS_VERSION}</p></div><button type="button" class="btn s" id="termsBtn">Read terms</button></div><p class="terms-state" id="consentHint">Not yet agreed. Tap “Read terms” to review and respond.</p></div></div><p class="err" id="regerr">${esc(message)}</p><div class="merchant-actions"><button class="btn s" type="button" id="backLogin">← Back to sign in</button><button class="btn p" id="submitReg">Submit application →</button></div></form></main>`;
 $('#termsBtn').onclick=showTerms;$('#backLogin').onclick=()=>gate();$('#register').onsubmit=async e=>{e.preventDefault();const btn=$('#submitReg');btn.disabled=true;try{db=client();if(!$('#register').reportValidity())throw Error('Please complete all required fields.');const app={owner:$('#owner').value.trim(),phone:$('#phone').value.trim(),email:$('#regemail').value.trim(),password:$('#regpass').value,store:$('#storename').value.trim(),barangay:$('#barangay').value.trim(),type:$('#type').value,address:$('#address').value.trim()};if(!termsReviewed)throw Error('Please read the Merchant Terms and choose “I agree” to continue.');if(!/^(09|\+639)\d{9}$/.test(app.phone))throw Error('Enter a valid Philippine mobile number.');sessionStorage.setItem('papalita.pending.application',JSON.stringify({...app,password:undefined,terms:TERMS_VERSION}));const {data,error}=await db.auth.signUp({email:app.email,password:app.password,options:{data:{full_name:app.owner,phone:app.phone}}});if(error)throw error;if(data.session&&data.user){await completeApplication(data.user);return;}pendingMessage('Account created. Confirm your email, then sign in to complete the store application.');}catch(ex){$('#regerr').textContent=ex.message;btn.disabled=false;}};
 }
 function pendingMessage(message){$('#root').innerHTML=`<main><div class="panel" style="max-width:550px;margin:10vh auto"><img class="form-mark" src="${LOGO.mark}" alt="Papalita"><h1>Store application</h1><p>${esc(message)}</p><button class="btn p blk" id="loginBack">Go to sign in</button></div></main>`;$('#loginBack').onclick=()=>gate();}
@@ -734,8 +785,6 @@ async function authorize(user){
 async function selectStore(id){
   const st=sellerStores.find(x=>x.id===id);if(!st)throw Error('Store not assigned to this account.');
   storeUuid=st.id;
-  const local=(window.RESTAURANTS||[]).find(r=>r.name.toLowerCase().replace(/[^a-z0-9]/g,'')===st.name.toLowerCase().replace(/[^a-z0-9]/g,''));
-  me=local?.id||null;
   await fetchCatering();
   tab='dashboard';
   await papaLoad();
@@ -757,42 +806,6 @@ async function updateCatering(id,status){
 }
 function realCateringHTML(){
   return realCatering.length?`<div class="ogrid">${realCatering.map(q=>`<div class="panel"><h3>${esc(q.customer_name||'Customer')}</h3><p class="sm mu">${esc(q.customer_phone||'')} · ${esc(q.event_type||'Event')}</p><p class="sm">${esc(q.event_date||'')} ${esc(q.event_time||'')} · ${Number(q.guests)||0} guests</p><p class="sm mu">${esc(q.package||'')} · ${esc(q.venue_barangay||'')} ${esc(q.venue_details||'')}</p><p class="sm">${esc(q.notes||'')}</p><label class="sm" for="status-${q.id}">Status</label><select class="in" data-real-status="${q.id}" id="status-${q.id}">${['pending','confirmed','cancelled'].map(x=>`<option value="${x}" ${q.status===x?'selected':''}>${x}</option>`).join('')}</select><p class="sm mu">Reference: ${esc(q.id)}</p></div>`).join('')}</div>`:'<div class="empty"><h3>No catering requests yet</h3><p>Requests from your customers will appear here.</p></div>';
-}
-function printSlip(o) { if (!o) return; const r = R(o.rid), sel = l => Object.values(l.sel || {}).flat();
-  printHTML('Order ' + o.id, `<h1>${esc(r.name)}</h1><div class="c">KITCHEN ORDER</div><div class="d"></div><div class="c big b">${esc(o.id)}</div><div class="c">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</div><div class="d"></div>${o.items.map(l => `<div class="it">${l.qty} x ${esc(l.name)}</div>${sel(l).length ? `<div class="n">+ ${esc(sel(l).join(', '))}</div>` : ''}${l.note ? `<div class="n b">NOTE: ${esc(l.note)}</div>` : ''}`).join('')}<div class="d"></div>${o.note ? `<div class="b">CUSTOMER NOTE: ${esc(o.note)}</div><div class="d"></div>` : ''}<div class="r"><span>PAYMENT</span><span>${o.pay.method === 'cod' ? 'COD ' + peso(o.total) : 'PAID ONLINE'}</span></div><div class="r"><span>RIDER</span><span>${o.rider ? esc(o.rider.name) : 'TBA'}</span></div><div class="r"><span>BARANGAY</span><span>${esc(addrBrgy(o))}</span></div><div class="d"></div><div class="c">Thank you!</div>`); }
-function orderCard(o, kind) { const s = stageOf(o), cod = o.pay.method === 'cod';
-  return `<div class="panel"><div class="row sp"><h3>${o.id}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${s < 0 ? 'Cancelled' : STEPS[s]}</span></div><p class="mu sm">${new Date(o.createdAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })} · ${esc(o.contact.name)} · ${esc(o.contact.phone)}</p>
-  <div class="sm" style="margin:8px 0">${items(o)}</div><div class="row sp sm"><span class="mu">Deliver to</span><span style="text-align:right">${esc(o.addr)}</span></div>${o.note ? `<p class="sm mu">Note: ${esc(o.note)}</p>` : ''}<div class="row sp"><b>${peso(o.total)}</b><span class="sm mu">${cod ? 'Cash on delivery' : 'Paid online (demo)'}</span></div>${o.rider ? `<p class="sm" style="margin-top:6px">Rider: <b>${esc(o.rider.name)}</b></p>` : ''}${(o.riderCancels || []).length && !o.rider && stageOf(o) >= 0 && stageOf(o) < 5 ? `<p class="sm" style="color:var(--er)">Rider ${esc(o.riderCancels.slice(-1)[0].rider)} cancelled (${esc(o.riderCancels.slice(-1)[0].reason)}). Waiting for a new rider.</p>` : ''}${o.cancelReason ? `<p class="sm mu">Reason: ${esc(o.cancelReason)}</p>` : ''}
-  ${o.review ? `<p class="sm" style="margin-top:6px">★ ${o.review.store}${o.review.comment ? ' “' + esc(o.review.comment) + '”' : ''}</p>` : ''}<div class="row wrap" style="margin-top:12px"><button class="btn s sm" data-print="${o.id}">Print slip</button>${kind === 'new' ? `<select class="in" style="min-height:44px" id="pt-${o.id}"><option value="10">Ready in 10 min</option><option value="20" selected>20 min</option><option value="30">30 min</option><option value="45">45 min</option></select><button class="btn p sm" data-acc="${o.id}">Accept</button><button class="btn d sm" data-rej="${o.id}">Reject</button>` : kind === 'prep' ? `<button class="btn p grow" data-rdy="${o.id}">Mark ready for pickup</button>` : kind === 'wait' ? '<span class="status open">Ready · waiting for rider</span>' : ''}</div></div>`; }
-function draw() { if (!storeUuid) return gate(); const r = me ? R(me) : {name:sellerStores.find(x=>x.id===storeUuid)?.name||'Store',closed:false,busy:0,items:[],hours:['08:00','18:00'],phone:'',messenger:''}, s = load(), os = s.orders.filter(o => o.rid === me), st = o => stageOf(o);
-  const nw = os.filter(o => o.status === 'active' && st(o) === 0), prep = os.filter(o => o.status === 'active' && st(o) === 1 && !o.ready), wait = os.filter(o => o.status === 'active' && st(o) === 1 && o.ready), out = os.filter(o => st(o) >= 2 && st(o) <= 4), hist = os.filter(o => st(o) === 5 || st(o) < 0);
-  const today = new Date().toDateString(), td = os.filter(o => new Date(o.createdAt).toDateString() === today && st(o) >= 0), rev = td.reduce((a, o) => a + o.sub, 0), cat = (s.cater || []).filter(q => q.rid === me);
-  const rv = os.filter(o => o.review), tdn = td.filter(o => st(o) === 5), sales = tdn.reduce((a, o) => a + o.sub, 0), cxToday = os.filter(o => st(o) < 0 && new Date(o.createdAt).toDateString() === today).length, tops = {}; tdn.forEach(o => o.items.forEach(l => tops[l.name] = (tops[l.name] || 0) + l.qty)); const topL = Object.entries(tops).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const REV = rv.length ? `<div class="ogrid">${rv.slice().sort((a, b) => b.review.at - a.review.at).map(o => `<div class="panel"><div class="row sp"><b>★ ${o.review.store}</b><span class="sm mu">${esc(o.id)}</span></div><p class="sm mu">${esc(o.contact.name)}${o.review.tags && o.review.tags.length ? ' · ' + esc(o.review.tags.join(', ')) : ''}</p>${o.review.comment ? `<p style="margin-top:6px">“${esc(o.review.comment)}”</p>` : ''}</div>`).join('')}</div>` : '<div class="empty"><h3>No reviews yet</h3><p>Customers can rate delivered orders.</p></div>';
-  const REP = `<div class="ogrid"><div class="panel"><span class="mu sm">Delivered today</span><span class="k">${tdn.length}</span></div><div class="panel"><span class="mu sm">Sales today (delivered)</span><span class="k">${peso(sales)}</span></div><div class="panel"><span class="mu sm">Cancelled today</span><span class="k">${cxToday}</span></div></div><div class="panel" style="margin-top:14px"><h3 style="margin-bottom:8px">Top items today</h3>${topL.length ? topL.map(([n, q]) => `<div class="row sp sm" style="padding:4px 0"><span>${esc(n)}</span><b>${q}</b></div>`).join('') : '<p class="mu">No delivered orders yet today.</p>'}</div><button class="btn p" data-prep>Print report</button>`;
-  $('#root').innerHTML = `<main><div class="row sp wrap"><div class="row" style="gap:14px;align-items:center"><img class="portal-mark" src="${LOGO.mark}" alt="Papalita"><div><h1 style="font-size:26px">${esc(r.name)}</h1><p class="mu sm">Store portal · Alegria${rv.length ? ` · ★ ${avg(rv.map(o => o.review.store))} (${rv.length} review${rv.length > 1 ? 's' : ''})` : ''}</p></div></div><label style="display:none" class="chip ${r.closed ? '' : 'on'}" style="cursor:pointer"><input type="checkbox" id="open" class="sr" ${r.closed ? '' : 'checked'}>${r.closed ? 'Store closed' : 'Accepting orders'}</label></div><div style="margin-top:14px">${sellerStores.length>1?`<label class="sm">Your store <select class="in" id="storepick">${sellerStores.map(x=>`<option value="${x.id}" ${x.id===storeUuid?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:''}<span class="sm mu">Catering and products are connected to Supabase. Orders and store settings are not live yet.</span></div><div class="panel row sp wrap" style="display:none"><div><b>Busy mode</b><p class="sm mu">Adds waiting time to your store in the customer app.</p></div><select class="in" id="busy" style="width:auto;min-height:44px" aria-label="Busy mode">${[[0, 'Off'], [10, '+10 min'], [20, '+20 min'], [30, '+30 min']].map(([v, l]) => `<option value="${v}" ${(r.busy || 0) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-
-  <div class="chips tabs">${[['cat', `Catering Requests (${realCatering.length})`], ['menu', 'Products (Supabase)'], ['set', 'Settings']].map(([k, l]) => `<button class="chip ${tab === k ? 'on' : ''}" data-t="${k}">${l}</button>`).join('')}<button class="chip" data-refresh>Refresh catering</button><button class="chip" data-out>Sign out</button></div>
-  ${tab === 'cat' ? realCateringHTML() : tab === 'new' ? (nw.length ? `<div class="ogrid">${nw.map(o => orderCard(o, 'new')).join('')}</div>` : '<div class="empty"><h3>No new orders</h3><p>New orders appear here. Turn on Live mode to receive them from the customer app.</p></div>')
-   : tab === 'prep' ? (prep.length + wait.length ? `<div class="ogrid">${prep.map(o => orderCard(o, 'prep')).join('')}${wait.map(o => orderCard(o, 'wait')).join('')}</div>` : '<div class="empty"><h3>Nothing in the kitchen</h3></div>')
-   : tab === 'out' ? (out.length ? `<div class="ogrid">${out.map(o => orderCard(o, '')).join('')}</div>` : '<div class="empty"><h3>No orders with riders</h3></div>')
-   : tab === 'hist' ? (hist.length ? `<div class="ogrid">${hist.map(o => orderCard(o, '')).join('')}</div>` : '<div class="empty"><h3>No history yet</h3></div>')
-   : tab === 'menu' ? `<div id="papalita-products" class="panel"><p>Loading Supabase products...</p></div>`
-   : tab === 'rev' ? REV : tab === 'rep' ? REP : tab === 'cat-demo' ? (cat.length ? `<div class="ogrid">${cat.map(q => `<div class="panel"><div class="row sp"><h3>${q.id}</h3><span class="status n">${q.kind === 'inquiry' ? 'Resort inquiry' : 'Catering'}</span></div><p class="sm">${esc(q.name)} · ${esc(q.phone)}</p><p class="sm mu">${esc(q.type)} · ${esc(q.date || '')} ${esc(q.time || '')} · ${q.guests} guests${q.pkg ? ' · ' + esc(q.pkg) : ''}</p>${q.venue || q.brgy ? `<p class="sm mu">Venue: ${esc(q.venue || '')} ${esc(q.brgy || '')}</p>` : ''}${q.notes ? `<p class="sm">“${esc(q.notes)}”</p>` : ''}<div class="field" style="margin-top:10px"><label>Quote (₱)</label><input class="in" type="number" min="0" value="${q.quote || ''}" data-q="${q.id}" style="min-height:42px"></div><select class="in" data-cs="${q.id}" style="min-height:44px">${['sent', 'confirmed', 'quoted', 'completed', 'cancelled'].map(x => `<option value="${x}" ${q.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select><div class="row" style="margin-top:10px"><a class="btn s sm grow" href="tel:${esc(q.phone)}">Call customer</a></div></div>`).join('')}</div>` : '<div class="empty"><h3>No catering requests</h3></div>')
-   : `<div class="panel" style="max-width:560px"><h3 style="margin-bottom:10px">Opening hours and contacts</h3><div class="two"><div class="field"><label>Opens</label><input class="in" type="time" id="ho" value="${r.hours[0].replace('24:00', '00:00')}"></div><div class="field"><label>Closes</label><input class="in" type="time" id="hc" value="${r.hours[1] > '24' ? '02:00' : r.hours[1]}"></div></div><div class="field"><label>Phone</label><input class="in" id="ph" value="${r.placeholder ? '' : esc(r.phone)}" placeholder="09XXXXXXXXX"><p class="err" id="phe"></p></div><div class="field"><label>Messenger link</label><input class="in" id="ms" value="${esc(r.messenger || '')}" placeholder="https://m.me/yourpage"></div><button class="btn p blk" id="svset">Save settings</button></div>`}</main>`;
-  const picker=$('#storepick');if(picker)picker.onchange=async()=>{try{await selectStore(picker.value);}catch(e){toast(e.message);}}; $$('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); }); $('[data-out]').onclick = async () => { await db.auth.signOut(); me=null; storeUuid=null; gate(); }; const mb=$('#modebtn');if(mb)mb.onclick=()=>toast('Order live mode is not connected to Supabase yet.'); const refresh=$('[data-refresh]');if(refresh)refresh.onclick=async()=>{try{await fetchCatering();draw();toast('Catering refreshed.');}catch(e){toast(e.message);}}; $$('[data-real-status]').forEach(el=>el.onchange=async()=>{try{await updateCatering(el.dataset.realStatus,el.value);}catch(e){toast(e.message);await fetchCatering();draw();}});
-  $('#open').onchange = e => { const o = ov(); o.stores = o.stores || {}; (o.stores[me] = o.stores[me] || {}).closed = !e.target.checked; setOv(o); window.applyOverrides(); r.closed = !e.target.checked; toast(r.closed ? 'Store closed. Customers cannot order.' : 'Store open for orders.'); draw(); };
-  $$('[data-acc]').forEach(b => b.onclick = () => { const m = +$('#pt-' + b.dataset.acc).value; update(b.dataset.acc, o => { o.stage = 1; o.prep = m; }); toast('Order accepted.'); draw(); });
-  $$('[data-rej]').forEach(b => b.onclick = () => { const why = prompt('Reason for rejecting (customer will see it):', 'Item unavailable'); if (why === null) return; const sx = load(), o = sx.orders.find(x => x.id === b.dataset.rej); o.demo = false; o.stage = 0; o.status = 'cancelled'; o.cancelReason = why || 'Rejected by store'; o.upd = Date.now(); if (o.pay.status === 'demo_authorized') o.pay.status = 'refund_pending'; tell(sx, o, 'Order cancelled', `${r.name} could not take your order: ${o.cancelReason}.`); save(sx); toast('Order rejected.'); draw(); });
-  $$('[data-rdy]').forEach(b => b.onclick = () => { update(b.dataset.rdy, o => { o.ready = true; }); toast('Marked ready. Riders can now see it.'); draw(); });
-  $$('[data-sv]').forEach(b => b.onclick = () => { const tr = b.closest('tr'), id = tr.dataset.i, p = +$('[data-p]', tr).value; if (!(p > 0)) return toast('Enter a price above 0.'); const o = ov(); o.items = o.items || {}; o.items[id] = Object.assign(o.items[id] || {}, { price: p, available: $('[data-av]', tr).checked }); setOv(o); toast('Saved.'); });
-  $$('[data-av]').forEach(c => c.onchange = () => { const id = c.closest('tr').dataset.i, o = ov(); o.items = o.items || {}; (o.items[id] = o.items[id] || {}).available = c.checked; setOv(o); toast(c.checked ? 'Item available.' : 'Marked sold out.'); });
-  $$('[data-cs]').forEach(e => e.onchange = () => { const sx = load(), q = sx.cater.find(x => x.id === e.dataset.cs), qt = $(`[data-q="${q.id}"]`).value; q.status = e.value; if (qt) q.quote = +qt; q.upd = Date.now(); save(sx); toast('Status updated.'); });
-  $('#busy').onchange = e => { const v = +e.target.value, o = ov(); o.stores = o.stores || {}; (o.stores[me] = o.stores[me] || {}).busy = v; setOv(o); r.busy = v; toast(v ? `Busy mode on: +${v} min` : 'Busy mode off.'); };
-  $$('[data-print]').forEach(b => b.onclick = () => printSlip(load().orders.find(x => x.id === b.dataset.print)));
-  const pr = $('[data-prep]'); if (pr) pr.onclick = () => printHTML('Daily report', `<h1>${esc(r.name)}</h1><div class="c">DAILY REPORT</div><div class="c">${new Date().toLocaleDateString('en-PH', { dateStyle: 'long' })}</div><div class="d"></div><div class="r"><span>Delivered</span><b>${tdn.length}</b></div><div class="r"><span>Cancelled</span><b>${cxToday}</b></div><div class="r big"><span>SALES</span><b>${peso(sales)}</b></div><div class="d"></div>${topL.map(([n, q]) => `<div class="r"><span>${esc(n)}</span><b>${q}</b></div>`).join('')}<div class="d"></div><div class="c">Papalita</div>`);
-  if(tab==='menu') renderSellerProducts();
-  const sv = $('#svset'); if (sv) sv.onclick = () => { const ph = $('#ph').value.replace(/\s/g, ''); if (ph && !/^(09|\+639)\d{9}$/.test(ph)) return $('#phe').textContent = 'Use a PH mobile number like 09171234567.'; $('#phe').textContent = ''; const o = ov(); o.stores = o.stores || {}; const e = o.stores[me] = o.stores[me] || {}; e.hours = [$('#ho').value, $('#hc').value]; if (ph) e.phone = ph; e.messenger = $('#ms').value.trim(); setOv(o); toast('Settings saved.'); };
 }
 
 /* PAPALITA UNIVERSAL MERCHANT DASHBOARD — only approved, owned store data */
@@ -820,6 +833,24 @@ async function papaFetchOrders(){
 const papaStore=()=>sellerStores.find(x=>x.id===storeUuid)||{};
 const papaCateringEligible=st=>/^(restaurant|carinderia|bulaloan|specialty[_\s-]*restaurant)$/i.test(String(st.business_type||'').trim());
 const papaCateringOn=st=>papaCateringEligible(st)&&st.catering_enabled===true;
+
+async function papaToggleStoreHeader(e){
+  const opening = papaStore().is_open === false;
+  if(!confirm(opening ? 'Reopen this store and accept new orders?' : 'Temporarily close your store? New orders will be blocked.')) return;
+  const btn = document.getElementById('papa-header-status-toggle');
+  if(btn) btn.style.opacity = '0.5';
+  try {
+    const q = await db.rpc('papalita_set_store_availability', {p_store_id: storeUuid, p_open: opening, p_reason: opening ? null : 'Closed by owner'});
+    if(q.error) throw q.error;
+    Object.assign(papaStore(), q.data);
+    toast(opening ? 'Store reopened' : 'Store closed');
+    draw();
+  } catch(e) {
+    toast('Availability update failed: ' + e.message);
+    if(btn) btn.style.opacity = '1';
+  }
+}
+
 function papaShell(content){
  const st=papaStore();
  const pending=papaLiveOrders.filter(o=>o.status==='pending').length;
@@ -845,22 +876,44 @@ function papaShell(content){
   ${sellerStores.length>1?`<select class="in" id="papa-storepick" style="margin:12px 0;width:100%">${sellerStores.map(x=>`<option value="${esc(x.id)}" ${x.id===storeUuid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}
   <nav>${nav}</nav>
   <div class="rf-side-foot">
-   <div class="rf-store-toggle"><span class="rf-dot ${closed?'off':''}" style="width:10px;height:10px;border-radius:50%;background:${closed?'#ef4444':'#10b981'}"></span><span><b>${closed?'Store Closed':'Store Open'}</b><small>${closed?'Not accepting orders':'Accepting orders'}</small></span></div>
    <div class="rf-owner"><span class="rf-avatar" style="width:36px;height:36px;background:var(--merchant-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${esc(initials)}</span><span style="display:flex;flex-direction:column;overflow:hidden"><b>Store Owner</b><small style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(papaUserEmail)}</small></span></div>
    <button class="papa-nav" id="papa-logout" style="margin-top:10px;justify-content:center;background:#fee2e2;color:#b91c1c"><i data-lucide="log-out"></i>Logout</button>
   </div></aside>
  <div class="papa-work"><header class="papa-top">
   <button class="papa-mobile-menu" id="papa-mobile-menu" aria-label="Toggle navigation" aria-expanded="false" style="display:none;background:none;border:0;font-size:24px;cursor:pointer">☰</button>
-  <div class="rf-title"><h1>${title}</h1><p>${sub}</p></div>
-  <label class="rf-search"><i data-lucide="search"></i><input id="rf-global-search" placeholder="Search global orders..."></label>
-  <button class="rf-icon-btn" data-papa-tab="orders" aria-label="Orders" style="background:transparent;border:0;cursor:pointer;position:relative"><i data-lucide="bell"></i>${pending?'<span style="position:absolute;top:0;right:0;width:10px;height:10px;background:#ef4444;border-radius:50%"></span>':''}</button>
-  <button class="papa-notify-toggle" id="papa-sound-toggle" style="background:transparent;border:1px solid var(--merchant-border);padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px">🔔 <span>${papaAudioEnabled?'On':'Off'}</span></button>
+  
+  <div class="rf-title" style="margin: 0; max-width: none; justify-content: flex-start; padding-right: 20px;">
+    <label class="rf-search"><i data-lucide="search"></i><input id="rf-global-search" placeholder="Search global orders..."></label>
+  </div>
+  
+  <div class="papa-top-controls">
+    <button class="papa-header-status ${closed ? 'closed' : 'open'}" id="papa-header-status-toggle">
+        <span class="indicator"></span>
+        <b>${closed ? 'Store Closed' : 'Store Open'}</b>
+    </button>
+    <button class="papa-icon-btn" data-papa-tab="orders" aria-label="Orders">
+      <i data-lucide="bell"></i>
+      ${pending?'<span class="badge"></span>':''}
+    </button>
+    <button class="papa-icon-btn" id="papa-sound-toggle" aria-label="Sound Toggle">
+      <i data-lucide="${papaAudioEnabled?'volume-2':'volume-x'}"></i>
+    </button>
+  </div>
   </header>
  <main class="papa-main"><div id="papa-content">${content}</div></main></div></div>`;
+ 
  $$('[data-papa-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.papaTab;draw();if(tab==='orders')void papaFetchOrders()});
  const mobile=$('#papa-mobile-menu');if(mobile)mobile.onclick=()=>{const open=$('#papa-sidebar').classList.toggle('papa-side-open');mobile.setAttribute('aria-expanded',String(open))};
  $('#papa-logout').onclick=async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;me=null;gate()};
- const sound=$('#papa-sound-toggle');if(sound)sound.onclick=()=>{papaAudioEnabled=!papaAudioEnabled;sound.innerHTML='🔔 <span>'+(papaAudioEnabled?'On':'Off')+'</span>';if(papaAudioEnabled)papaBeep()};
+ 
+ const toggleBtn = $('#papa-header-status-toggle'); if(toggleBtn) toggleBtn.onclick = papaToggleStoreHeader;
+ const sound=$('#papa-sound-toggle');
+ if(sound)sound.onclick=()=>{
+   papaAudioEnabled=!papaAudioEnabled;
+   sound.innerHTML=`<i data-lucide="${papaAudioEnabled?'volume-2':'volume-x'}"></i>`;
+   if(window.lucide) window.lucide.createIcons();
+   if(papaAudioEnabled)papaBeep();
+ };
  const pick=$('#papa-storepick');if(pick)pick.onchange=()=>selectStore(pick.value).catch(e=>toast(e.message));
 }
 const papaKpi=(label,value,note)=>`<div class="papa-card papa-kpi" style="padding:16px"><small style="color:var(--merchant-muted)">${esc(label)}</small><strong style="display:block;font-size:24px;margin:4px 0">${esc(value)}</strong><span style="font-size:12px;color:var(--merchant-muted)">${esc(note||'')}</span></div>`;
@@ -884,13 +937,12 @@ function papaDashboard(){
   <div class="rf-kpi p"><span class="rf-kpi-ico">${icon('package')}</span><div><span>Total Products</span><strong>${papaProducts.length}</strong></div></div>
   <div class="rf-kpi o"><span class="rf-kpi-ico">${icon('star')}</span><div><span>Average Rating</span><strong>${rating||'—'}</strong></div></div>
  </div>
- <div class="rf-row">
-  <section class="rf-card"><h2>Welcome back! 👋<br>${esc(st.name||'Merchant')}</h2><p>Your store is <b>${closed?'Closed':'Open'}</b> ${closed?'and not accepting orders.':'and accepting orders.'}</p><div style="margin-top:20px;display:flex;gap:10px"><button class="rf-btn p" data-jump="orders">View Orders</button> <button class="rf-btn" data-jump="menu">Manage Products</button></div></section>
-  <section class="rf-card"><div style="display:flex;align-items:center;gap:12px"><span style="width:48px;height:48px;background:#e3f4e9;color:#087f32;display:flex;align-items:center;justify-content:center;border-radius:12px">${icon('store')}</span><div><h2 style="margin:0;font-size:16px">Store Status</h2><p style="margin:4px 0 0;font-size:13px;color:var(--merchant-muted)">${closed?'Store is hidden from new orders.':'Store is visible to customers.'}</p></div></div></section>
+ <div class="rf-row" style="grid-template-columns: 1fr;">
+  <section class="rf-card"><h2>Welcome back! 👋<br>${esc(st.name||'Merchant')}</h2><p>Your store is <b>${closed?'Closed':'Open'}</b> ${closed?'and not accepting orders.':'and accepting orders on the Papalita customer app.'}</p><div style="margin-top:20px;display:flex;gap:10px"><button class="rf-btn p" data-jump="orders">View Orders</button> <button class="rf-btn" data-jump="menu">Manage Products</button></div></section>
  </div>
  <div class="rf-row">
   <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2>${icon('file-text')} Recent Orders</h2><button class="rf-btn" data-jump="orders" style="padding:6px 12px">View All</button></div>
-   <div style="overflow-x:auto"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead><tbody>${orders.slice(0,5).map(o=>`<tr><td><b>#${esc(String(o.id).slice(0,8))}</b></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td>${(o.items||[]).reduce((n,i)=>n+(Number(i.quantity)||0),0)} item(s)</td><td><b>${peso(o.total_amount)}</b></td><td><span style="padding:4px 8px;border-radius:4px;font-size:12px;background:var(--merchant-canvas);font-weight:600">${esc(String(o.status).replace('_',' '))}</span></td><td>${esc(new Date(o.created_at).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}))}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--merchant-muted)">No orders yet</td></tr>'}</tbody></table></div></section>
+   <div style="overflow-x:auto"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead><tbody>${orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5).map(o=>`<tr><td><b>#${esc(String(o.id).slice(0,8))}</b></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td>${(o.items||[]).reduce((n,i)=>n+(Number(i.quantity)||0),0)} item(s)</td><td><b>${peso(o.total_amount)}</b></td><td><span style="padding:4px 8px;border-radius:4px;font-size:12px;background:var(--merchant-canvas);font-weight:600">${esc(String(o.status).replace('_',' '))}</span></td><td>${esc(new Date(o.created_at).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}))}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--merchant-muted)">No orders yet</td></tr>'}</tbody></table></div></section>
   <div class="rf-stack">
    <section class="rf-card"><h2>${icon('zap')} Quick Actions</h2><div class="rf-actions"><button class="first" data-jump="menu">${icon('circle-plus')}Add Product</button><button data-jump="menu">${icon('utensils')}Manage Menu</button><button data-jump="settings">${icon('settings')}Store Settings</button><button data-jump="appearance">${icon('palette')}Appearance</button></div></section>
    <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2>${icon('trending-up')} Top Products</h2></div>
@@ -924,33 +976,82 @@ function papaOrders(){
  const counts={all:papaLiveOrders.length,pending:0,confirmed:0,preparing:0,ready:0,out_for_delivery:0,completed:0,cancelled:0};
  for(const o of papaLiveOrders){if(Object.hasOwn(counts,String(o.status)))counts[o.status]++}
  const filters=[['all','All'],['pending','New'],['confirmed','Confirmed'],['preparing','Preparing'],['ready','Ready'],['out_for_delivery','On the way'],['completed','Completed'],['cancelled','Cancelled']];
- const head=`<div class="papa-heading"><div><h1>Orders</h1><p>Manage live incoming customer orders and fulfillment.</p></div><div class="wf-order-tools"><label class="wf-order-search" style="height:40px"><span>⌕</span><input id="wf-order-search" type="search" placeholder="Search order ID or customer..." value="${esc(papaOrderSearch)}"></label><button class="btn s" id="papa-orders-refresh" style="height:40px">↻ Refresh</button></div></div>`;
+ const head=`<div class="papa-heading"><div><h1>Orders</h1><p>Manage live incoming customer orders and fulfillment.</p></div><div class="wf-order-tools"><label class="wf-order-search" style="height:40px"><span><i data-lucide="search" style="width:16px;height:16px"></i></span><input id="wf-order-search" type="search" placeholder="Search order ID or customer..." value="${esc(papaOrderSearch)}"></label><button class="btn s" id="papa-orders-refresh" style="height:40px"><i data-lucide="rotate-cw" style="width:16px;height:16px"></i> Refresh</button></div></div>`;
  if(papaOrdersLoading&&papaOrdersStore!==storeUuid)return head+'<div class="papa-card" style="padding:24px">Loading orders from Supabase...</div>';
  if(papaOrdersError)return head+`<div class="papa-card" style="padding:24px"><h2>Unable to load orders</h2><p style="color:#ef4444">${esc(papaOrdersError)}</p></div>`;
  if(papaOrdersStore!==storeUuid)return head+'<div class="papa-card" style="padding:24px">Loading your orders...</div>';
- const visible=papaLiveOrders.filter(o=>(papaOrderFilter==='all'||o.status===papaOrderFilter)&&(!papaOrderSearch||[o.id,o.customer_name,o.contact_number,o.delivery_address].some(v=>String(v||'').toLowerCase().includes(papaOrderSearch.toLowerCase()))));
+ 
+ // FIX: Sorting oldest first for active workflows
+ const visible=papaLiveOrders
+  .filter(o=>(papaOrderFilter==='all'||o.status===papaOrderFilter)&&(!papaOrderSearch||[o.id,o.customer_name,o.contact_number,o.delivery_address].some(v=>String(v||'').toLowerCase().includes(papaOrderSearch.toLowerCase()))))
+  .sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+
  const toolbar=`<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:8px">${filters.map(([key,label])=>`<button class="btn s sm ${papaOrderFilter===key?'p':''}" style="${papaOrderFilter!==key?'background:var(--merchant-surface)':''}" data-papa-filter="${key}">${label}${counts[key]?` (${counts[key]})`:''}</button>`).join('')}</div>`;
- const rows=visible.map(o=>{const status=String(o.status||'pending');const items=(o.items||[]).map(i=>`${Number(i.quantity)||0}× ${i.product_name||'Product'}`).join(', ');const when=o.created_at?new Date(o.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila',hour:'numeric',minute:'2-digit'}):'—';return `<tr data-wf-order="${esc(String(o.id))}"><td><strong>#${esc(String(o.id).slice(0,8))}</strong></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td title="${esc(items)}">${esc(items||'No items listed')}</td><td><strong>${peso(o.total_amount)}</strong></td><td>${esc(when)}</td><td><span style="padding:4px 8px;border-radius:4px;font-size:12px;background:var(--merchant-canvas);font-weight:600">${esc(status.replaceAll('_',' '))}</span></td><td><button class="btn s sm" data-wf-order-button="${esc(String(o.id))}">Manage</button></td></tr>`}).join('');
- return head+toolbar+`<section class="papa-card papa-table-wrapper"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--merchant-muted)">No matching orders found.</td></tr>'}</tbody></table></section>`+`<dialog id="papa-order-dialog" class="merchant-dialog" style="padding:0;max-width:500px"><div id="papa-order-dialog-content"></div></dialog>`;
+ 
+ const rows=visible.map(o=>{
+  const status=String(o.status||'pending');
+  const items=(o.items||[]).map(i=>`${Number(i.quantity)||0}× ${i.product_name||'Product'}`).join(', ');
+  
+  // Add time tracking (FIFO Priority)
+  const createdAtMs = new Date(o.created_at).getTime();
+  const elapsedMins = Math.floor((Date.now() - createdAtMs) / 60000);
+  const urgent = elapsedMins > 15 && status !== 'completed' && status !== 'cancelled';
+  const timerBadge = status === 'completed' || status === 'cancelled' 
+    ? '' 
+    : `<br><span class="papa-timer-badge ${urgent ? 'urgent' : ''}"><i data-lucide="clock" style="width:12px;height:12px"></i> ${elapsedMins}m ago</span>`;
+
+  const when=o.created_at?new Date(o.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila',hour:'numeric',minute:'2-digit'}):'—';
+  
+  return `<tr data-wf-order="${esc(String(o.id))}"><td><strong>#${esc(String(o.id).slice(0,8))}</strong></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td title="${esc(items)}">${esc(items||'No items listed')}</td><td><strong>${peso(o.total_amount)}</strong></td><td>${esc(when)}${timerBadge}</td><td><span style="padding:4px 8px;border-radius:4px;font-size:12px;background:var(--merchant-canvas);font-weight:600;text-transform:uppercase">${esc(status.replaceAll('_',' '))}</span></td><td><button class="btn s sm" data-wf-order-button="${esc(String(o.id))}">Manage</button></td></tr>`
+ }).join('');
+ 
+ return head+toolbar+`<section class="papa-card papa-table-wrapper"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--merchant-muted)">No matching orders found.</td></tr>'}</tbody></table></section>`+`<dialog id="papa-order-dialog" class="merchant-dialog" style="padding:0;max-width:500px;border-radius:16px"><div id="papa-order-dialog-content"></div></dialog>`;
 }
 let papaOrderSearch='';
 function papaOpenOrderDrawer(id){
  const o=papaLiveOrders.find(x=>String(x.id)===String(id));if(!o)return;
  const dlg=document.getElementById('papa-order-dialog');if(!dlg)return;
+ 
+ // Reset event listeners to prevent double triggers
+ const newDlg = dlg.cloneNode(false);
+ dlg.parentNode.replaceChild(newDlg, dlg);
+
  const status=String(o.status||'pending');
- const items=(o.items||[]).map(i=>`<div style="display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--merchant-border)"><div><b>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</b>${i.selected_options&&Object.keys(i.selected_options).length?`<br><small style="color:var(--merchant-muted)">${esc(JSON.stringify(i.selected_options))}</small>`:''}${i.special_instructions?`<br><small style="color:var(--merchant-muted)">Note: ${esc(i.special_instructions)}</small>`:''}</div><b>${peso(i.line_total)}</b></div>`).join('');
+ const items=(o.items||[]).map(i=>`<div class="item-row"><div><b>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</b>${i.selected_options&&Object.keys(i.selected_options).length?`<br><small style="color:var(--merchant-muted)">${esc(JSON.stringify(i.selected_options))}</small>`:''}${i.special_instructions?`<br><small style="color:var(--merchant-muted)">Note: ${esc(i.special_instructions)}</small>`:''}</div><b>${peso(i.line_total)}</b></div>`).join('');
+ 
  document.getElementById('papa-order-dialog-content').innerHTML=`
- <div style="padding:20px;background:var(--merchant-canvas);border-bottom:1px solid var(--merchant-border);display:flex;justify-content:space-between;align-items:center"><div><h2 style="margin:0;font-size:18px">Order #${String(o.id).slice(0,8)}</h2><span style="font-size:13px;font-weight:600;color:var(--merchant-accent)">${status.toUpperCase()}</span></div><button type="button" class="btn s sm" data-wf-close>✕</button></div>
- <div style="padding:20px;max-height:60vh;overflow-y:auto">
-  <div style="margin-bottom:20px;padding:16px;background:var(--merchant-canvas);border-radius:12px"><h3 style="margin:0 0 10px;font-size:14px">Customer Details</h3><div style="font-size:14px;display:grid;gap:6px"><div><span style="color:var(--merchant-muted)">Name:</span> <b>${esc(o.customer_name||o.contact_name||'Not provided')}</b></div><div><span style="color:var(--merchant-muted)">Contact:</span> <b>${esc(o.contact_number||'Not provided')}</b></div><div><span style="color:var(--merchant-muted)">Address:</span> <b>${esc(o.delivery_address||'Not provided')}</b></div></div></div>
-  <div style="margin-bottom:20px"><h3 style="margin:0 0 10px;font-size:14px">Order Items</h3>${items||'<p>No items</p>'}</div>
-  <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;padding-top:16px;border-top:1px solid var(--merchant-border)"><span>Total</span><span>${peso(o.total_amount)}</span></div>
-  <div style="font-size:13px;color:var(--merchant-muted);margin-top:8px">${esc(o.payment_method||'Cash')} · ${esc(o.fulfillment_type||'Delivery')}</div>
- </div>
- <div style="padding:20px;border-top:1px solid var(--merchant-border);background:var(--merchant-surface)">${papaOrderActions(o)||'<button type="button" class="btn s blk" data-wf-close>Close</button>'}</div>`;
- dlg.showModal();
- dlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>dlg.close());
- dlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{await papaChangeOrderStatus(b.dataset.papaOrderId,b.dataset.papaNextStatus,b);dlg.close()});
+ <div class="papa-drawer-content">
+  <div style="padding:20px 24px;background:var(--merchant-canvas);border-bottom:1px solid var(--merchant-border);display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0">
+   <div><h2 style="margin:0">Order #${String(o.id).slice(0,8)}</h2><span style="font-size:12px;font-weight:700;color:var(--merchant-accent);text-transform:uppercase;letter-spacing:0.05em">${status.replaceAll('_',' ')}</span></div>
+   <button type="button" class="papa-icon-btn" data-wf-close><i data-lucide="x"></i></button>
+  </div>
+  <div style="padding:24px;max-height:60vh;overflow-y:auto">
+   <div style="margin-bottom:24px;padding:16px;background:var(--merchant-canvas);border-radius:12px;border:1px solid var(--merchant-border)">
+    <h3>Customer Details</h3>
+    <div class="info-grid">
+     <div><span style="color:var(--merchant-muted)">Name:</span> <b>${esc(o.customer_name||o.contact_name||'Not provided')}</b></div>
+     <div><span style="color:var(--merchant-muted)">Contact:</span> <b>${esc(o.contact_number||'Not provided')}</b></div>
+     <div><span style="color:var(--merchant-muted)">Address:</span> <b>${esc(o.delivery_address||'Not provided')}</b></div>
+    </div>
+   </div>
+   <div style="margin-bottom:24px">
+    <h3>Order Items</h3>
+    ${items||'<p>No items</p>'}
+   </div>
+   <div class="total-row"><span>Total</span><span>${peso(o.total_amount)}</span></div>
+   <div style="font-size:13px;color:var(--merchant-muted);margin-top:8px;text-align:right">${esc(o.payment_method||'Cash').toUpperCase()} · ${esc(o.fulfillment_type||'Delivery').toUpperCase()}</div>
+  </div>
+  <div style="padding:20px 24px;border-top:1px solid var(--merchant-border);background:var(--merchant-surface);border-radius:0 0 16px 16px">${papaOrderActions(o)||'<button type="button" class="btn s blk" data-wf-close>Close</button>'}</div>
+ </div>`;
+ 
+ newDlg.showModal();
+ if(window.lucide) window.lucide.createIcons();
+ 
+ newDlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>newDlg.close());
+ newDlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{
+   await papaChangeOrderStatus(b.dataset.papaOrderId, b.dataset.papaNextStatus, b);
+   newDlg.close();
+ });
 }
 function papaReports(){
  const rows=papaOrdersStore===storeUuid?papaLiveOrders:[];
@@ -999,6 +1100,7 @@ async function papaBind(){
  const typeSelect=$('#papa-type');if(typeSelect)typeSelect.onchange=()=>{const field=$('#papa-catering-setting');if(field){const allowed=papaCateringEligible({business_type:typeSelect.value});field.hidden=!allowed;if(!allowed)$('#papa-catering-enabled').checked=false;}};
  const form=$('#papa-profile-form');if(form)form.onsubmit=async e=>{e.preventDefault();const btn=$('#papa-save-profile');btn.disabled=true;const err=$('#papa-profile-error');err.textContent='';try{const phone=$('#papa-phone').value.trim();if(phone&&!/^(09\d{9}|\+639\d{9})$/.test(phone))throw Error('Enter a valid Philippine mobile number');const changes={name:$('#papa-name').value.trim(),business_type:$('#papa-type').value,catering_enabled:papaCateringEligible({business_type:$('#papa-type').value})&&$('#papa-catering-enabled').checked,description:$('#papa-description').value.trim(),address:$('#papa-address').value.trim(),phone,open_time:$('#papa-open').value,close_time:$('#papa-close').value};if(!changes.name||!changes.address)throw Error('Name and address are required');const logo=await papaUpload($('#papa-logo-file').files[0],'logo');if(logo)changes.logo_url=logo;const q=await db.from('stores').update(changes).eq('id',storeUuid).eq('status','approved').select('*').single();if(q.error)throw q.error;Object.assign(papaStore(),q.data);toast('Store profile saved!');draw()}catch(ex){err.textContent=ex.message}finally{btn.disabled=false}};
  $$('[data-save-stock]').forEach(b=>b.onclick=async()=>{const tr=b.closest('tr');const stock=Number(tr.querySelector('[data-stock]').value),threshold=Number(tr.querySelector('[data-threshold]').value);if(!Number.isInteger(stock)||stock<0||!Number.isInteger(threshold)||threshold<0)return toast('Enter valid nonnegative whole numbers');b.disabled=true;try{const q=await db.from('products').update({stock,low_stock_threshold:threshold}).eq('id',tr.dataset.invId).eq('store_id',storeUuid).select('id');if(q.error)throw q.error;if(!q.data?.length)throw Error('Update blocked by RLS');toast('Stock updated');await papaLoad()}catch(e){toast(e.message)}finally{b.disabled=false}});
+ 
  const reasonSelect=$('#papa-closure-reason');
  const toggle=$('#papa-emergency-toggle');
  if(toggle)toggle.onclick=async()=>{
