@@ -1,11 +1,23 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Papalita — Merchant Portal</title><meta name="robots" content="noindex">
-<link rel="icon" type="image/png" href="images/papalita_mark_color.png"><meta name="theme-color" content="#087F32">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papalita — Merchant Portal</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="images/papalita_mark_color.png">
+<meta name="theme-color" content="#087F32">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 
-<style>main{max-width:980px;margin:0 auto;padding:16px 16px 60px}.tabs{position:sticky;top:0;background:var(--bg);z-index:5;padding:10px 0}.k{font-size:26px;font-weight:800;display:block}.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px}.ogrid .panel{margin:0}.sw{width:22px;height:22px;accent-color:var(--or)}</style><style>
+<style>
+main{max-width:980px;margin:0 auto;padding:16px 16px 60px}.tabs{position:sticky;top:0;background:var(--bg);z-index:5;padding:10px 0}.k{font-size:26px;font-weight:800;display:block}.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px}.ogrid .panel{margin:0}.sw{width:22px;height:22px;accent-color:var(--or)}
+</style>
+
+<style>
 :root{--merchant-green:#087f45;--merchant-ink:#152e25}body{background:#f4f7f4!important}.merchant-hero{background:linear-gradient(125deg,#073f2c,#087f45);color:white;padding:38px;border-radius:24px;margin-bottom:20px;position:relative;overflow:hidden}.merchant-hero:after{content:"";position:absolute;right:-55px;top:-100px;width:260px;height:260px;border:65px solid #ffffff12;border-radius:50%}.merchant-hero h1{color:#fff;font-size:clamp(26px,4vw,40px);line-height:1.16;margin:12px 0}.merchant-hero p{color:#e2f4e8;max-width:540px;line-height:1.65}.merchant-pill{display:inline-flex;background:#ffffff25;color:white;border:1px solid #ffffff50;border-radius:99px;padding:7px 13px;font-weight:700;font-size:12px;letter-spacing:.05em}.merchant-wrap{max-width:790px;margin:22px auto;padding:0 14px 70px}.merchant-sheet{background:#fff;border:1px solid #e0e9e2;border-radius:22px;padding:clamp(18px,4vw,32px);box-shadow:0 15px 55px #123e2310;margin-bottom:16px}.merchant-section-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}.merchant-num{width:34px;height:34px;border-radius:11px;background:#e6f5ec;color:#087f45;display:grid;place-items:center;font-weight:800}.merchant-section-head h2{font-size:18px;color:#173c2b;margin:0}.merchant-section-head p{color:#6b7d71;font-size:12px;margin:3px 0 0}.merchant-sheet .field label{font-weight:700;color:#334c3d;font-size:13px}.merchant-sheet .in{border-radius:12px;background:#fbfdfb;border:1px solid #d8e5da}.merchant-sheet .in:focus{outline:2px solid #70c89a;outline-offset:1px}.merchant-consent{border:1px solid #d6e6da;border-radius:16px;padding:18px;background:#f8fcf9}.merchant-consent label{display:flex;align-items:flex-start;gap:12px;line-height:1.55}.merchant-consent input{width:19px;height:19px;flex:none;margin-top:3px;accent-color:#087f45}.merchant-consent input:disabled{cursor:not-allowed}.merchant-help{font-size:12px;color:#6b7d71;line-height:1.6}.merchant-actions{display:flex;gap:10px;flex-wrap:wrap}.merchant-actions .btn{flex:1;min-width:170px}.merchant-dialog{width:min(780px,96vw);max-height:92vh;border:0;border-radius:22px;padding:0;box-shadow:0 25px 100px #001f1370;color:#19362a}.merchant-dialog::backdrop{background:#071b14bd;backdrop-filter:blur(4px)}.merchant-dialog-head{padding:22px 26px;background:#064b33;color:white}.merchant-dialog-head h2{color:white;font-size:21px;margin:0 0 5px}.merchant-dialog-head p{color:#d4ebdc;font-size:12px;margin:0}.merchant-terms-scroll{height:min(53vh,480px);overflow-y:auto;padding:22px 28px;line-height:1.75;background:white}.merchant-terms-scroll h3{color:#135e3d}.merchant-dialog-foot{padding:16px 24px;border-top:1px solid #e0ebe2;background:#f8fbf8}.merchant-progress{height:6px;background:#dce8de;border-radius:12px;overflow:hidden;margin-bottom:12px}.merchant-progress span{display:block;width:0;height:100%;background:#0a8b50;transition:width .15s}.merchant-login{max-width:460px;margin:7vh auto;padding:0 15px}.merchant-login .merchant-sheet{padding:32px}.merchant-login h1{font-size:27px;color:#163b2a;margin:0 0 7px}@media(max-width:580px){.merchant-hero{padding:26px}.merchant-dialog-head{padding:18px}.merchant-terms-scroll{padding:16px}.merchant-dialog-foot{padding:14px}}
 </style>
+
 <style id="design-polish">
 /* ===== Design polish: same green palette + Plus Jakarta Sans ===== */
 :root{
@@ -22,8 +34,6 @@ h3{font-size:16px;font-weight:700}
 .mu{color:var(--ink-soft)!important}
 .sm{font-size:13px}
 :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:3px solid #70c89a;outline-offset:2px;border-radius:var(--r-sm)}
-
-/* Buttons */
 .btn{font-family:inherit;font-weight:700;font-size:14px;min-height:46px;padding:0 20px;border-radius:var(--r-md);border:1.5px solid transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background-color .15s,border-color .15s,box-shadow .15s,transform .08s}
 .btn.sm{min-height:40px;padding:0 14px;font-size:13px;border-radius:12px}
 .btn:active:not(:disabled){transform:scale(.98)}
@@ -35,8 +45,6 @@ h3{font-size:16px;font-weight:700}
 .btn.d{background:#fff;color:var(--danger);border-color:#efc9c4}
 .btn.d:hover:not(:disabled){background:#fdf1ef;border-color:var(--danger)}
 .btn.blk{width:100%}
-
-/* Inputs */
 .field{margin-bottom:16px}
 .field label,.merchant-sheet .field label{display:block;font-size:13px;font-weight:700;color:#334c3d;margin-bottom:6px}
 .in{font-family:inherit;font-size:15px;width:100%;min-height:48px;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--r-md);background:#fbfdfb;color:var(--ink);transition:border-color .15s,box-shadow .15s,background-color .15s}
@@ -52,8 +60,6 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:38px;background-
 .err:empty{display:none}
 .link{display:inline-block;margin-top:18px;color:var(--g-700);font-weight:700;font-size:13px;text-decoration:none}
 .link:hover{text-decoration:underline}
-
-/* Register + sign-in */
 .merchant-hero{background:linear-gradient(135deg,var(--g-900) 0%,var(--g-700) 100%);border-radius:var(--r-lg);padding:34px 36px;margin-bottom:18px;box-shadow:var(--shadow-md)}
 .merchant-hero:after{opacity:.7}
 .merchant-hero h1{font-weight:800;letter-spacing:-.02em}
@@ -70,16 +76,12 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:38px;background-
 .merchant-actions{gap:12px}
 .merchant-actions .btn{min-width:160px}
 .merchant-login .merchant-sheet{box-shadow:var(--shadow-md)}
-
-/* Terms dialog */
 .merchant-dialog{box-shadow:0 30px 100px #001f1366}
 .merchant-dialog-head{padding:24px 28px}
 .merchant-terms-scroll h3{font-size:15px;font-weight:800;margin-top:22px}
 .merchant-terms-scroll p{color:#3b5446;max-width:68ch}
 .merchant-progress{height:8px}
 .merchant-progress span{background:linear-gradient(90deg,var(--g-700),#25b36c)}
-
-/* Portal layout */
 main{max-width:1040px;margin:0 auto;padding:20px 16px 72px}
 main>.row.sp.wrap:first-child{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--shadow-sm);align-items:center;gap:14px}
 main>.row.sp.wrap:first-child h1{font-size:24px;font-weight:800;margin:0}
@@ -87,8 +89,6 @@ label.chip{user-select:none}
 label.chip.on{background:var(--g-100);border-color:#a9dcc0;color:var(--g-800)}
 label.chip::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#b8c4bc;margin-right:9px}
 label.chip.on::before{background:#1db26a;box-shadow:0 0 0 4px #1db26a2e}
-
-/* Panels */
 .panel{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--shadow-sm);margin-bottom:14px}
 .panel h3{margin:0 0 4px}
 .panel p{margin:4px 0}
@@ -100,8 +100,6 @@ label.chip.on::before{background:#1db26a;box-shadow:0 0 0 4px #1db26a2e}
 .row.sp{justify-content:space-between}
 .row.wrap{flex-wrap:wrap}
 .grow{flex:1}
-
-/* Tabs */
 .chips{display:flex;gap:8px}
 .chips.tabs{position:sticky;top:0;z-index:5;margin:16px -16px 18px;padding:10px 16px;background:#f4f7f4ee;backdrop-filter:blur(8px);overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line)}
 .chips.tabs::-webkit-scrollbar{display:none}
@@ -112,19 +110,13 @@ label.chip.on{background:var(--g-100);border-color:#a9dcc0;color:var(--g-800)}
 .chips.tabs .chip[data-refresh],.chips.tabs .chip[data-out]{background:transparent;border-style:dashed;color:var(--ink-soft)}
 .chips.tabs .chip[data-refresh]{margin-left:auto}
 .chips.tabs .chip[data-out]:hover{color:var(--danger);border-color:var(--danger)}
-
-/* Status pills */
 .status{display:inline-flex;align-items:center;padding:5px 12px;border-radius:99px;font-size:12px;font-weight:800;background:#eef3ef;color:#3b5446;white-space:nowrap}
 .status.open{background:var(--g-100);color:var(--g-800)}
 .status.closed{background:#fdeceb;color:var(--danger)}
 .status.n{background:#fff4dc;color:#8a5a00}
-
-/* Empty state */
 .empty{text-align:center;padding:56px 24px;background:#fff;border:1.5px dashed #c9dccf;border-radius:var(--r-lg)}
 .empty h3{font-size:18px;margin:0 0 6px}
 .empty p{color:var(--ink-soft);max-width:44ch;margin:0 auto}
-
-/* Menu table */
 .tw{border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow-sm)}
 .tw table{border-radius:var(--r-lg)!important}
 .tw thead th{font-size:12px;font-weight:800;color:var(--ink-soft);padding:14px 12px;background:var(--g-50);border-bottom:1px solid var(--line)}
@@ -132,7 +124,6 @@ label.chip.on{background:var(--g-100);border-color:#a9dcc0;color:var(--g-800)}
 .tw td{padding:12px;vertical-align:middle}
 .sw{width:24px;height:24px;accent-color:var(--g-700);cursor:pointer}
 input[type=checkbox],input[type=radio]{accent-color:var(--g-700)}
-
 @media(max-width:640px){
   .two{grid-template-columns:1fr}
   main{padding:14px 12px 60px}
@@ -142,14 +133,10 @@ input[type=checkbox],input[type=radio]{accent-color:var(--g-700)}
   .merchant-actions .btn{flex:1 1 100%}
   .ogrid{grid-template-columns:1fr}
 }
-
-/* Terms state */
 .terms-state{margin:12px 0 0;font-size:13px;font-weight:600;color:var(--ink-soft)}
 .terms-state.ok{color:var(--g-700)}
 .terms-state.no{color:var(--danger)}
 .ask-title{margin:0 0 12px;font-weight:800;font-size:16px;color:var(--ink)}
-
-/* Sign-in / welcome screen */
 main.auth{max-width:1000px;width:calc(100% - 24px);margin:clamp(12px,6vh,56px) auto;padding:0;display:grid;grid-template-columns:1.15fr 1fr;background:#fff;border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:var(--shadow-md)}
 .auth-pitch{position:relative;overflow:hidden;color:#fff;padding:clamp(26px,5vw,48px);background:linear-gradient(150deg,var(--g-900) 0%,var(--g-800) 45%,var(--g-700) 100%);display:flex;flex-direction:column;gap:22px}
 .auth-pitch:before{content:"";position:absolute;right:-90px;top:-90px;width:300px;height:300px;border:70px solid #ffffff10;border-radius:50%}
@@ -197,7 +184,6 @@ main.auth{max-width:1000px;width:calc(100% - 24px);margin:clamp(12px,6vh,56px) a
 .btn.p:hover:not(:disabled),.btn.light:hover{background:var(--g-600)}
 @media(max-width:820px){.auth-logo{width:min(250px,80%)}}
 
-
 /* ===== Alignment safety ===== */
 *,*::before,*::after{box-sizing:border-box}
 .btn.blk{width:100%}
@@ -218,7 +204,6 @@ main.auth>*{min-width:0}
   .merchant-sheet{padding:20px 16px}
 }
 
-
 /* PAPALITA OFFICIAL LOGO — shared motion */
 .papalita-logo-motion{display:inline-flex;align-items:center;justify-content:center;flex:none;animation:papalitaMarkEnter .8s cubic-bezier(.2,1.3,.3,1) both,papalitaMarkFloat 3s ease-in-out .8s infinite;transform-origin:center;overflow:visible!important;background:transparent!important;box-shadow:none!important}
 .papalita-logo-motion img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(0,85,46,.18))}
@@ -227,248 +212,322 @@ main.auth>*{min-width:0}
 @keyframes papalitaMarkEnter{from{opacity:0;transform:translateY(14px) scale(.84)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes papalitaMarkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @media(prefers-reduced-motion:reduce){.papalita-logo-motion,#splash .sp-brand{animation:none!important}}
-
-</style><style id="papa-dashboard-css">.papa-shell{display:grid;grid-template-columns:246px minmax(0,1fr);min-height:100vh;background:#f5f8f5}.papa-side{background:#103e2e;color:#fff;padding:24px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}.papa-brand{width:174px;max-height:74px;object-fit:contain;object-position:left center;margin:0 10px 8px}.papa-side-caption{font-size:10px;letter-spacing:.15em;color:#a6d7bc;margin:0 10px 30px}.papa-side nav{display:grid;gap:5px}.papa-nav{width:100%;text-align:left;padding:12px 13px;border-radius:12px;display:flex;align-items:center;gap:12px;color:#d8eee1;font-size:14px;font-weight:700}.papa-nav span{width:24px;font-size:19px}.papa-nav:hover{background:#ffffff19}.papa-nav.active{background:#fff;color:#075c34}.papa-side-foot{margin-top:auto;font-size:11px;color:#b6d6c3;padding:12px}.papa-work{min-width:0}.papa-top{background:#fff;border-bottom:1px solid #dce8df;padding:15px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px}.papa-identity{display:flex;align-items:center;gap:13px}.papa-identity strong{display:block;font-size:17px;color:#163e2a}.papa-identity small{display:block;color:#718476;font-size:12px}.papa-avatar{width:51px;height:51px;border-radius:50%;object-fit:cover}.papa-empty-avatar{display:grid;place-items:center;background:#e9f4e9;font-size:25px}.papa-approved{color:#16844b;font-weight:700}.papa-top-right{display:flex;gap:12px;align-items:center}.papa-signout{border:1px solid #d5e5da;padding:9px 14px;border-radius:10px;font-weight:700}.papa-main{max-width:1350px;margin:auto;padding:28px}.papa-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.papa-heading h1{font-size:clamp(24px,3vw,30px);margin:0 0 5px}.papa-heading p,.papa-muted{color:#718476;font-size:13px;line-height:1.6}.papa-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.papa-card{background:#fff;border:1px solid #e2eae3;border-radius:17px;padding:20px;box-shadow:0 3px 15px #123e2308;margin-bottom:16px}.papa-card h2{font-size:17px;margin-bottom:16px}.papa-kpi small{display:block;color:#738578;font-size:12px}.papa-kpi strong{display:block;font-size:29px;margin:8px 0;color:#153e29}.papa-kpi span{font-size:11px;color:#718476}.papa-columns{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}.papa-actions{display:grid;gap:9px}.papa-actions .btn{justify-content:flex-start}.papa-table-wrap{overflow-x:auto}.papa-table{width:100%;border-collapse:collapse}.papa-table th,.papa-table td{padding:12px;border-bottom:1px solid #e9eee9;text-align:left;font-size:13px}.papa-table th{background:#f4f8f5;color:#617868;font-size:11px}.papa-table .in{min-width:90px;max-width:120px}.papa-warn{color:#bd7100}.papa-danger{color:#cc3636}.papa-good{color:#16844b}.papa-form .papa-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px}.papa-full{grid-column:1/-1}.papa-cover{height:175px;border-radius:14px;background:#e4f0e8 center/cover;display:flex;align-items:flex-end;padding:15px;color:#315d44;font-weight:800;margin-bottom:18px}.papa-toggle{display:flex;align-items:center;gap:12px;margin-bottom:18px}.papa-toggle input{width:22px;height:22px;accent-color:#087f45}@media(max-width:1050px){.papa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.papa-columns{grid-template-columns:1fr}}@media(max-width:740px){.papa-shell{display:block}.papa-side{position:static;height:auto;padding:14px}.papa-brand{width:140px;max-height:54px}.papa-side-caption,.papa-side-foot{display:none}.papa-side nav{display:flex;overflow-x:auto;gap:6px}.papa-nav{width:auto;flex:none;padding:9px 12px;white-space:nowrap}.papa-top{padding:12px 15px}.papa-main{padding:16px}.papa-identity strong{font-size:14px}.papa-identity small{font-size:10px}.papa-avatar{width:39px;height:39px}.papa-form .papa-fields{grid-template-columns:1fr}.papa-full{grid-column:auto}.papa-heading{align-items:flex-start;flex-wrap:wrap}.papa-kpis{gap:9px}.papa-card{padding:15px}.papa-kpi strong{font-size:23px}}
 </style>
-
-<style id="papalita-exact-reference-2026">
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-.papa-reference-shell{grid-template-columns:240px minmax(0,1fr)!important;font-family:'Plus Jakarta Sans',sans-serif!important;background:#f8faf9!important;color:#17241d!important}
-.papa-reference-shell .papa-side{display:flex!important;flex-direction:column!important;background:#fff!important;color:#354558!important;border-right:1px solid #edf0ef!important;box-shadow:none!important;padding:18px 12px!important}
-.papa-brand-row{display:flex;align-items:center;gap:11px;padding:0 17px 22px;min-height:72px}.papa-brand-mark{width:43px;height:47px;object-fit:contain}.papa-brand-row strong{display:block;color:#087f32;font-size:24px;line-height:1.1;font-weight:800}.papa-brand-row small{display:block;color:#516375;font-size:12px;margin-top:3px}.papa-reference-shell .papa-side nav{display:flex!important;flex-direction:column!important;gap:3px!important}
-.papa-reference-shell .papa-nav{display:flex!important;align-items:center!important;gap:14px!important;width:100%!important;text-align:left!important;border:0!important;border-radius:10px!important;padding:13px 17px!important;font-size:14px!important;font-weight:500!important;color:#425468!important;background:transparent!important;box-shadow:none!important;min-height:49px!important}
-.papa-reference-shell .papa-nav.active{background:#e8f4ec!important;color:#007b37!important;font-weight:700!important;box-shadow:inset 4px 0 0 #07944c!important}
-.papa-nav-icon{font-size:21px;line-height:1;width:22px;display:inline-grid;place-items:center}.papa-nav-count{margin-left:auto;background:#e3382b;color:white;border-radius:99px;padding:2px 7px;font-size:12px;font-weight:800}
-.papa-side-bottom{margin-top:auto;border-top:1px solid #edf0ef;padding-top:18px}.papa-reference-shell .papa-top{background:#fff!important;min-height:74px!important;padding:12px 26px!important;box-shadow:none!important;border-bottom:1px solid #eff1ef!important}.papa-reference-shell .papa-identity{gap:12px!important}.papa-reference-shell .papa-avatar{width:48px!important;height:48px!important;object-fit:cover;border-radius:50%!important}.papa-reference-shell .papa-identity strong{font-size:17px!important;color:#182334!important}.papa-reference-shell .papa-identity small{font-size:12px!important;color:#617183!important}
-.papa-header-status{display:inline-block;margin-left:9px;background:#e0f3e6;color:#087f32;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:700;vertical-align:middle}.papa-header-status.is-closed{background:#fce6e3;color:#b02e25}.papa-owner-avatar{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#145e48;color:white;font-size:12px;font-weight:800}.papa-owner-label{font-size:12px;color:#45536a}.papa-mobile-menu{display:none;background:white;border:1px solid #dce5df;border-radius:8px;padding:7px 10px}
-.papa-reference-shell .papa-main{max-width:none!important;padding:12px 24px 28px!important;position:relative;isolation:isolate;background:transparent!important}.papa-reference-shell .papa-main::before{content:'';position:fixed;top:26%;left:42%;width:min(40vw,500px);height:65vh;background:url('images/papalita_mark_color.png') center/contain no-repeat;opacity:.035;pointer-events:none;z-index:-1}.papa-reference-shell .papa-main>#papa-content{position:relative;z-index:1}
-.papa-dashboard-heading{display:none!important}.papa-reference-shell .papa-card{border-radius:11px!important;border:1px solid #e5ebe7!important;box-shadow:0 1px 6px #123d2310!important;padding:17px 19px!important}.papa-reference-shell .papa-availability{background:#f0f8f4!important;border-color:#a6ddbc!important;padding:20px!important;margin-bottom:15px!important}.papa-reference-shell .papa-availability-title{gap:17px!important}.papa-reference-shell .papa-store-icon{width:64px!important;height:64px!important;border-radius:50%!important;font-size:32px!important}.papa-reference-shell .papa-availability-body{grid-template-columns:1fr 1.85fr!important}.papa-reference-shell .papa-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin:15px 0!important}.papa-reference-shell .papa-kpi{min-height:110px!important;padding:18px!important}.papa-reference-shell .papa-kpi strong{font-size:25px!important}.papa-reference-shell .papa-data-columns{grid-template-columns:1.25fr 1fr!important;gap:15px!important}.papa-reference-shell .papa-chart-card{margin-top:15px!important}.papa-reference-shell .papa-chart-card .papa-sales-bars{height:160px!important}
-@media(max-width:1150px){.papa-reference-shell .papa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.papa-reference-shell .papa-data-columns{grid-template-columns:1fr!important}}
-@media(max-width:800px){.papa-reference-shell{display:block!important}.papa-reference-shell .papa-side{display:none!important;position:fixed!important;top:74px!important;left:0!important;bottom:0!important;width:min(280px,85vw)!important;height:auto!important;z-index:100!important;overflow-y:auto!important;box-shadow:10px 0 25px #18332322!important}.papa-reference-shell .papa-side.papa-side-open{display:flex!important}.papa-mobile-menu{display:inline-flex!important}.papa-owner-label{display:none}.papa-reference-shell .papa-top{padding:12px 14px!important}.papa-reference-shell .papa-main{padding:13px!important}.papa-reference-shell .papa-availability-body{grid-template-columns:1fr!important}.papa-reference-shell .papa-current-state{border-right:0!important;border-bottom:1px solid #d5e4db!important;padding-bottom:15px!important}.papa-reference-shell .papa-main::before{left:15%;width:70vw}}
-@media(max-width:500px){.papa-reference-shell .papa-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.papa-reference-shell .papa-close-row{flex-direction:column!important;align-items:stretch!important}.papa-reference-shell .papa-table-wrap{overflow-x:auto!important}.papa-reference-shell .papa-identity small{display:none}.papa-reference-shell .papa-owner-avatar{display:none}}
-</style>
-<style id="papalita-merchant-appearance">
-.papa-appearance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0}.papa-appearance-grid label{display:block;font-weight:700;margin-bottom:7px}.papa-appearance-preview{display:flex;align-items:center;gap:14px;background:var(--wf-bg,#f7f5ef);border:1px solid var(--wf-line,#ddd);border-radius:12px;padding:18px;margin-bottom:14px}.papa-appearance-preview>span:first-child{font-size:12px;opacity:.65}.papa-appearance-preview-pill{margin-left:auto;border-radius:7px;padding:7px 13px;color:#fff;background:var(--merchant-accent,#087f32)}
-html{--merchant-accent:#087f32}html[data-merchant-accent="indigo"]{--merchant-accent:#4f46e5}html[data-merchant-accent="blue"]{--merchant-accent:#2563eb}html[data-merchant-accent="orange"]{--merchant-accent:#ea580c}html[data-merchant-accent="purple"]{--merchant-accent:#9333ea}
-html body .papa-reference-shell{--wf-green:var(--merchant-accent)!important}html body .papa-reference-shell .papa-nav.active:before{background:var(--merchant-accent)!important}html body .papa-reference-shell .papa-brand-row strong{color:var(--merchant-accent)!important}html body .papa-reference-shell .btn.p{background:var(--merchant-accent)!important}html body .papa-reference-shell .papa-nav.active .papa-nav-icon{color:var(--merchant-accent)!important}
-html[data-merchant-mode="dark"] body .papa-reference-shell .papa-side{background:#111115!important;color:#f4f4f5!important;border-color:#27272a!important}html[data-merchant-mode="dark"] body .papa-reference-shell .papa-brand-row strong{color:#fff!important}html[data-merchant-mode="dark"] body .papa-reference-shell .papa-brand-row small,html[data-merchant-mode="dark"] body .papa-reference-shell .wharf-nav-label{color:#a1a1aa!important}html[data-merchant-mode="dark"] body .papa-reference-shell .papa-nav{color:#a1a1aa!important}html[data-merchant-mode="dark"] body .papa-reference-shell .papa-nav:hover{background:#27272a!important;color:#fff!important}html[data-merchant-mode="dark"] body .papa-reference-shell .papa-nav.active{background:#27272a!important;color:#fff!important;border-color:#3f3f46!important}html[data-merchant-mode="dark"] body .papa-reference-shell .papa-side-bottom{border-color:#3f3f46!important}html[data-merchant-mode="dark"] body .papa-reference-shell .wharf-sidebar-search{background:#27272a!important;border-color:#3f3f46!important;color:#a1a1aa!important}html[data-merchant-mode="dark"] body .papa-reference-shell .wharf-sidebar-search input{color:#fff!important}
-@media(max-width:640px){.papa-appearance-grid{grid-template-columns:1fr}.papa-appearance-preview{flex-wrap:wrap}}
-</style>
-
-<script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-<link rel="stylesheet" href="merchant-wharf-theme.css?v=20261104-wharf-v2">
 
 <style id="reference-theme">
-/* Papalita Merchant Portal — consolidated FINAL visual corrections (2026-11-04)
-   Visual styling only; does not change Supabase, DOM IDs or event handlers.
-   This stylesheet must be the LAST stylesheet in <head>. */
+/* Papalita Merchant Portal — consolidated FINAL visual corrections & Dark Mode Fix (2026-11-04) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-:root {--merchant-accent:#087f32;--merchant-surface:#fff;--merchant-canvas:#f7f9fb;--merchant-ink:#17251e;--merchant-muted:#66766c;--merchant-border:#e2e8e4;}
-html[data-merchant-accent="indigo"]{--merchant-accent:#4f46e5}
-html[data-merchant-accent="blue"]{--merchant-accent:#2563eb}
-html[data-merchant-accent="orange"]{--merchant-accent:#ea580c}
-html[data-merchant-accent="purple"]{--merchant-accent:#9333ea}
-body:has(.papa-reference-shell),.papa-reference-shell,.papa-reference-shell button,.papa-reference-shell input,.papa-reference-shell select,.papa-reference-shell textarea{font-family:Inter,system-ui,sans-serif!important}
-html body .papa-reference-shell{background:var(--merchant-canvas)!important;color:var(--merchant-ink)!important;grid-template-columns:240px minmax(0,1fr)!important}
-html body .papa-reference-shell .papa-side{background:linear-gradient(165deg,#031e19,#062e22 65%,#041d17)!important;color:#e7f6ed!important;border-right:0!important;box-shadow:none!important;padding:14px 12px!important}
-html body .papa-reference-shell .papa-side::before{display:none!important}
-html body .papa-reference-shell .papa-brand-row{background:transparent!important;border-bottom:1px solid #315146!important;padding:12px 10px 18px!important;margin-bottom:12px!important}
-html body .papa-reference-shell .papa-brand-row strong{color:#fff!important;font-size:19px!important}
-html body .papa-reference-shell .papa-brand-row small{color:#b4d3c3!important}
-html body .papa-reference-shell .wharf-nav-label{color:#a6c1b2!important}
-html body .papa-reference-shell .papa-nav{background:transparent!important;color:#d7e8df!important;border:0!important;border-radius:9px!important;box-shadow:none!important;font-size:13px!important}
-html body .papa-reference-shell .papa-nav:hover{background:#ffffff16!important;color:#fff!important}
-html body .papa-reference-shell .papa-nav.active{background:var(--merchant-accent)!important;color:#fff!important;box-shadow:none!important}
-html body .papa-reference-shell .papa-nav-count,html body .papa-reference-shell .papa-new-count{font-size:10px!important;min-width:19px!important;min-height:19px!important;line-height:15px!important;padding:2px 5px!important;border-radius:999px!important}
-html body .papa-reference-shell .papa-side-bottom{border-color:#315146!important}
-html body .papa-reference-shell .papa-work,html body .papa-reference-shell .papa-main{background:var(--merchant-canvas)!important;color:var(--merchant-ink)!important}
-html body .papa-reference-shell .papa-main{max-width:none!important;padding:24px 26px 44px!important}
-html body .papa-reference-shell .papa-main::before{display:none!important}
-html body .papa-reference-shell .papa-top{background:var(--merchant-surface)!important;border-bottom:1px solid var(--merchant-border)!important}
-html body .papa-reference-shell .papa-heading{background:transparent!important;color:var(--merchant-ink)!important;box-shadow:none!important;border:0!important;padding:0!important;min-height:0!important;margin-bottom:18px!important}
-html body .papa-reference-shell .papa-heading::after{display:none!important}
-html body .papa-reference-shell .papa-heading h1,html body .papa-reference-shell .wf-pg-title h1{color:var(--merchant-ink)!important;font-size:25px!important;font-weight:750!important}
-html body .papa-reference-shell .papa-heading p,html body .papa-reference-shell .papa-muted{color:var(--merchant-muted)!important}
-html body .papa-reference-shell .papa-card,html body .papa-reference-shell .wf-premium-panel,html body .papa-reference-shell .wf-status-panel,html body .papa-reference-shell .wf-premium-kpi{background:var(--merchant-surface)!important;color:var(--merchant-ink)!important;border:1px solid var(--merchant-border)!important;border-radius:12px!important;box-shadow:0 2px 10px #102b1808!important}
-html body .papa-reference-shell .papa-card h2,html body .papa-reference-shell .wf-panel-head h2,html body .papa-reference-shell .wf-status-panel h2{color:var(--merchant-ink)!important}
-html body .papa-reference-shell .papa-kpi,html body .papa-reference-shell .papa-kpi:nth-child(n){background:var(--merchant-surface)!important;color:var(--merchant-ink)!important}
-html body .papa-reference-shell .papa-kpi strong,html body .papa-reference-shell .wf-kpi-copy strong{color:var(--merchant-ink)!important}
-html body .papa-reference-shell .wf-welcome-banner{background:linear-gradient(110deg,#07552d,#0b7e3d 65%,#19a052)!important;color:#fff!important}
-html body .papa-reference-shell .wf-welcome-banner h2,html body .papa-reference-shell .wf-welcome-banner .wf-welcome-eyebrow{color:#fff!important}
-html body .papa-reference-shell .wf-welcome-banner p{color:#e4f9e9!important}
-html body .papa-reference-shell .wf-welcome-art{opacity:.10!important}
-html body .papa-reference-shell .papa-table-wrap,html body .papa-reference-shell .wf-scroll-table{overflow-x:auto!important}
-html body .papa-reference-shell .papa-table{width:100%!important;border-collapse:collapse!important;background:var(--merchant-surface)!important;color:var(--merchant-ink)!important}
-html body .papa-reference-shell .papa-table th,html body .papa-reference-shell .wf-premium-table th{background:#f2f5f3!important;color:#526358!important;border-bottom:1px solid var(--merchant-border)!important;text-align:left!important}
-html body .papa-reference-shell .papa-table td,html body .papa-reference-shell .wf-premium-table td{background:var(--merchant-surface)!important;color:var(--merchant-ink)!important;border-bottom:1px solid var(--merchant-border)!important}
-html body .papa-reference-shell .papa-table td a,html body .papa-reference-shell .papa-table td b,html body .papa-reference-shell .papa-table td strong{color:var(--merchant-ink)!important}
-html body .papa-reference-shell .papa-table tr:hover td{background:#f4f8f5!important}
-html body .papa-reference-shell .papa-order-status{color:#855508!important}
-html body .papa-reference-shell .papa-order-status.completed,html body .papa-reference-shell .papa-order-status.delivered{color:#087f32!important}
-html body .papa-reference-shell .papa-order-status.cancelled{color:#b42318!important}
-html body .papa-reference-shell .papa-filter.active,html body .papa-reference-shell .btn.p{background:var(--merchant-accent)!important;border-color:var(--merchant-accent)!important;color:#fff!important}
-html body .papa-reference-shell .papa-filter:not(.active){background:var(--merchant-surface)!important;color:var(--merchant-ink)!important;border:1px solid var(--merchant-border)!important}
-html body .papa-reference-shell .papa-appearance-settings h3{color:var(--merchant-ink)!important}
-.papa-theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,160px));gap:12px;margin-top:18px}
-.papa-theme-option{display:grid;gap:10px;text-align:center;padding:10px;border:2px solid var(--merchant-border);border-radius:12px;background:var(--merchant-surface);color:var(--merchant-ink);cursor:pointer}
-.papa-theme-option.selected{border-color:var(--merchant-accent)}
-.papa-theme-mini{height:75px;border-radius:7px;background:#fafafa;display:grid;grid-template-columns:27% 1fr;gap:6px;padding:7px}
-.papa-theme-mini i{background:#18181b;border-radius:4px;grid-row:span 2}.papa-theme-mini b,.papa-theme-mini em{background:#e4e4e7;border-radius:4px}.papa-theme-mini.dark{background:#18181b}.papa-theme-mini.dark b,.papa-theme-mini.dark em{background:#3f3f46}.papa-theme-mini.system{background:linear-gradient(90deg,#fafafa 50%,#18181b 50%)}
-.papa-accent-grid{display:flex;flex-wrap:wrap;gap:15px;margin-top:16px}.papa-accent-option{background:transparent;border:0;display:grid;justify-items:center;gap:7px;cursor:pointer;color:var(--merchant-muted);font-size:12px}.papa-accent-option span{background:var(--swatch);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:20px}.papa-accent-option.selected span{outline:2px solid var(--merchant-ink);outline-offset:3px}
-/* Existing app uses data-merchant-mode for theme selection. */
-html[data-merchant-mode="dark"]{--merchant-surface:#252c29;--merchant-canvas:#161e1a;--merchant-ink:#f5f8f6;--merchant-muted:#b4c1b9;--merchant-border:#3a4940}
-html[data-merchant-mode="dark"] body .papa-reference-shell .papa-table th,html[data-merchant-mode="dark"] body .papa-reference-shell .wf-premium-table th{background:#303b34!important;color:#d0dcd4!important}
-html[data-merchant-mode="dark"] body .papa-reference-shell .papa-table tr:hover td{background:#2c3830!important}
-html[data-merchant-mode="dark"] body .papa-reference-shell input,html[data-merchant-mode="dark"] body .papa-reference-shell select,html[data-merchant-mode="dark"] body .papa-reference-shell textarea{background:#1c2620!important;color:#f5f8f6!important;border-color:#526357!important}
-@media(max-width:1050px){html body .papa-reference-shell .wf-premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:740px){html body .papa-reference-shell{display:block!important}html body .papa-reference-shell .papa-side{position:sticky!important;top:0!important;height:auto!important;z-index:20!important;padding:8px!important}html body .papa-reference-shell .papa-side nav{display:flex!important;overflow-x:auto!important}html body .papa-reference-shell .papa-main{padding:16px 12px 32px!important}.papa-theme-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-
-
-/* WHARF V2 — clean, light, readable, and responsive. Intentionally scoped. */
-html body .papa-reference-shell .papa-work,html body .papa-reference-shell .papa-main{background:#f7f6f2!important;color:#202024!important}
-html body .papa-reference-shell .papa-top{background:#fff!important;color:#171717!important;border-bottom:1px solid #e7e5e1!important}
-html body .papa-reference-shell .papa-identity strong,html body .papa-reference-shell .papa-heading h1,html body .papa-reference-shell .papa-heading p{color:#202024!important}
-html body .papa-reference-shell .papa-heading{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:16px!important;margin:0 0 20px!important}
-html body .papa-reference-shell .papa-heading h1{font-size:25px!important;font-weight:750!important;letter-spacing:-.04em!important}
-html body .papa-reference-shell .papa-card{background:#fff!important;color:#242428!important;border:1px solid #e8e6e0!important;border-radius:17px!important;box-shadow:0 7px 22px #15151508!important}
-html body .papa-reference-shell .wf-orders-table-card{padding:0!important;overflow:hidden!important}
-html body .papa-reference-shell .wf-table-scroll{overflow-x:auto!important;width:100%!important}
-html body .papa-reference-shell .wf-orders-table{width:100%!important;min-width:820px!important;border-collapse:collapse!important;table-layout:auto!important;color:#252525!important;font-size:13px!important}
-html body .papa-reference-shell .wf-orders-table th{background:#f7f7f5!important;color:#6b6b70!important;text-align:left!important;font-size:11px!important;letter-spacing:.02em!important;font-weight:700!important;padding:16px 18px!important;border-bottom:1px solid #eae8e4!important;white-space:nowrap!important}
-html body .papa-reference-shell .wf-orders-table td{background:#fff!important;color:#292929!important;padding:15px 18px!important;border-bottom:1px solid #eeece8!important;vertical-align:middle!important;white-space:nowrap!important}
-html body .papa-reference-shell .wf-orders-table tbody tr:hover td{background:#fbfaf6!important}
-html body .papa-reference-shell .wf-orders-table td strong{color:#252525!important}
-html body .papa-reference-shell .wf-orders-table .wf-items-cell{max-width:320px!important;overflow:hidden!important;text-overflow:ellipsis!important}
-html body .papa-reference-shell .wf-status{display:inline-flex!important;align-items:center!important;border-radius:999px!important;padding:5px 11px!important;font-size:11px!important;font-weight:700!important;line-height:1.4!important;text-transform:capitalize!important;background:#eef1f3!important;color:#46515c!important}
-html body .papa-reference-shell .wf-status-pending,html body .papa-reference-shell .wf-status-new{background:#fff2d8!important;color:#946000!important}
-html body .papa-reference-shell .wf-status-confirmed,html body .papa-reference-shell .wf-status-completed{background:#e5f7e9!important;color:#116e36!important}
-html body .papa-reference-shell .wf-status-cancelled{background:#ffe7e6!important;color:#b53232!important}
-html body .papa-reference-shell .wf-status-ready,html body .papa-reference-shell .wf-status-ready_for_pickup{background:#e7efff!important;color:#2854ad!important}
-html body .papa-reference-shell .wf-view-order{display:inline-flex!important;align-items:center!important;justify-content:center!important;background:#fff!important;color:#202024!important;border:1px solid #dededb!important;border-radius:9px!important;padding:9px 13px!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important}
-html body .papa-reference-shell .wf-view-order:hover{background:#f4f2ed!important}
-html body .papa-reference-shell .wf-order-filters{display:flex!important;gap:8px!important;flex-wrap:wrap!important;margin:0 0 16px!important}
-html body .papa-reference-shell .wf-order-filters .papa-filter{display:inline-flex!important;gap:6px!important;align-items:center!important;border:1px solid #e2e0dc!important;border-radius:9px!important;background:#fff!important;color:#444!important;padding:9px 12px!important;font-size:12px!important;font-weight:650!important;white-space:nowrap!important}
-html body .papa-reference-shell .wf-order-filters .papa-filter.active{background:var(--merchant-accent,#087f32)!important;color:#fff!important;border-color:var(--merchant-accent,#087f32)!important}
-html body .papa-reference-shell .wf-filter-count{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:18px!important;height:18px!important;border-radius:6px!important;background:#eee!important;color:#444!important;font-size:10px!important;padding:0 4px!important}
-html body .papa-reference-shell .papa-filter.active .wf-filter-count{background:#ffffff33!important;color:#fff!important}
-html body .papa-reference-shell .wf-premium-panel,html body .papa-reference-shell .wf-premium-kpi,html body .papa-reference-shell .wf-status-panel{background:#fff!important;color:#202024!important;border-color:#e8e6e0!important}
-html body .papa-reference-shell .wf-premium-table th{background:#f7f7f5!important;color:#606069!important}
-html body .papa-reference-shell .wf-premium-table td{background:#fff!important;color:#27272a!important}
-html body .papa-reference-shell .wf-kpi-copy span,html body .papa-reference-shell .wf-kpi-copy small{color:#647067!important}
-html body .papa-reference-shell .wf-kpi-copy strong,html body .papa-reference-shell .wf-panel-head h2,html body .papa-reference-shell .wf-status-panel h2{color:#202024!important}
-html body .papa-reference-shell .wf-welcome-banner,html body .papa-reference-shell .wf-welcome-banner h2{color:#fff!important}
-html body .papa-reference-shell .wf-welcome-banner p{color:#e6f7eb!important}
-html body .papa-reference-shell .wf-action-grid button{color:#26352d!important}
-html body .papa-reference-shell .wf-settings-tabs{display:flex;gap:26px;border-bottom:1px solid #e1dfd9;margin:0 0 14px;padding:0 12px;color:#747474;font-size:13px}
-html body .papa-reference-shell .wf-settings-tabs>*{padding:12px 0}
-html body .papa-reference-shell .wf-settings-tabs strong{border-bottom:2px solid #232327;color:#232327}
-html body .papa-reference-shell .wf-settings-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;align-items:start}
-html body .papa-reference-shell .wf-settings-layout>.papa-card{padding:24px!important;min-height:245px!important}
-html body .papa-reference-shell .wf-appearance-title h2,html body .papa-reference-shell .wf-settings-info h2{font-size:16px!important;color:#202024!important;margin:0 0 5px!important}
-html body .papa-reference-shell .wf-control-label{display:block;color:#54545b;font-size:12px;margin:20px 0 8px}
-html body .papa-reference-shell .wf-theme-segment{display:inline-flex;gap:3px;padding:4px;border:1px solid #e1dfd8;border-radius:11px;background:#f2f0eb}
-html body .papa-reference-shell .wf-theme-segment button{border:0;border-radius:8px;background:transparent;color:#444;padding:9px 16px;cursor:pointer;font-size:12px}
-html body .papa-reference-shell .wf-theme-segment button.selected{background:#242329;color:white;box-shadow:0 1px 3px #0002}
-html body .papa-reference-shell .wf-accent-swatches{display:flex;gap:12px;margin:12px 0 22px}
-html body .papa-reference-shell .wf-accent-swatches button{width:34px;height:34px;border-radius:50%;background:var(--swatch);border:3px solid white;outline:1px solid #ddd;cursor:pointer}
-html body .papa-reference-shell .wf-accent-swatches button.selected{outline:2px solid #222;outline-offset:2px}
-html body .papa-reference-shell .wf-native-select{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
-html body .papa-reference-shell .wf-reset-appearance,html body .papa-reference-shell .wf-settings-go{border:1px solid #e1dfda;background:white;color:#222;border-radius:9px;padding:10px 13px;font-size:12px;font-weight:700;cursor:pointer}
-html body .papa-reference-shell .wf-settings-info-row{display:flex;justify-content:space-between;gap:15px;padding:15px 0;border-bottom:1px solid #eeece8;font-size:12px}
-html body .papa-reference-shell .wf-settings-info-row span{color:#777}
-html body .papa-reference-shell .wf-settings-go{margin-top:20px;background:#242329;color:white}
-@media(max-width:850px){html body .papa-reference-shell .wf-settings-layout{grid-template-columns:1fr}html body .papa-reference-shell .wf-orders-table{min-width:760px!important}}
 
 /* =========================================================
-   FIXES FOR MERCHANT PORTAL UI (2026-11-04)
+   1. GLOBAL VARIABLES & DARK MODE ARCHITECTURE
    ========================================================= */
-/* 1. HIDE DUPLICATE INNER HEADINGS (Since global top-bar already has the title) */
-html body .papa-reference-shell .papa-heading > div:first-child {
+:root {
+  --merchant-accent: #087f32;
+  --merchant-surface: #ffffff;
+  --merchant-canvas: #f7f9fb;
+  --merchant-ink: #17251e;
+  --merchant-muted: #66766c;
+  --merchant-border: #e2e8e4;
+  
+  --rf-green: var(--merchant-accent);
+  --rf-green-d: #075c2d;
+  --rf-ink: var(--merchant-ink);
+  --rf-mute: var(--merchant-muted);
+  --rf-line: var(--merchant-border);
+  --rf-card: var(--merchant-surface);
+  --rf-canvas: var(--merchant-canvas);
+}
+
+html[data-merchant-accent="indigo"] { --merchant-accent: #4f46e5; }
+html[data-merchant-accent="blue"] { --merchant-accent: #2563eb; }
+html[data-merchant-accent="orange"] { --merchant-accent: #ea580c; }
+html[data-merchant-accent="purple"] { --merchant-accent: #9333ea; }
+
+/* DARK MODE OVERRIDES */
+html[data-merchant-mode="dark"] {
+  --merchant-surface: #18181b;
+  --merchant-canvas: #09090b;
+  --merchant-ink: #fafafa;
+  --merchant-muted: #a1a1aa;
+  --merchant-border: #27272a;
+}
+
+/* =========================================================
+   2. STRUCTURAL FIXES FOR SIDEBAR & GRID 
+   ========================================================= */
+html body .papa-reference-shell {
+  display: grid !important;
+  grid-template-columns: 240px minmax(0, 1fr) !important;
+  min-height: 100vh !important;
+  background: var(--merchant-canvas) !important;
+  color: var(--merchant-ink) !important;
+  font-family: Inter, system-ui, sans-serif !important;
+}
+html body .papa-reference-shell button,
+html body .papa-reference-shell input,
+html body .papa-reference-shell select,
+html body .papa-reference-shell textarea {
+  font-family: Inter, system-ui, sans-serif !important;
+}
+
+/* SIDEBAR */
+html body .papa-reference-shell .papa-side {
+  display: flex !important;
+  flex-direction: column !important;
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  padding: 14px 12px !important;
+  overflow-y: auto !important;
+  background: var(--merchant-surface) !important;
+  color: var(--merchant-ink) !important;
+  border-right: 1px solid var(--merchant-border) !important;
+  box-shadow: none !important;
+}
+/* Ensure dark mode sidebar blends well if they wanted the green gradient previously. 
+   We will keep it standard surface color for proper UI consistency. */
+html body .papa-reference-shell .papa-side::before { display: none !important; }
+html body .papa-reference-shell .papa-brand-row {
+  background: transparent !important;
+  border-bottom: 1px solid var(--merchant-border) !important;
+  padding: 12px 10px 18px !important;
+  margin-bottom: 12px !important;
+}
+html body .papa-reference-shell .papa-brand-row strong {
+  color: var(--merchant-accent) !important;
+  font-size: 19px !important;
+}
+html body .papa-reference-shell .papa-brand-row small,
+html body .papa-reference-shell .wharf-nav-label {
+  color: var(--merchant-muted) !important;
+}
+html body .papa-reference-shell .papa-side nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+html body .papa-reference-shell .papa-nav {
+  background: transparent !important;
+  color: var(--merchant-ink) !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  min-height: 44px !important;
+}
+html body .papa-reference-shell .papa-nav:hover {
+  background: var(--merchant-canvas) !important;
+  color: var(--merchant-ink) !important;
+}
+html body .papa-reference-shell .papa-nav.active {
+  background: var(--merchant-accent) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+html body .papa-reference-shell .papa-nav-count,
+html body .papa-reference-shell .papa-new-count {
+  font-size: 10px !important;
+  min-width: 19px !important;
+  min-height: 19px !important;
+  line-height: 15px !important;
+  padding: 2px 5px !important;
+  border-radius: 999px !important;
+  margin-left: auto !important;
+}
+html body .papa-reference-shell .papa-side-bottom,
+html body .papa-reference-shell .rf-side-foot {
+  margin-top: auto !important; 
+  padding-top: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  border-top: 1px solid var(--merchant-border) !important;
+}
+
+@media(max-width: 800px) {
+  html body .papa-reference-shell { display: block !important; }
+  html body .papa-reference-shell .papa-side {
     display: none !important;
+    position: fixed !important;
+    top: 74px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: min(280px, 85vw) !important;
+    height: auto !important;
+    z-index: 100 !important;
+    box-shadow: 10px 0 25px rgba(0,0,0,0.1) !important;
+  }
+  html body .papa-reference-shell .papa-side.papa-side-open { display: flex !important; }
 }
 
-/* 2. FIX ORDERS SEARCH BAR & TOOLS ALIGNMENT */
+/* =========================================================
+   3. MAIN WORKSPACE & TOP BAR
+   ========================================================= */
+html body .papa-reference-shell .papa-work,
+html body .papa-reference-shell .papa-main {
+  background: var(--merchant-canvas) !important;
+  color: var(--merchant-ink) !important;
+  max-width: none !important;
+}
+html body .papa-reference-shell .papa-main {
+  padding: 24px 26px 44px !important;
+}
+html body .papa-reference-shell .papa-main::before { display: none !important; }
+
+html body .papa-reference-shell .papa-top {
+  background: var(--merchant-surface) !important;
+  color: var(--merchant-ink) !important;
+  border-bottom: 1px solid var(--merchant-border) !important;
+  min-height: 70px !important;
+}
+
 html body .papa-reference-shell .papa-heading {
-    justify-content: flex-end !important;
-    margin-bottom: 16px !important;
+  background: transparent !important;
+  color: var(--merchant-ink) !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  margin-bottom: 18px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-end !important;
+  gap: 16px !important;
 }
-html body .papa-reference-shell .wf-order-tools {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    justify-content: flex-end;
+html body .papa-reference-shell .papa-heading::after { display: none !important; }
+html body .papa-reference-shell .papa-heading > div:first-child { display: none !important; }
+html body .papa-reference-shell .papa-heading h1,
+html body .papa-reference-shell .wf-pg-title h1,
+html body .papa-reference-shell .papa-identity strong {
+  color: var(--merchant-ink) !important;
+  font-size: 25px !important;
+  font-weight: 750 !important;
+  letter-spacing: -.04em !important;
 }
-html body .papa-reference-shell .wf-order-search {
-    display: inline-flex;
-    align-items: center;
-    background: var(--merchant-surface, #fff);
-    border: 1px solid var(--merchant-border, #e8e6e0);
-    border-radius: 9px;
-    padding: 0 12px;
-    height: 40px;
-    flex: 1;
-    max-width: 340px;
-}
-html body .papa-reference-shell .wf-order-search span {
-    color: #888;
-    font-size: 16px;
-    margin-right: 8px;
-}
-html body .papa-reference-shell .wf-order-search input {
-    border: none !important;
-    background: transparent !important;
-    outline: none !important;
-    box-shadow: none !important;
-    font-size: 13px;
-    width: 100%;
-    height: 100%;
-    padding: 0 !important;
-    color: var(--merchant-ink, #202024);
-}
-html body .papa-reference-shell .wf-order-tools .btn {
-    height: 40px;
-    padding: 0 16px;
-    border-radius: 9px;
+html body .papa-reference-shell .papa-heading p,
+html body .papa-reference-shell .papa-muted {
+  color: var(--merchant-muted) !important;
 }
 
-/* 3. RESTORE MISSING ANALYTICS BAR CHART CSS */
-html body .papa-reference-shell .papa-sales-bars {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 10px;
-    height: 190px;
-    padding-top: 20px;
-    margin: 10px 0 16px;
-    border-bottom: 1px solid var(--merchant-border, #e8e6e0);
+/* =========================================================
+   4. CARDS, INPUTS, AND TABLES (DARK MODE ADAPTIVE)
+   ========================================================= */
+html body .papa-reference-shell .papa-card,
+html body .papa-reference-shell .wf-premium-panel,
+html body .papa-reference-shell .wf-status-panel,
+html body .papa-reference-shell .wf-premium-kpi,
+html body .papa-reference-shell .panel {
+  background: var(--merchant-surface) !important;
+  color: var(--merchant-ink) !important;
+  border: 1px solid var(--merchant-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 10px #102b1808 !important;
 }
-html body .papa-reference-shell .papa-sales-day {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    height: 100%;
-    flex: 1;
-    gap: 8px;
+html body .papa-reference-shell .papa-card h2,
+html body .papa-reference-shell .wf-panel-head h2,
+html body .papa-reference-shell .wf-status-panel h2 {
+  color: var(--merchant-ink) !important;
 }
-html body .papa-reference-shell .papa-sales-day .bar {
-    background: var(--merchant-accent, #087f32);
-    width: 100%;
-    max-width: 48px;
-    border-radius: 5px 5px 0 0;
-    min-height: 4px;
-    transition: height 0.3s ease;
+
+/* DASHBOARD KPIs (.rf-*) */
+.rf-card { background: var(--merchant-surface); border: 1px solid var(--merchant-border); border-radius: 14px; padding: 18px 20px; }
+.rf-card h2 { margin: 0; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--merchant-ink); }
+.rf-card h2 svg { color: var(--merchant-accent); }
+.rf-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+.rf-kpi { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 14px; border: 1px solid var(--merchant-border); background: var(--merchant-surface) !important; }
+.rf-kpi-ico { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.rf-kpi.g .rf-kpi-ico { background: #d7efdf; color: #0a8a43; }
+.rf-kpi.b .rf-kpi-ico { background: #d8e9f8; color: #1f7bd0; }
+.rf-kpi.p .rf-kpi-ico { background: #e5dcf6; color: #7447c4; }
+.rf-kpi.o .rf-kpi-ico { background: #fbe6c8; color: #e8870c; }
+.rf-kpi span { font-size: 13px; color: var(--merchant-muted); font-weight: 600; }
+.rf-kpi strong { display: block; font-size: 28px; line-height: 1.15; color: var(--merchant-ink); margin: 2px 0; }
+.rf-kpi small { font-size: 12px; color: var(--merchant-muted); }
+.rf-kpi em { font-style: normal; font-weight: 700; color: #0d8a45; }
+.rf-kpi em.dn { color: #c93a2f; }
+.rf-row { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.rf-stack { display: grid; gap: 16px; align-content: start; }
+
+.rf-btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--merchant-border); background: var(--merchant-surface); color: var(--merchant-ink); }
+.rf-btn.p, html body .papa-reference-shell .btn.p { background: var(--merchant-accent) !important; border-color: var(--merchant-accent) !important; color: #fff !important; }
+
+/* TABLES */
+html body .papa-reference-shell .papa-table,
+html body .papa-reference-shell .wf-orders-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  background: var(--merchant-surface) !important;
+  color: var(--merchant-ink) !important;
 }
-html body .papa-reference-shell .papa-sales-day small {
-    font-size: 12px;
-    color: var(--merchant-muted, #6b6b70);
-    font-weight: 500;
+html body .papa-reference-shell .papa-table th,
+html body .papa-reference-shell .wf-orders-table th,
+html body .papa-reference-shell .wf-premium-table th {
+  background: var(--merchant-canvas) !important;
+  color: var(--merchant-muted) !important;
+  border-bottom: 1px solid var(--merchant-border) !important;
+  text-align: left !important;
 }
+html body .papa-reference-shell .papa-table td,
+html body .papa-reference-shell .wf-orders-table td,
+html body .papa-reference-shell .wf-premium-table td {
+  background: var(--merchant-surface) !important;
+  color: var(--merchant-ink) !important;
+  border-bottom: 1px solid var(--merchant-border) !important;
+}
+html body .papa-reference-shell .wf-orders-table td strong { color: var(--merchant-ink) !important; }
+html body .papa-reference-shell .papa-table tr:hover td,
+html body .papa-reference-shell .wf-orders-table tbody tr:hover td {
+  background: var(--merchant-canvas) !important;
+}
+
+/* INPUTS */
+html[data-merchant-mode="dark"] body .papa-reference-shell input,
+html[data-merchant-mode="dark"] body .papa-reference-shell select,
+html[data-merchant-mode="dark"] body .papa-reference-shell textarea {
+  background: var(--merchant-canvas) !important;
+  color: var(--merchant-ink) !important;
+  border-color: var(--merchant-border) !important;
+}
+
+/* FIX ORDERS SEARCH BAR & TOOLS ALIGNMENT */
+html body .papa-reference-shell .wf-order-tools { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: flex-end; }
+html body .papa-reference-shell .wf-order-search { display: inline-flex; align-items: center; background: var(--merchant-surface); border: 1px solid var(--merchant-border); border-radius: 9px; padding: 0 12px; height: 40px; flex: 1; max-width: 340px; }
+html body .papa-reference-shell .wf-order-search span { color: var(--merchant-muted); font-size: 16px; margin-right: 8px; }
+html body .papa-reference-shell .wf-order-search input { border: none !important; background: transparent !important; outline: none !important; box-shadow: none !important; font-size: 13px; width: 100%; height: 100%; padding: 0 !important; color: var(--merchant-ink); }
+html body .papa-reference-shell .wf-order-tools .btn { height: 40px; padding: 0 16px; border-radius: 9px; }
+
+/* MISC UI ELEMENTS */
+html body .papa-reference-shell .wf-welcome-banner { background: linear-gradient(110deg, #07552d, #0b7e3d 65%, #19a052) !important; color: #fff !important; }
+html body .papa-reference-shell .wf-welcome-banner h2, html body .papa-reference-shell .wf-welcome-banner .wf-welcome-eyebrow { color: #fff !important; }
+html body .papa-reference-shell .wf-welcome-banner p { color: #e4f9e9 !important; }
+
+html body .papa-reference-shell .papa-filter.active { background: var(--merchant-accent) !important; border-color: var(--merchant-accent) !important; color: #fff !important; }
+html body .papa-reference-shell .papa-filter:not(.active) { background: var(--merchant-surface) !important; color: var(--merchant-ink) !important; border: 1px solid var(--merchant-border) !important; }
+
+.papa-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 160px)); gap: 12px; margin-top: 18px; }
+.papa-theme-option { display: grid; gap: 10px; text-align: center; padding: 10px; border: 2px solid var(--merchant-border); border-radius: 12px; background: var(--merchant-surface); color: var(--merchant-ink); cursor: pointer; }
+.papa-theme-option.selected { border-color: var(--merchant-accent); }
+
+/* RESTORE MISSING ANALYTICS BAR CHART CSS */
+html body .papa-reference-shell .papa-sales-bars { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; height: 190px; padding-top: 20px; margin: 10px 0 16px; border-bottom: 1px solid var(--merchant-border); }
+html body .papa-reference-shell .papa-sales-day { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; gap: 8px; }
+html body .papa-reference-shell .papa-sales-day .bar { background: var(--merchant-accent); width: 100%; max-width: 48px; border-radius: 5px 5px 0 0; min-height: 4px; transition: height 0.3s ease; }
+html body .papa-reference-shell .papa-sales-day small { font-size: 12px; color: var(--merchant-muted); font-weight: 500; }
+
+@media(max-width:1050px){html body .papa-reference-shell .wf-premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
+@media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-insights{grid-template-columns:1fr}}
 </style>
+<script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 </head>
-<body><div id="root"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/supabase.js"></script><script src="js/images.js"></script><script src="js/data.js"></script><script src="js/ops.js?v=merchant-orders-accept-v1"></script>
+<body>
+<div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/images.js"></script>
+<script src="js/data.js"></script>
+<script src="js/ops.js?v=merchant-orders-accept-v1"></script>
 <script>
 (() => { 'use strict';
 const LOGO={mark:'images/papalita_mark_color.png',white:'images/papalita_full_white.png'};
@@ -534,7 +593,6 @@ async function selectStore(id){
   await fetchCatering();
   tab='dashboard';
   await papaLoad();
-  // Start listening immediately after merchant authentication and store selection.
   papaStartOrderListener();
   void papaFetchOrders();
 }
@@ -591,7 +649,6 @@ function draw() { if (!storeUuid) return gate(); const r = me ? R(me) : {name:se
   const sv = $('#svset'); if (sv) sv.onclick = () => { const ph = $('#ph').value.replace(/\s/g, ''); if (ph && !/^(09|\+639)\d{9}$/.test(ph)) return $('#phe').textContent = 'Use a PH mobile number like 09171234567.'; $('#phe').textContent = ''; const o = ov(); o.stores = o.stores || {}; const e = o.stores[me] = o.stores[me] || {}; e.hours = [$('#ho').value, $('#hc').value]; if (ph) e.phone = ph; e.messenger = $('#ms').value.trim(); setOv(o); toast('Settings saved.'); };
 }
 
-
 /* PAPALITA UNIVERSAL MERCHANT DASHBOARD — only approved, owned store data */
 const PAPA_TYPES=['Restaurant','Carinderia','Café / Coffee Shop','Milk Tea Shop','Bakery','Snack House','Grill / BBQ','Pizza / Pasta','Desserts','Food Stall','Catering','Other food business'];
 let papaProducts=[], papaLoadSeq=0;
@@ -634,7 +691,7 @@ function papaShell(content){
   +item('reports','Analytics','chart-no-axes-column')
   +'<div class="rf-divider"></div><div class="rf-section">Store Management</div>'
   +item('settings','Store Settings','settings')
-  +item('appearance','Appearance & Theme','palette','<span class="rf-new">New</span>');
+  +item('appearance','Appearance & Theme','palette'); // <-- TANGGAL NA ANG "NEW"
  const logo=st.logo_url?`<img src="${esc(st.logo_url)}" alt="">`:`<span class="rf-logo-fallback">${esc(initials)}</span>`;
  $('#root').innerHTML=`<div class="papa-shell papa-reference-shell"><aside class="papa-side" id="papa-sidebar">
   <div class="papa-brand-row"><img src="${LOGO.mark}" alt="Papalita" class="papa-brand-mark"><div><strong>Papalita</strong><small>Merchant Portal</small></div></div>
@@ -660,7 +717,6 @@ function papaShell(content){
  $('#papa-logout').onclick=async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;me=null;gate()};
  const sound=$('#papa-sound-toggle');if(sound)sound.onclick=()=>{papaAudioEnabled=!papaAudioEnabled;sound.innerHTML='🔔 <span class="papa-sound-label">'+(papaAudioEnabled?'On':'Off')+'</span>';if(papaAudioEnabled)papaBeep()};
  const pick=$('#papa-storepick');if(pick)pick.onchange=()=>selectStore(pick.value).catch(e=>toast(e.message));
- /* Sidebar open/close switch (reopen directly; closing uses the Emergency reason) */
  const tg=$('[data-rf-toggle]');if(tg)tg.onclick=async()=>{
   const opening=papaStore().is_open===false;
   if(!confirm(opening?'Reopen this store and accept new orders?':'Temporarily close your store? Use Store Settings to pick a reason.'))return;
@@ -836,17 +892,17 @@ async function papaBind(){
  if(reasonSelect)reasonSelect.onchange=()=>{$('#papa-closure-other-wrap').hidden=reasonSelect.value!=='Others'};
  const toggle=$('#papa-emergency-toggle');
  if(toggle)toggle.onclick=async()=>{
-   const opening=papaStore().is_open===false;
-   const reason=reasonSelect.value==='Others'?$('#papa-closure-other').value.trim():reasonSelect.value;
-   if(!opening&&(!reason||reason.length>200))return toast('Please enter a closure reason (up to 200 characters).');
-   if(!confirm(opening?'Reopen this store and accept new orders?':'Temporarily close your store? New orders should be blocked.'))return;
-   toggle.disabled=true;
-   try{
-     const q=await db.rpc('papalita_set_store_availability',{p_store_id:storeUuid,p_open:opening,p_reason:opening?null:reason});
-     if(q.error)throw q.error;
-     Object.assign(papaStore(),q.data);
-     toast(opening?'Store reopened':'Store temporarily closed');draw();
-   }catch(e){toast('Availability update failed: '+e.message);toggle.disabled=false;}
+  const opening=papaStore().is_open===false;
+  const reason=reasonSelect.value==='Others'?$('#papa-closure-other').value.trim():reasonSelect.value;
+  if(!opening&&(!reason||reason.length>200))return toast('Please enter a closure reason (up to 200 characters).');
+  if(!confirm(opening?'Reopen this store and accept new orders?':'Temporarily close your store? New orders should be blocked.'))return;
+  toggle.disabled=true;
+  try{
+   const q=await db.rpc('papalita_set_store_availability',{p_store_id:storeUuid,p_open:opening,p_reason:opening?null:reason});
+   if(q.error)throw q.error;
+   Object.assign(papaStore(),q.data);
+   toast(opening?'Store reopened':'Store temporarily closed');draw();
+  }catch(e){toast('Availability update failed: '+e.message);toggle.disabled=false;}
  };
 }
 function draw(){if(!storeUuid)return gate();if(tab==='cat'&&!papaCateringOn(papaStore()))tab='dashboard';const content=tab==='dashboard'?papaDashboard():tab==='profile'?papaProfile():tab==='menu'?'<div id="papalita-products" class="papa-card">Loading products...</div>':tab==='inventory'?papaInventory():tab==='orders'?papaOrders():tab==='reports'?papaReports():tab==='settings'?papaSettings():tab==='appearance'?papaAppearancePanel():`<div class="papa-heading"><div><h1>Catering Requests</h1><p>Manage your Supabase catering inquiries.</p></div><button class="btn s" id="papa-catering-refresh">↻ Refresh</button></div>${realCateringHTML()}`;papaShell(content);papaBind();papaBindAppearance();if(tab==='menu')renderSellerProducts();if(tab==='cat'){$$('[data-real-status]').forEach(el=>el.onchange=async()=>{try{await updateCatering(el.dataset.realStatus,el.value)}catch(e){toast(e.message)}});const b=$('#papa-catering-refresh');if(b)b.onclick=async()=>{await fetchCatering();draw()}};
@@ -864,7 +920,7 @@ function optionTemplate(){return [
  {id:optionId(),label:'Add-ons',type:'checkbox',req:false,ch:[{n:'Extra espresso shot',p:25},{n:'Whipped cream',p:20}]}
 ]}
 function renderOptionGroups(){const host=$('#sp-option-groups');if(!host)return;
- host.innerHTML=sellerOptionGroups.map((g,gi)=>`<div class="panel" data-og="${gi}" style="margin-bottom:12px;padding:12px;background:white"><div class="row sp wrap"><b>Option group ${gi+1}</b><button type="button" class="btn d sm" data-og-remove="${gi}">Remove group</button></div><div class="two" style="margin-top:8px"><div class="field"><label>Group name</label><input class="in" data-og-label="${gi}" value="${esc(g.label)}" placeholder="e.g. Milk choice" maxlength="70"></div><div class="field"><label>Selection type</label><select class="in" data-og-type="${gi}"><option value="radio" ${g.type==='radio'?'selected':''}>Choose one</option><option value="checkbox" ${g.type==='checkbox'?'selected':''}>Choose multiple</option></select></div></div><label class="row sm" style="margin-bottom:8px"><input type="checkbox" data-og-req="${gi}" ${g.req?'checked':''}> Required selection</label><div>${g.ch.map((c,ci)=>`<div class="row" style="margin-bottom:7px"><input class="in" style="min-width:0;flex:1" data-oc-name="${gi}:${ci}" value="${esc(c.n)}" placeholder="Choice name" maxlength="80"><input class="in" style="width:100px;flex:none" type="number" min="0" step="0.01" data-oc-price="${gi}:${ci}" value="${Number(c.p)||0}" aria-label="Additional price"><button type="button" class="btn d sm" data-oc-remove="${gi}:${ci}" aria-label="Remove choice">×</button></div>`).join('')}</div><button type="button" class="btn s sm" data-oc-add="${gi}">+ Add choice</button></div>`).join('');
+ host.innerHTML=sellerOptionGroups.map((g,gi)=>`<div class="panel" data-og="${gi}" style="margin-bottom:12px;padding:12px;background:var(--merchant-surface)"><div class="row sp wrap"><b>Option group ${gi+1}</b><button type="button" class="btn d sm" data-og-remove="${gi}">Remove group</button></div><div class="two" style="margin-top:8px"><div class="field"><label>Group name</label><input class="in" data-og-label="${gi}" value="${esc(g.label)}" placeholder="e.g. Milk choice" maxlength="70"></div><div class="field"><label>Selection type</label><select class="in" data-og-type="${gi}"><option value="radio" ${g.type==='radio'?'selected':''}>Choose one</option><option value="checkbox" ${g.type==='checkbox'?'selected':''}>Choose multiple</option></select></div></div><label class="row sm" style="margin-bottom:8px"><input type="checkbox" data-og-req="${gi}" ${g.req?'checked':''}> Required selection</label><div>${g.ch.map((c,ci)=>`<div class="row" style="margin-bottom:7px"><input class="in" style="min-width:0;flex:1" data-oc-name="${gi}:${ci}" value="${esc(c.n)}" placeholder="Choice name" maxlength="80"><input class="in" style="width:100px;flex:none" type="number" min="0" step="0.01" data-oc-price="${gi}:${ci}" value="${Number(c.p)||0}" aria-label="Additional price"><button type="button" class="btn d sm" data-oc-remove="${gi}:${ci}" aria-label="Remove choice">×</button></div>`).join('')}</div><button type="button" class="btn s sm" data-oc-add="${gi}">+ Add choice</button></div>`).join('');
  host.querySelectorAll('[data-og-remove]').forEach(b=>b.onclick=()=>{sellerOptionGroups.splice(+b.dataset.ogRemove,1);renderOptionGroups()});
  host.querySelectorAll('[data-oc-add]').forEach(b=>b.onclick=()=>{sellerOptionGroups[+b.dataset.ocAdd].ch.push({n:'',p:0});renderOptionGroups()});
  host.querySelectorAll('[data-oc-remove]').forEach(b=>b.onclick=()=>{const [g,c]=b.dataset.ocRemove.split(':').map(Number);sellerOptionGroups[g].ch.splice(c,1);renderOptionGroups()});
@@ -883,11 +939,11 @@ async function renderSellerProducts(){
     if(!$('#papalita-products'))return;
     const rows=q.data||[];
     target.innerHTML=`<div class="row sp wrap"><div><h3>My products</h3><p class="sm mu">Active products publish automatically to customers while your store is approved. Stock 0 = sold out.</p></div><button class="btn s sm" id="reload-products">Refresh</button></div>
-    <form id="seller-product-form" class="panel" style="margin-top:14px"><h3 id="seller-form-title">Add product</h3><input type="hidden" id="seller-product-id"><div class="two"><div class="field"><label>Name</label><input class="in" id="sp-name" required maxlength="120"></div><div class="field"><label>Category</label><input class="in" id="sp-cat" placeholder="Meals" required></div><div class="field"><label>Price (₱)</label><input class="in" id="sp-price" type="number" step="0.01" min="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="sp-stock" type="number" min="0" step="1" value="0" required></div></div><div class="field"><label>Description</label><textarea class="in" id="sp-desc"></textarea></div><div class="field"><label>Photo (optional, JPEG/PNG/WebP, max 5 MB)</label><input class="in" id="sp-file" type="file" accept="image/jpeg,image/png,image/webp"></div><div class="field"><label>Or image URL</label><input class="in" id="sp-img" type="url" placeholder="https://..."></div><section class="panel" id="sp-option-editor" style="margin:14px 0;background:#f7faf7;border:1px solid #dcece0">
+    <form id="seller-product-form" class="panel" style="margin-top:14px"><h3 id="seller-form-title">Add product</h3><input type="hidden" id="seller-product-id"><div class="two"><div class="field"><label>Name</label><input class="in" id="sp-name" required maxlength="120"></div><div class="field"><label>Category</label><input class="in" id="sp-cat" placeholder="Meals" required></div><div class="field"><label>Price (₱)</label><input class="in" id="sp-price" type="number" step="0.01" min="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="sp-stock" type="number" min="0" step="1" value="0" required></div></div><div class="field"><label>Description</label><textarea class="in" id="sp-desc"></textarea></div><div class="field"><label>Photo (optional, JPEG/PNG/WebP, max 5 MB)</label><input class="in" id="sp-file" type="file" accept="image/jpeg,image/png,image/webp"></div><div class="field"><label>Or image URL</label><input class="in" id="sp-img" type="url" placeholder="https://..."></div><section class="panel" id="sp-option-editor" style="margin:14px 0;background:var(--merchant-canvas);border:1px solid var(--merchant-border)">
 <h3 style="margin-bottom:6px">Product customization</h3><p class="sm mu" style="margin-bottom:12px">Each product has its own options. Examples: Size, Sugar Level, Milk, Ice, Add-ons. Extra prices are added to the base price.</p>
 <div id="sp-option-groups"></div><div class="row wrap"><button type="button" class="btn s sm" id="sp-add-group">+ Add option group</button><button type="button" class="btn s sm" id="sp-cafe-template">Use café starter groups</button></div>
 <p class="sm mu" style="margin-top:8px">Starter groups are editable; remove any option that your product does not offer. Save product to publish the changes.</p></section><div class="field"><label>Visibility</label><select class="in" id="sp-status"><option value="active">Published</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div><div class="row wrap"><button class="btn p" id="sp-save">Save product</button><button class="btn s" type="button" id="sp-clear">Clear form</button></div><p class="err" id="sp-error"></p></form>
-    <div class="tw" style="overflow-x:auto"><table style="width:100%"><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><br><small>${esc(x.category||'')}</small></td><td>${peso(x.price)}</td><td>${Number(x.stock)||0}</td><td>${esc(x.status)}</td><td><button class="btn s sm" data-edit-product="${x.id}">Edit</button> <button class="btn d sm" data-delete-product="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5">No products yet.</td></tr>'}</tbody></table></div>`;
+    <div class="tw" style="overflow-x:auto"><table class="papa-table"><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><br><small>${esc(x.category||'')}</small></td><td>${peso(x.price)}</td><td>${Number(x.stock)||0}</td><td>${esc(x.status)}</td><td><button class="btn s sm" data-edit-product="${x.id}">Edit</button> <button class="btn d sm" data-delete-product="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5">No products yet.</td></tr>'}</tbody></table></div>`;
     const clear=()=>{$('#seller-product-form').reset();$('#seller-product-id').value='';$('#seller-form-title').textContent='Add product';sellerOptionGroups=[];renderOptionGroups();};
     $('#sp-add-group').onclick=()=>{sellerOptionGroups.push({id:optionId(),label:'',type:'radio',req:false,ch:[{n:'',p:0}]});renderOptionGroups();};
     $('#sp-cafe-template').onclick=()=>{if(sellerOptionGroups.length&&!confirm('Replace current option groups with café starter groups?'))return;sellerOptionGroups=optionTemplate();renderOptionGroups();};
@@ -907,7 +963,6 @@ async function renderSellerProducts(){
     }catch(err){$('#sp-error').textContent=err.message;}finally{btn.disabled=false;}};
   }catch(err){target.textContent='Could not load products: '+err.message;}
 }
-
 
 /* Live incoming order popup: only Supabase orders belonging to the signed-in store. */
 function papaBeep(){
@@ -948,14 +1003,13 @@ function papaStartOrderListener(){
  papaStopOrderListener();if(!storeUuid||!db)return;
  const id=storeUuid;
  void papaFetchOrders();
- // Realtime may require orders to be in the Supabase Realtime publication.
  papaLiveChannel=db.channel('papalita-merchant-orders-'+id).on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:'store_id=eq.'+id},()=>{if(storeUuid===id)void papaFetchOrders()}).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:'store_id=eq.'+id},()=>{if(storeUuid===id)void papaFetchOrders()}).subscribe();
- // Polling fallback also handles deployments without Realtime publication.
  papaPollTimer=setInterval(()=>{if(storeUuid===id&&document.visibilityState==='visible')void papaFetchOrders()},12000);
 }
 setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && ['new', 'prep', 'out', 'hist'].includes(tab)) draw(); }, 4000); (async()=>{try{db=client();const {data,error}=await db.auth.getUser();if(error||!data?.user){gate();return;}if(!await completeApplication(data.user))await authorize(data.user);}catch(e){gate(e.message);}})();
 })();
-</script><script>
+</script>
+<script>
 (function(){
  const renderIcons=()=>{if(window.lucide&&window.lucide.createIcons)window.lucide.createIcons();};
  const root=document.getElementById('papa-content')||document.body;
@@ -964,4 +1018,5 @@ setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(docum
  window.addEventListener('load',renderIcons);
 })();
 </script>
-</body></html>
+</body>
+</html>
