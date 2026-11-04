@@ -1,6 +1,6 @@
 /* Papalita Merchant Portal — consolidated FINAL visual corrections (2026-11-04)
    Visual styling only; does not change Supabase, DOM IDs or event handlers.
-   This stylesheet must be the LAST stylesheet in <head>. */
+   This stylesheet must be the LAST stylesheet in <head>. *
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root {--merchant-accent:#087f32;--merchant-surface:#fff;--merchant-canvas:#f7f9fb;--merchant-ink:#17251e;--merchant-muted:#66766c;--merchant-border:#e2e8e4;}
 html[data-merchant-accent="indigo"]{--merchant-accent:#4f46e5}
