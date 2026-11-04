@@ -261,10 +261,118 @@ html[data-merchant-mode="dark"] body .papa-reference-shell .papa-side{background
 <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
 <!-- Dashboard component styles retained until their source is consolidated. -->
-<link rel="stylesheet" href="merchant-premium-dashboard.css?v=1">
 <!-- Final merchant theme MUST load after all inline styles. -->
 <link rel="stylesheet" href="merchant-wharf-theme.css?v=20261104-wharf-v2">
-<link rel="stylesheet" href="merchant-reference-theme.css?v=1">
+<style id="reference-theme">
+/* Papalita Merchant — reference dashboard look (matches the screenshot).
+   Load this LAST in <head>, after merchant-wharf-theme.css. Visual only. */
+:root{--rf-green:#0a7a3b;--rf-green-d:#075c2d;--rf-ink:#14231b;--rf-mute:#68786e;--rf-line:#e3ebe5;--rf-card:#fff;--rf-canvas:#f6f9f7}
+html body .papa-reference-shell,html body .papa-reference-shell *{font-family:Inter,'Plus Jakarta Sans',system-ui,sans-serif}
+html body .papa-reference-shell{display:grid!important;grid-template-columns:268px minmax(0,1fr)!important;background:var(--rf-canvas)!important;color:var(--rf-ink)!important}
+
+/* ---------- Sidebar ---------- */
+html body .papa-reference-shell .papa-side{background:linear-gradient(180deg,#05281c 0%,#041f16 100%)!important;color:#e6f4ec!important;padding:16px 14px!important;border:0!important;gap:0}
+html body .papa-reference-shell .papa-brand-row{border:0!important;padding:4px 6px 16px!important;margin:0!important;min-height:0!important}
+html body .papa-reference-shell .papa-brand-row strong{color:#fff!important;font-size:22px!important;font-weight:800!important}
+html body .papa-reference-shell .papa-brand-row small{color:#d4e8dc!important;font-size:14px!important}
+.rf-switch{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 12px;margin-bottom:14px;border:1px solid #2b5a45;border-radius:12px;background:#ffffff0d;color:#fff;cursor:pointer}
+.rf-switch img,.rf-switch .rf-logo-fallback{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#e8f4ec;color:#075c2d;display:grid;place-items:center;font-weight:800;flex:none}
+.rf-switch b{display:block;font-size:14px}.rf-switch small{display:block;color:#b9d6c6;font-size:12px;margin-top:1px}
+.rf-switch .rf-chev{margin-left:auto;opacity:.7}
+html body .papa-reference-shell .papa-side nav{display:flex!important;flex-direction:column!important;gap:3px!important}
+html body .papa-reference-shell .papa-nav{display:flex!important;align-items:center!important;gap:13px!important;width:100%!important;min-height:44px!important;padding:10px 14px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:#e3f1e9!important;font-size:14px!important;font-weight:600!important;box-shadow:none!important}
+html body .papa-reference-shell .papa-nav:hover{background:#ffffff14!important}
+html body .papa-reference-shell .papa-nav.active{background:var(--rf-green)!important;color:#fff!important;box-shadow:none!important}
+html body .papa-reference-shell .papa-nav svg{width:20px;height:20px;flex:none}
+html body .papa-reference-shell .papa-nav-count{margin-left:auto!important;background:#17b05a!important;color:#fff!important;min-width:22px;height:22px;border-radius:50%!important;display:grid!important;place-items:center;padding:0!important;font-size:11px!important}
+.rf-new{margin-left:auto;background:#12a55a;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700}
+.rf-divider{height:1px;background:#244a3a;margin:14px 6px 10px}
+.rf-section{color:#cfe5d8;font-size:13px;font-weight:600;padding:2px 14px 6px}
+.rf-side-foot{margin-top:auto;display:grid;gap:10px;padding-top:14px}
+.rf-store-toggle,.rf-owner{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid #2b5a45;border-radius:12px;background:#ffffff0a;color:#fff}
+.rf-store-toggle b,.rf-owner b{display:block;font-size:14px}.rf-store-toggle small,.rf-owner small{display:block;font-size:12px;color:#c3dccd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.rf-dot{width:9px;height:9px;border-radius:50%;background:#26d46c;flex:none}.rf-dot.off{background:#e5594f}
+.rf-switch-ui{margin-left:auto;width:50px;height:28px;border-radius:99px;background:#16b45d;border:0;position:relative;cursor:pointer;flex:none}
+.rf-switch-ui::after{content:"";position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.15s}
+.rf-switch-ui.off{background:#6b7b72}.rf-switch-ui.off::after{right:auto;left:3px}
+.rf-owner .rf-avatar{width:40px;height:40px;border-radius:50%;background:#0b8d47;display:grid;place-items:center;font-weight:800;flex:none}
+
+/* ---------- Top bar ---------- */
+html body .papa-reference-shell .papa-top{background:#fff!important;border-bottom:1px solid var(--rf-line)!important;padding:12px 28px!important;min-height:72px}
+.rf-title h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--rf-ink)}
+.rf-title p{margin:2px 0 0;font-size:13px;color:var(--rf-mute)}
+.rf-search{display:flex;align-items:center;gap:9px;width:min(420px,38vw);margin-left:auto;padding:0 12px;height:42px;border:1px solid #d9e3dc;border-radius:10px;background:#fff;color:var(--rf-mute);font-size:13px}
+.rf-search input{border:0;outline:0;background:transparent;flex:1;min-width:0;font-size:13px;color:var(--rf-ink)}
+.rf-search kbd{border:1px solid #d9e3dc;border-radius:6px;padding:2px 7px;font-size:11px;background:#f4f7f5}
+.rf-icon-btn{position:relative;width:40px;height:40px;border:0;background:transparent;border-radius:50%;display:grid;place-items:center;color:#1b2b22;cursor:pointer}
+.rf-icon-btn .rf-red{position:absolute;top:7px;right:8px;width:9px;height:9px;border-radius:50%;background:#e5352b;border:2px solid #fff}
+.rf-top-avatar{width:42px;height:42px;border-radius:50%;background:var(--rf-green);color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px}
+html body .papa-reference-shell .papa-main{background:var(--rf-canvas)!important;padding:18px 28px 40px!important}
+
+/* ---------- Dashboard ---------- */
+.rf-card{background:var(--rf-card);border:1px solid var(--rf-line);border-radius:14px;box-shadow:0 2px 10px #0f2c1a0a;padding:18px 20px}
+.rf-card h2{margin:0;font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;color:var(--rf-ink)}
+.rf-card h2 svg{color:var(--rf-green)}
+.rf-link{background:none;border:0;color:var(--rf-green);font-weight:700;font-size:13px;cursor:pointer;padding:0}
+.rf-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.rf-kpi{display:flex;align-items:center;gap:16px;padding:18px;border-radius:14px;border:1px solid var(--rf-line)}
+.rf-kpi.g{background:#eef8f1}.rf-kpi.b{background:#edf5fc}.rf-kpi.p{background:#f3effb}.rf-kpi.o{background:#fdf5ea}
+.rf-kpi-ico{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;flex:none}
+.rf-kpi.g .rf-kpi-ico{background:#d7efdf;color:#0a8a43}.rf-kpi.b .rf-kpi-ico{background:#d8e9f8;color:#1f7bd0}.rf-kpi.p .rf-kpi-ico{background:#e5dcf6;color:#7447c4}.rf-kpi.o .rf-kpi-ico{background:#fbe6c8;color:#e8870c}
+.rf-kpi span{font-size:13px;color:#33433a;font-weight:600}.rf-kpi strong{display:block;font-size:28px;line-height:1.15;color:var(--rf-ink);margin:2px 0}
+.rf-kpi small{font-size:12px;color:var(--rf-mute)}.rf-kpi em{font-style:normal;font-weight:700;color:#0d8a45}.rf-kpi em.dn{color:#c93a2f}
+.rf-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.rf-stack{display:grid;gap:16px;align-content:start}
+.rf-banner{position:relative;overflow:hidden;min-height:150px;padding:26px 28px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(100deg,#e6f5ec 0%,#d6efde 45%,#0b7a3c 46%,#0a6b34 100%);background-size:cover;background-position:center}
+.rf-banner.has-img{background:linear-gradient(90deg,#eaf6ee 0%,#eaf6eecc 45%,#0a6b3488 100%),var(--cover) center/cover}
+.rf-banner h2{font-size:24px;line-height:1.15;display:block}
+.rf-banner p{margin:8px 0 14px;color:#33433a;font-size:14px}.rf-banner p b{color:#0a7a3b}
+.rf-btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--rf-line);background:#fff;color:var(--rf-ink)}
+.rf-btn.p{background:var(--rf-green);border-color:var(--rf-green);color:#fff}
+.rf-status-card{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;min-height:150px}
+.rf-status-ico{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;color:#0a7a3b;background:#eaf6ee}
+.rf-pill-open{display:inline-flex;gap:7px;align-items:center;background:#e7f6ec;color:#0a7a3b;font-weight:700;font-size:13px;border-radius:8px;padding:4px 12px;margin:5px 0 8px}
+.rf-pill-open.off{background:#fdeceb;color:#c93a2f}
+.rf-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.rf-chip{border:1px solid #d9e3dc;background:#fff;color:#25352c;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer}
+.rf-chip.on{background:var(--rf-green);border-color:var(--rf-green);color:#fff}
+.rf-table-wrap{overflow-x:auto}
+.rf-table{width:100%;border-collapse:collapse;min-width:560px}
+.rf-table th{background:#f3f7f4;color:#33433a;font-size:12px;text-align:left;padding:10px 12px;font-weight:700}
+.rf-table td{padding:12px;border-bottom:1px solid #edf2ee;font-size:13px;color:var(--rf-ink);white-space:nowrap}
+.rf-table tr:last-child td{border-bottom:0}
+.rf-pill{display:inline-flex;align-items:center;padding:4px 14px;border-radius:7px;font-size:12px;font-weight:700;text-transform:capitalize;background:#eef1f3;color:#46515c}
+.rf-pill.confirmed,.rf-pill.completed{background:#d9f2e1;color:#0c7a3a}.rf-pill.cancelled{background:#fcd6d3;color:#c0332a}
+.rf-pill.pending,.rf-pill.preparing{background:#fdebc8;color:#b46a00}.rf-pill.ready,.rf-pill.out_for_delivery{background:#dbe9fb;color:#2458a8}
+.rf-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.rf-actions button{display:grid;justify-items:center;gap:7px;padding:14px 6px;border:1px solid var(--rf-line);border-radius:11px;background:#fff;font-size:12px;font-weight:600;color:var(--rf-ink);cursor:pointer}
+.rf-actions button.first{background:#e9f7ee;border-color:#8bd4a6;color:#0a7a3b}
+.rf-top-item{display:grid;grid-template-columns:42px 1fr auto auto;gap:12px;align-items:center;padding:7px 0}
+.rf-top-item img,.rf-top-item .rf-ph{width:42px;height:42px;border-radius:8px;object-fit:cover;background:#eaf0ec;display:grid;place-items:center}
+.rf-top-item b{font-size:13px;text-transform:uppercase}.rf-top-item span{font-size:12.5px;color:#46564c}.rf-top-item strong{font-size:13px}
+.rf-chart{display:grid;grid-template-columns:48px 1fr;gap:6px;margin-top:14px}
+.rf-y{display:flex;flex-direction:column;justify-content:space-between;height:150px;font-size:11px;color:var(--rf-mute);text-align:right}
+.rf-bars{display:grid;grid-template-columns:repeat(7,1fr);gap:18px;align-items:end;height:150px;border-bottom:1px solid var(--rf-line);background:repeating-linear-gradient(#0000 0 29px,#eef3ef 29px 30px)}
+.rf-bar{background:#86d99f;border-radius:3px 3px 0 0;min-height:4px}.rf-bar.today{background:#0a8a43}
+.rf-x{grid-column:2;display:grid;grid-template-columns:repeat(7,1fr);gap:18px;text-align:center;font-size:12px;color:#33433a}
+.rf-insights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.rf-insight{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--rf-line);border-radius:11px}
+.rf-insight i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;font-style:normal}
+.rf-insight strong{display:block;font-size:18px}.rf-insight small{color:var(--rf-mute);font-size:12px}
+@media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
+@media(max-width:800px){html body .papa-reference-shell{display:block!important}.rf-search{display:none}.rf-actions{grid-template-columns:repeat(2,1fr)}.rf-status-card{grid-template-columns:auto 1fr}}
+@media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-insights{grid-template-columns:1fr}}
+
+/* ---- Settings tabs (Account / Integrations / Workspace) ---- */
+html body .papa-reference-shell .wf-settings-tabs .wf-tab{background:none;border:0;border-bottom:2px solid transparent;padding:12px 0;font:inherit;font-size:13px;color:#747474;cursor:pointer}
+html body .papa-reference-shell .wf-settings-tabs .wf-tab:hover{color:#232327}
+html body .papa-reference-shell .wf-settings-tabs .wf-tab.on{border-bottom-color:var(--merchant-accent,#087f32);color:#232327;font-weight:700}
+.wf-int-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid #eeece8;font-size:13px}
+.wf-int-row:last-child{border-bottom:0}.wf-int-row small{display:block;color:#68786e;margin-top:2px}
+.wf-badge{display:inline-flex;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;background:#d9f2e1;color:#0c7a3a;white-space:nowrap}
+.wf-badge.off{background:#eef1f3;color:#59646e}
+
+</style>
 </head>
 <body><div id="root"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/supabase.js"></script><script src="js/images.js"></script><script src="js/data.js"></script><script src="js/ops.js?v=merchant-orders-accept-v1"></script>
@@ -594,7 +702,19 @@ function papaAvailabilityCard(){
  const current=st.closure_reason||'Emergency';const selected=options.includes(current)?current:'Others';
  return `<section class="papa-card papa-availability"><div class="papa-availability-title"><span class="papa-store-icon">▣</span><div><h2>Store status</h2><p class="papa-muted">Manage availability for new orders.</p></div></div><div class="papa-availability-body"><div class="papa-current-state"><span class="papa-field-title">Current status</span><strong class="papa-state ${closed?'is-closed':'is-open'}">● ${closed?'Temporarily closed':'Open'}</strong><p class="papa-muted">${closed?'Store marked unavailable':'Store is accepting orders'}</p>${closed?`<p class="papa-muted">${esc(st.closure_reason||'')} · ${st.temporarily_closed_at?esc(new Date(st.temporarily_closed_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'})):''}</p>`:''}</div><div class="papa-closure-controls"><h3>${closed?'Reopen your store':'Emergency close store'}</h3><p class="papa-muted">${closed?'Resume accepting new orders.':'Temporarily stop accepting new orders.'}</p><div class="papa-close-row"><div class="papa-close-input"><label for="papa-closure-reason">Closure reason</label><select class="in" id="papa-closure-reason" ${closed?'disabled':''}>${options.map(x=>`<option value="${esc(x)}" ${selected===x?'selected':''}>${esc(x)}</option>`).join('')}</select><div id="papa-closure-other-wrap" ${selected==='Others'&&!closed?'':'hidden'}><label for="papa-closure-other">Specify reason</label><textarea class="in" id="papa-closure-other" maxlength="200" placeholder="Enter closure reason…">${selected==='Others'?esc(options.includes(current)?'':current):''}</textarea></div></div><button class="btn ${closed?'p':'d'}" id="papa-emergency-toggle">${closed?'Reopen store':'Close store'}</button></div><p class="papa-muted papa-closure-note">Existing orders are not automatically cancelled. Customer checkout protection must be enabled separately.</p></div></div></section>`;
 }
-function papaAppearancePanel(){return `<div class="papa-heading"><div><h1>Appearance & Theme</h1><p>Choose how your Papalita workspace looks.</p></div></div><div class="wf-settings-tabs"><span>Account</span><span>Integrations</span><strong>Workspace</strong></div><div class="wf-settings-layout"><section class="papa-card papa-appearance wf-appearance"><div class="wf-appearance-title"><h2>Appearance</h2><p class="papa-muted">Your preference is saved on this device.</p></div><label class="wf-control-label">Sidebar theme</label><div class="wf-theme-segment"><button type="button" data-wf-theme="light">☀ Light</button><button type="button" data-wf-theme="dark">☾ Dark</button></div><select class="wf-native-select" id="papa-theme-mode" aria-label="Sidebar theme"><option value="light">Light</option><option value="dark">Dark</option></select><label class="wf-control-label">Accent</label><div class="wf-accent-swatches"><button type="button" data-wf-accent="green" style="--swatch:#087f32" aria-label="Papalita green"></button><button type="button" data-wf-accent="indigo" style="--swatch:#6366f1" aria-label="Indigo"></button><button type="button" data-wf-accent="blue" style="--swatch:#93c5fd" aria-label="Blue"></button><button type="button" data-wf-accent="orange" style="--swatch:#f8bd47" aria-label="Orange"></button><button type="button" data-wf-accent="purple" style="--swatch:#c084fc" aria-label="Purple"></button></div><select class="wf-native-select" id="papa-theme-accent" aria-label="Accent color"><option value="green">Green</option><option value="indigo">Indigo</option><option value="blue">Blue</option><option value="orange">Orange</option><option value="purple">Purple</option></select><button class="wf-reset-appearance" type="button" id="papa-theme-reset">Reset appearance</button></section><section class="papa-card wf-settings-info"><h2>Workspace</h2><p class="papa-muted">Your store profile and business details are managed in Store Profile and Store Settings.</p><div class="wf-settings-info-row"><span>Brand</span><strong>Papalita Merchant</strong></div><div class="wf-settings-info-row"><span>Currency</span><strong>PHP (₱)</strong></div><div class="wf-settings-info-row"><span>Time zone</span><strong>Asia/Manila</strong></div><button class="wf-settings-go" type="button" data-jump="profile">Manage store profile →</button></section></div>`;}
+let papaSetTab='workspace';
+function papaAppearancePanel(){
+ const old=papaAppearanceWorkspace(),st=papaStore();
+ const tabs=[['account','Account'],['integrations','Integrations'],['workspace','Workspace']];
+ const bar=`<div class="wf-settings-tabs">${tabs.map(([k,l])=>`<button type="button" class="wf-tab ${papaSetTab===k?'on':''}" data-wf-settab="${k}">${l}</button>`).join('')}</div>`;
+ const i=old.indexOf('<div class="wf-settings-tabs">'),j=old.indexOf('</div>',i)+6;
+ const head=old.slice(0,i),body=old.slice(j);
+ if(papaSetTab==='workspace')return head+bar+body;
+ const row=(a,b)=>`<div class="wf-settings-info-row"><span>${a}</span><strong>${b}</strong></div>`;
+ if(papaSetTab==='account')return head+bar+`<div class="wf-settings-layout"><section class="papa-card wf-settings-info"><h2>Account</h2><p class="papa-muted">Your sign-in and store owner details.</p>${row('Store',esc(st.name||'—'))}${row('Email',esc(papaUserEmail||'—'))}${row('Business type',esc(st.business_type||'—'))}${row('Store status',esc(st.status||'approved'))}</section><section class="papa-card wf-settings-info"><h2>Security</h2><p class="papa-muted">Change your password or sign out of this device.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button type="button" class="wf-reset-appearance" id="papa-pw-reset">Send password reset email</button><button type="button" class="wf-settings-go" id="papa-acct-logout" style="margin-top:0">Sign out</button></div><p class="err" id="papa-acct-msg"></p></section></div>`;
+ return head+bar+`<div class="wf-settings-layout"><section class="papa-card wf-settings-info"><h2>Integrations</h2><p class="papa-muted">Services connected to your store.</p><div class="wf-int-row"><div><b>Supabase database</b><small>Orders, products and catering requests</small></div><span class="wf-badge">Connected</span></div><div class="wf-int-row"><div><b>Live order updates</b><small>Realtime listener with 12-second refresh</small></div><span class="wf-badge">Active</span></div><div class="wf-int-row"><div><b>Catering requests</b><small>${papaCateringEligible(st)?'Turn on or off in Store Profile':'Not available for this business type'}</small></div><span class="wf-badge ${papaCateringOn(st)?'':'off'}">${papaCateringOn(st)?'Enabled':'Off'}</span></div></section><section class="papa-card wf-settings-info"><h2>Notifications</h2><p class="papa-muted">Sound alert when a new order arrives.</p><div class="wf-int-row"><div><b>New order sound</b><small>Plays while this page is open</small></div><button type="button" class="wf-reset-appearance" id="wf-sound-btn">${papaAudioEnabled?'Turn off':'Turn on'}</button></div></section></div>`;
+}
+function papaAppearanceWorkspace(){return `<div class="papa-heading"><div><h1>Appearance & Theme</h1><p>Choose how your Papalita workspace looks.</p></div></div><div class="wf-settings-tabs"><span>Account</span><span>Integrations</span><strong>Workspace</strong></div><div class="wf-settings-layout"><section class="papa-card papa-appearance wf-appearance"><div class="wf-appearance-title"><h2>Appearance</h2><p class="papa-muted">Your preference is saved on this device.</p></div><label class="wf-control-label">Sidebar theme</label><div class="wf-theme-segment"><button type="button" data-wf-theme="light">☀ Light</button><button type="button" data-wf-theme="dark">☾ Dark</button></div><select class="wf-native-select" id="papa-theme-mode" aria-label="Sidebar theme"><option value="light">Light</option><option value="dark">Dark</option></select><label class="wf-control-label">Accent</label><div class="wf-accent-swatches"><button type="button" data-wf-accent="green" style="--swatch:#087f32" aria-label="Papalita green"></button><button type="button" data-wf-accent="indigo" style="--swatch:#6366f1" aria-label="Indigo"></button><button type="button" data-wf-accent="blue" style="--swatch:#93c5fd" aria-label="Blue"></button><button type="button" data-wf-accent="orange" style="--swatch:#f8bd47" aria-label="Orange"></button><button type="button" data-wf-accent="purple" style="--swatch:#c084fc" aria-label="Purple"></button></div><select class="wf-native-select" id="papa-theme-accent" aria-label="Accent color"><option value="green">Green</option><option value="indigo">Indigo</option><option value="blue">Blue</option><option value="orange">Orange</option><option value="purple">Purple</option></select><button class="wf-reset-appearance" type="button" id="papa-theme-reset">Reset appearance</button></section><section class="papa-card wf-settings-info"><h2>Workspace</h2><p class="papa-muted">Your store profile and business details are managed in Store Profile and Store Settings.</p><div class="wf-settings-info-row"><span>Brand</span><strong>Papalita Merchant</strong></div><div class="wf-settings-info-row"><span>Currency</span><strong>PHP (₱)</strong></div><div class="wf-settings-info-row"><span>Time zone</span><strong>Asia/Manila</strong></div><button class="wf-settings-go" type="button" data-jump="profile">Manage store profile →</button></section></div>`;}
 
 function papaApplyAppearance(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){};const mode=['dark','light'].includes(prefs.mode)?prefs.mode:'light';const accent=['green','indigo','blue','orange','purple'].includes(prefs.accent)?prefs.accent:'green';document.documentElement.dataset.merchantMode=mode;document.documentElement.dataset.merchantAccent=accent;const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent');if(m)m.value=mode;if(a)a.value=accent;document.querySelectorAll('[data-wf-theme]').forEach(b=>{b.classList.toggle('selected',b.dataset.wfTheme===mode);b.setAttribute('aria-pressed',String(b.dataset.wfTheme===mode))});document.querySelectorAll('[data-wf-accent]').forEach(b=>{b.classList.toggle('selected',b.dataset.wfAccent===accent);b.setAttribute('aria-pressed',String(b.dataset.wfAccent===accent))});}
 function papaBindAppearance(){papaApplyAppearance();const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent'),r=document.getElementById('papa-theme-reset');const save=()=>{try{localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify({mode:m.value,accent:a.value}))}catch(e){}papaApplyAppearance()};if(m&&a){m.onchange=save;a.onchange=save;}document.querySelectorAll('[data-wf-theme]').forEach(b=>b.onclick=()=>{m.value=b.dataset.wfTheme;save()});document.querySelectorAll('[data-wf-accent]').forEach(b=>b.onclick=()=>{a.value=b.dataset.wfAccent;save()});if(r)r.onclick=()=>{try{localStorage.removeItem('papalita_merchant_appearance_v1')}catch(e){}papaApplyAppearance()};}
@@ -602,6 +722,10 @@ function papaSettings(){return `<div class="papa-heading"><div><h1>Store setting
 async function papaUpload(file,kind){if(!file)return null;if(file.size>5*1024*1024)throw Error('Photo must be 5 MB or smaller');const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];if(!ext)throw Error('Please use JPEG, PNG or WebP');const path=`${storeUuid}/${kind}-${crypto.randomUUID()}.${ext}`;const q=await db.storage.from('store-images').upload(path,file,{contentType:file.type,upsert:false});if(q.error)throw Error('Photo upload failed: '+q.error.message+' (check store-images Storage RLS)');return db.storage.from('store-images').getPublicUrl(path).data.publicUrl;}
 async function papaBind(){
  $$('[data-papa-filter]').forEach(b=>b.onclick=()=>{papaOrderFilter=b.dataset.papaFilter;draw()});
+ $$('[data-wf-settab]').forEach(b=>b.onclick=()=>{papaSetTab=b.dataset.wfSettab;draw()});
+ const pwBtn=$('#papa-pw-reset');if(pwBtn)pwBtn.onclick=async()=>{const m=$('#papa-acct-msg');pwBtn.disabled=true;try{if(!papaUserEmail)throw Error('No email on this account.');const r=await db.auth.resetPasswordForEmail(papaUserEmail);if(r.error)throw r.error;m.style.color='#0c7a3a';m.textContent='Reset link sent to '+papaUserEmail+'.'}catch(e){m.style.color='';m.textContent=e.message}finally{pwBtn.disabled=false}};
+ const outBtn=$('#papa-acct-logout');if(outBtn)outBtn.onclick=()=>$('#papa-logout').click();
+ const sndBtn=$('#wf-sound-btn');if(sndBtn)sndBtn.onclick=()=>{papaAudioEnabled=!papaAudioEnabled;if(papaAudioEnabled)papaBeep();draw()};
  const wfSearch=$('#wf-order-search');if(wfSearch)wfSearch.oninput=()=>{papaOrderSearch=wfSearch.value;const pos=wfSearch.selectionStart;draw();const n=$('#wf-order-search');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
  $$('[data-wf-order]').forEach(r=>{r.onclick=e=>{if(!e.target.closest('[data-papa-next-status]'))papaOpenOrderDrawer(r.dataset.wfOrder)};r.onkeydown=e=>{if(e.key==='Enter')papaOpenOrderDrawer(r.dataset.wfOrder)}});
  $$('[data-wf-order-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();papaOpenOrderDrawer(b.dataset.wfOrderButton)});
