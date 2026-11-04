@@ -203,19 +203,10 @@ main.auth>*{min-width:0}
   .merchant-wrap{padding:0 10px 56px}
   .merchant-sheet{padding:20px 16px}
 }
-
-/* PAPALITA OFFICIAL LOGO — shared motion */
-.papalita-logo-motion{display:inline-flex;align-items:center;justify-content:center;flex:none;animation:papalitaMarkEnter .8s cubic-bezier(.2,1.3,.3,1) both,papalitaMarkFloat 3s ease-in-out .8s infinite;transform-origin:center;overflow:visible!important;background:transparent!important;box-shadow:none!important}
-.papalita-logo-motion img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(0,85,46,.18))}
-.auth-top .papalita-logo-motion{width:58px;height:58px;min-width:58px;border-radius:0}
-#splash .sp-brand{width:min(320px,82vw);height:auto;object-fit:contain;animation:papalitaMarkEnter .8s both,papalitaMarkFloat 3s ease-in-out .8s infinite}
-@keyframes papalitaMarkEnter{from{opacity:0;transform:translateY(14px) scale(.84)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes papalitaMarkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@media(prefers-reduced-motion:reduce){.papalita-logo-motion,#splash .sp-brand{animation:none!important}}
 </style>
 
 <style id="reference-theme">
-/* Papalita Merchant Portal — consolidated FINAL visual corrections & Dark Mode Fix (2026-11-04) */
+/* Papalita Merchant Portal — FINAL IMAGE & GRID FIX (2026-11-04) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* =========================================================
@@ -237,13 +228,10 @@ main.auth>*{min-width:0}
   --rf-card: var(--merchant-surface);
   --rf-canvas: var(--merchant-canvas);
 }
-
 html[data-merchant-accent="indigo"] { --merchant-accent: #4f46e5; }
 html[data-merchant-accent="blue"] { --merchant-accent: #2563eb; }
 html[data-merchant-accent="orange"] { --merchant-accent: #ea580c; }
 html[data-merchant-accent="purple"] { --merchant-accent: #9333ea; }
-
-/* DARK MODE OVERRIDES */
 html[data-merchant-mode="dark"] {
   --merchant-surface: #18181b;
   --merchant-canvas: #09090b;
@@ -253,7 +241,7 @@ html[data-merchant-mode="dark"] {
 }
 
 /* =========================================================
-   2. STRUCTURAL FIXES FOR SIDEBAR & GRID 
+   2. STRUCTURAL FIXES FOR SIDEBAR & GRID (SOLVING THE IMAGE EXPLOSION)
    ========================================================= */
 html body .papa-reference-shell {
   display: grid !important;
@@ -263,77 +251,142 @@ html body .papa-reference-shell {
   color: var(--merchant-ink) !important;
   font-family: Inter, system-ui, sans-serif !important;
 }
-html body .papa-reference-shell button,
-html body .papa-reference-shell input,
-html body .papa-reference-shell select,
-html body .papa-reference-shell textarea {
-  font-family: Inter, system-ui, sans-serif !important;
-}
 
-/* SIDEBAR */
+/* SIDEBAR RESTRAINT */
 html body .papa-reference-shell .papa-side {
   display: flex !important;
   flex-direction: column !important;
   position: sticky !important;
   top: 0 !important;
   height: 100vh !important;
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
   padding: 14px 12px !important;
+  overflow-x: hidden !important;
   overflow-y: auto !important;
   background: var(--merchant-surface) !important;
   color: var(--merchant-ink) !important;
   border-right: 1px solid var(--merchant-border) !important;
   box-shadow: none !important;
 }
-/* Ensure dark mode sidebar blends well if they wanted the green gradient previously. 
-   We will keep it standard surface color for proper UI consistency. */
+
+/* FIX EXPLODING LOGOS */
+html body .papa-reference-shell .papa-side img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+html body .papa-reference-shell .papa-brand-row img.papa-brand-mark {
+  width: 32px !important;
+  height: 32px !important;
+  object-fit: contain !important;
+}
+html body .papa-reference-shell .papa-side .rf-switch img {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  border-radius: 8px !important;
+  object-fit: cover !important;
+  flex: none !important;
+}
+
+/* FIX BRAND ALIGNMENT & BUTTONS */
 html body .papa-reference-shell .papa-side::before { display: none !important; }
 html body .papa-reference-shell .papa-brand-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
   background: transparent !important;
   border-bottom: 1px solid var(--merchant-border) !important;
   padding: 12px 10px 18px !important;
   margin-bottom: 12px !important;
 }
 html body .papa-reference-shell .papa-brand-row strong {
+  display: block !important;
   color: var(--merchant-accent) !important;
-  font-size: 19px !important;
+  font-size: 18px !important;
+  line-height: 1.2 !important;
 }
 html body .papa-reference-shell .papa-brand-row small,
 html body .papa-reference-shell .wharf-nav-label {
   color: var(--merchant-muted) !important;
+  font-size: 11px !important;
 }
+
+html body .papa-reference-shell .papa-side .rf-switch {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-align: left !important;
+  padding: 10px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  width: 100% !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+}
+html body .papa-reference-shell .papa-side .rf-switch:hover {
+  background: var(--merchant-canvas) !important;
+}
+html body .papa-reference-shell .papa-side .rf-switch span {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  flex: 1 !important;
+}
+html body .papa-reference-shell .papa-side .rf-switch span b,
+html body .papa-reference-shell .papa-side .rf-switch span small {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+}
+html body .papa-reference-shell .papa-side .rf-switch i.rf-chev {
+  margin-left: auto !important;
+  flex: none !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
 html body .papa-reference-shell .papa-side nav {
   display: flex !important;
   flex-direction: column !important;
   gap: 5px !important;
+  margin-top: 12px !important;
 }
 html body .papa-reference-shell .papa-nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
   background: transparent !important;
   color: var(--merchant-ink) !important;
   border: 0 !important;
   border-radius: 9px !important;
+  padding: 0 12px !important;
   box-shadow: none !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
   min-height: 44px !important;
+  cursor: pointer !important;
+  text-align: left !important;
 }
-html body .papa-reference-shell .papa-nav:hover {
-  background: var(--merchant-canvas) !important;
-  color: var(--merchant-ink) !important;
-}
-html body .papa-reference-shell .papa-nav.active {
-  background: var(--merchant-accent) !important;
-  color: #fff !important;
-  box-shadow: none !important;
-}
-html body .papa-reference-shell .papa-nav-count,
-html body .papa-reference-shell .papa-new-count {
-  font-size: 10px !important;
-  min-width: 19px !important;
-  min-height: 19px !important;
-  line-height: 15px !important;
-  padding: 2px 5px !important;
+html body .papa-reference-shell .papa-nav i { width: 18px !important; height: 18px !important; flex: none !important; }
+html body .papa-reference-shell .papa-nav:hover { background: var(--merchant-canvas) !important; color: var(--merchant-ink) !important; }
+html body .papa-reference-shell .papa-nav.active { background: var(--merchant-accent) !important; color: #fff !important; font-weight: 600 !important; }
+html body .papa-reference-shell .papa-nav-count {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   border-radius: 999px !important;
   margin-left: auto !important;
+  background: #ef4444 !important;
+  color: #fff !important;
 }
+
 html body .papa-reference-shell .papa-side-bottom,
 html body .papa-reference-shell .rf-side-foot {
   margin-top: auto !important; 
@@ -343,6 +396,16 @@ html body .papa-reference-shell .rf-side-foot {
   gap: 10px !important;
   border-top: 1px solid var(--merchant-border) !important;
 }
+html body .papa-reference-shell .rf-store-toggle,
+html body .papa-reference-shell .rf-owner {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 8px 10px !important;
+}
+html body .papa-reference-shell .rf-store-toggle span { display: flex !important; flex-direction: column !important; }
+html body .papa-reference-shell .rf-store-toggle b { font-size: 13px !important; }
+html body .papa-reference-shell .rf-store-toggle small { font-size: 11px !important; color: var(--merchant-muted) !important; }
 
 @media(max-width: 800px) {
   html body .papa-reference-shell { display: block !important; }
@@ -367,19 +430,25 @@ html body .papa-reference-shell .papa-work,
 html body .papa-reference-shell .papa-main {
   background: var(--merchant-canvas) !important;
   color: var(--merchant-ink) !important;
-  max-width: none !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
 }
-html body .papa-reference-shell .papa-main {
-  padding: 24px 26px 44px !important;
-}
+html body .papa-reference-shell .papa-main { padding: 24px 26px 44px !important; }
 html body .papa-reference-shell .papa-main::before { display: none !important; }
 
 html body .papa-reference-shell .papa-top {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 0 26px !important;
   background: var(--merchant-surface) !important;
   color: var(--merchant-ink) !important;
   border-bottom: 1px solid var(--merchant-border) !important;
   min-height: 70px !important;
 }
+html body .papa-reference-shell .papa-top .rf-title { flex: 1 !important; }
+html body .papa-reference-shell .papa-top .rf-title h1 { font-size: 20px !important; font-weight: 700 !important; margin: 0 !important; }
+html body .papa-reference-shell .papa-top .rf-title p { font-size: 13px !important; color: var(--merchant-muted) !important; margin: 2px 0 0 !important; }
 
 html body .papa-reference-shell .papa-heading {
   background: transparent !important;
@@ -423,37 +492,40 @@ html body .papa-reference-shell .panel {
   border-radius: 12px !important;
   box-shadow: 0 2px 10px #102b1808 !important;
 }
-html body .papa-reference-shell .papa-card h2,
-html body .papa-reference-shell .wf-panel-head h2,
-html body .papa-reference-shell .wf-status-panel h2 {
-  color: var(--merchant-ink) !important;
-}
 
 /* DASHBOARD KPIs (.rf-*) */
 .rf-card { background: var(--merchant-surface); border: 1px solid var(--merchant-border); border-radius: 14px; padding: 18px 20px; }
-.rf-card h2 { margin: 0; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--merchant-ink); }
-.rf-card h2 svg { color: var(--merchant-accent); }
+.rf-card h2 { margin: 0 0 14px 0; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; color: var(--merchant-ink); }
+.rf-card h2 svg { color: var(--merchant-accent); width: 20px; height: 20px; }
 .rf-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
 .rf-kpi { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 14px; border: 1px solid var(--merchant-border); background: var(--merchant-surface) !important; }
-.rf-kpi-ico { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.rf-kpi-ico { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; }
 .rf-kpi.g .rf-kpi-ico { background: #d7efdf; color: #0a8a43; }
 .rf-kpi.b .rf-kpi-ico { background: #d8e9f8; color: #1f7bd0; }
 .rf-kpi.p .rf-kpi-ico { background: #e5dcf6; color: #7447c4; }
 .rf-kpi.o .rf-kpi-ico { background: #fbe6c8; color: #e8870c; }
-.rf-kpi span { font-size: 13px; color: var(--merchant-muted); font-weight: 600; }
-.rf-kpi strong { display: block; font-size: 28px; line-height: 1.15; color: var(--merchant-ink); margin: 2px 0; }
+.rf-kpi span { font-size: 12px; color: var(--merchant-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.rf-kpi strong { display: block; font-size: 24px; font-weight: 800; line-height: 1.15; color: var(--merchant-ink); margin: 4px 0; }
 .rf-kpi small { font-size: 12px; color: var(--merchant-muted); }
-.rf-kpi em { font-style: normal; font-weight: 700; color: #0d8a45; }
-.rf-kpi em.dn { color: #c93a2f; }
+
 .rf-row { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
 .rf-stack { display: grid; gap: 16px; align-content: start; }
+
+/* FIX DASHBOARD QUICK ACTIONS */
+.rf-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.rf-actions button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px 10px; border: 1px solid var(--merchant-border); border-radius: 11px; background: var(--merchant-surface); font-size: 13px; font-weight: 600; color: var(--merchant-ink); cursor: pointer; text-align: center; }
+.rf-actions button svg { width: 22px; height: 22px; color: var(--merchant-muted); }
+.rf-actions button:hover { background: var(--merchant-canvas); border-color: var(--merchant-accent); }
+.rf-actions button.first { background: var(--merchant-accent); border-color: var(--merchant-accent); color: #fff; }
+.rf-actions button.first svg { color: #fff; }
 
 .rf-btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 9px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid var(--merchant-border); background: var(--merchant-surface); color: var(--merchant-ink); }
 .rf-btn.p, html body .papa-reference-shell .btn.p { background: var(--merchant-accent) !important; border-color: var(--merchant-accent) !important; color: #fff !important; }
 
 /* TABLES */
 html body .papa-reference-shell .papa-table,
-html body .papa-reference-shell .wf-orders-table {
+html body .papa-reference-shell .wf-orders-table,
+html body .papa-reference-shell .rf-table {
   width: 100% !important;
   border-collapse: collapse !important;
   background: var(--merchant-surface) !important;
@@ -461,23 +533,25 @@ html body .papa-reference-shell .wf-orders-table {
 }
 html body .papa-reference-shell .papa-table th,
 html body .papa-reference-shell .wf-orders-table th,
-html body .papa-reference-shell .wf-premium-table th {
+html body .papa-reference-shell .wf-premium-table th,
+html body .papa-reference-shell .rf-table th {
   background: var(--merchant-canvas) !important;
   color: var(--merchant-muted) !important;
   border-bottom: 1px solid var(--merchant-border) !important;
   text-align: left !important;
+  padding: 12px 14px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
 }
 html body .papa-reference-shell .papa-table td,
 html body .papa-reference-shell .wf-orders-table td,
-html body .papa-reference-shell .wf-premium-table td {
+html body .papa-reference-shell .wf-premium-table td,
+html body .papa-reference-shell .rf-table td {
   background: var(--merchant-surface) !important;
   color: var(--merchant-ink) !important;
   border-bottom: 1px solid var(--merchant-border) !important;
-}
-html body .papa-reference-shell .wf-orders-table td strong { color: var(--merchant-ink) !important; }
-html body .papa-reference-shell .papa-table tr:hover td,
-html body .papa-reference-shell .wf-orders-table tbody tr:hover td {
-  background: var(--merchant-canvas) !important;
+  padding: 14px !important;
+  font-size: 14px !important;
 }
 
 /* INPUTS */
@@ -508,15 +582,8 @@ html body .papa-reference-shell .papa-filter:not(.active) { background: var(--me
 .papa-theme-option { display: grid; gap: 10px; text-align: center; padding: 10px; border: 2px solid var(--merchant-border); border-radius: 12px; background: var(--merchant-surface); color: var(--merchant-ink); cursor: pointer; }
 .papa-theme-option.selected { border-color: var(--merchant-accent); }
 
-/* RESTORE MISSING ANALYTICS BAR CHART CSS */
-html body .papa-reference-shell .papa-sales-bars { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; height: 190px; padding-top: 20px; margin: 10px 0 16px; border-bottom: 1px solid var(--merchant-border); }
-html body .papa-reference-shell .papa-sales-day { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; gap: 8px; }
-html body .papa-reference-shell .papa-sales-day .bar { background: var(--merchant-accent); width: 100%; max-width: 48px; border-radius: 5px 5px 0 0; min-height: 4px; transition: height 0.3s ease; }
-html body .papa-reference-shell .papa-sales-day small { font-size: 12px; color: var(--merchant-muted); font-weight: 500; }
-
-@media(max-width:1050px){html body .papa-reference-shell .wf-premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
-@media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-insights{grid-template-columns:1fr}}
+@media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-actions{grid-template-columns:1fr}}
 </style>
 <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 </head>
@@ -674,7 +741,6 @@ async function papaFetchOrders(){
 const papaStore=()=>sellerStores.find(x=>x.id===storeUuid)||{};
 const papaCateringEligible=st=>/^(restaurant|carinderia|bulaloan|specialty[_\s-]*restaurant)$/i.test(String(st.business_type||'').trim());
 const papaCateringOn=st=>papaCateringEligible(st)&&st.catering_enabled===true;
-const papaIcon={dashboard:'▦',profile:'▣',menu:'◫',inventory:'▤',cat:'▧',orders:'▤',reports:'▥',settings:'⚙'};
 function papaShell(content){
  const st=papaStore();
  const pending=papaLiveOrders.filter(o=>o.status==='pending').length;
@@ -689,44 +755,36 @@ function papaShell(content){
   +item('inventory','Inventory','list-checks')
   +(papaCateringOn(st)?item('cat','Catering Orders','chef-hat'):'')
   +item('reports','Analytics','chart-no-axes-column')
-  +'<div class="rf-divider"></div><div class="rf-section">Store Management</div>'
+  +'<div class="rf-divider" style="height:1px;background:var(--merchant-border);margin:10px 0"></div>'
+  +'<div class="rf-section" style="padding:0 12px;font-size:11px;font-weight:700;color:var(--merchant-muted);text-transform:uppercase;margin-bottom:8px">Store Management</div>'
   +item('settings','Store Settings','settings')
-  +item('appearance','Appearance & Theme','palette'); // <-- TANGGAL NA ANG "NEW"
- const logo=st.logo_url?`<img src="${esc(st.logo_url)}" alt="">`:`<span class="rf-logo-fallback">${esc(initials)}</span>`;
+  +item('appearance','Appearance','palette');
+ const logo=st.logo_url?`<img src="${esc(st.logo_url)}" alt="Logo">`:`<span class="rf-logo-fallback" style="width:42px;height:42px;background:var(--merchant-accent);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:700">${esc(initials)}</span>`;
  $('#root').innerHTML=`<div class="papa-shell papa-reference-shell"><aside class="papa-side" id="papa-sidebar">
   <div class="papa-brand-row"><img src="${LOGO.mark}" alt="Papalita" class="papa-brand-mark"><div><strong>Papalita</strong><small>Merchant Portal</small></div></div>
   <button class="rf-switch" data-papa-tab="profile">${logo}<span><b>${esc(st.name||'Your Store')}</b><small>${esc(st.business_type||'Food establishment')}</small></span><i class="rf-chev" data-lucide="chevron-down"></i></button>
-  ${sellerStores.length>1?`<select class="in" id="papa-storepick" style="margin-bottom:12px">${sellerStores.map(x=>`<option value="${esc(x.id)}" ${x.id===storeUuid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}
+  ${sellerStores.length>1?`<select class="in" id="papa-storepick" style="margin:12px 0;width:100%">${sellerStores.map(x=>`<option value="${esc(x.id)}" ${x.id===storeUuid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}
   <nav>${nav}</nav>
   <div class="rf-side-foot">
-   <div class="rf-store-toggle"><span class="rf-dot ${closed?'off':''}"></span><span><b>${closed?'Store Closed':'Store Open'}</b><small>${closed?'Not accepting orders':'Accepting orders'}</small></span><button class="rf-switch-ui ${closed?'off':''}" data-rf-toggle aria-label="Toggle store open/closed"></button></div>
-   <div class="rf-owner"><span class="rf-avatar">${esc(initials)}</span><span><b>Store Owner</b><small>${esc(papaUserEmail)}</small></span></div>
-   <button class="papa-nav" id="papa-logout"><i data-lucide="log-out"></i>Logout</button>
+   <div class="rf-store-toggle"><span class="rf-dot ${closed?'off':''}" style="width:10px;height:10px;border-radius:50%;background:${closed?'#ef4444':'#10b981'}"></span><span><b>${closed?'Store Closed':'Store Open'}</b><small>${closed?'Not accepting orders':'Accepting orders'}</small></span></div>
+   <div class="rf-owner"><span class="rf-avatar" style="width:36px;height:36px;background:var(--merchant-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${esc(initials)}</span><span style="display:flex;flex-direction:column;overflow:hidden"><b>Store Owner</b><small style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(papaUserEmail)}</small></span></div>
+   <button class="papa-nav" id="papa-logout" style="margin-top:10px;justify-content:center;background:#fee2e2;color:#b91c1c"><i data-lucide="log-out"></i>Logout</button>
   </div></aside>
  <div class="papa-work"><header class="papa-top">
-  <button class="papa-mobile-menu" id="papa-mobile-menu" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  <button class="papa-mobile-menu" id="papa-mobile-menu" aria-label="Toggle navigation" aria-expanded="false" style="display:none;background:none;border:0;font-size:24px;cursor:pointer">☰</button>
   <div class="rf-title"><h1>${title}</h1><p>${sub}</p></div>
-  <label class="rf-search"><i data-lucide="search"></i><input id="rf-global-search" placeholder="Search order, product, or customer..."><kbd>Ctrl K</kbd></label>
-  <button class="rf-icon-btn" data-papa-tab="orders" aria-label="Orders"><i data-lucide="bell"></i>${pending?'<span class="rf-red"></span>':''}</button>
-  <button class="rf-icon-btn" data-papa-tab="settings" aria-label="Help"><i data-lucide="circle-help"></i></button>
-  <button class="papa-notify-toggle" id="papa-sound-toggle" title="New order sound">🔔 <span class="papa-sound-label">${papaAudioEnabled?'On':'Off'}</span></button>
-  <span class="rf-top-avatar">${esc(initials)}</span></header>
+  <label class="rf-search"><i data-lucide="search"></i><input id="rf-global-search" placeholder="Search orders..."></label>
+  <button class="rf-icon-btn" data-papa-tab="orders" aria-label="Orders" style="background:transparent;border:0;cursor:pointer;position:relative"><i data-lucide="bell"></i>${pending?'<span style="position:absolute;top:0;right:0;width:10px;height:10px;background:#ef4444;border-radius:50%"></span>':''}</button>
+  <button class="papa-notify-toggle" id="papa-sound-toggle" style="background:transparent;border:1px solid var(--merchant-border);padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px">🔔 <span>${papaAudioEnabled?'On':'Off'}</span></button>
+  </header>
  <main class="papa-main"><div id="papa-content">${content}</div></main></div></div>`;
  $$('[data-papa-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.papaTab;draw();if(tab==='orders')void papaFetchOrders()});
  const mobile=$('#papa-mobile-menu');if(mobile)mobile.onclick=()=>{const open=$('#papa-sidebar').classList.toggle('papa-side-open');mobile.setAttribute('aria-expanded',String(open))};
  $('#papa-logout').onclick=async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;me=null;gate()};
- const sound=$('#papa-sound-toggle');if(sound)sound.onclick=()=>{papaAudioEnabled=!papaAudioEnabled;sound.innerHTML='🔔 <span class="papa-sound-label">'+(papaAudioEnabled?'On':'Off')+'</span>';if(papaAudioEnabled)papaBeep()};
+ const sound=$('#papa-sound-toggle');if(sound)sound.onclick=()=>{papaAudioEnabled=!papaAudioEnabled;sound.innerHTML='🔔 <span>'+(papaAudioEnabled?'On':'Off')+'</span>';if(papaAudioEnabled)papaBeep()};
  const pick=$('#papa-storepick');if(pick)pick.onchange=()=>selectStore(pick.value).catch(e=>toast(e.message));
- const tg=$('[data-rf-toggle]');if(tg)tg.onclick=async()=>{
-  const opening=papaStore().is_open===false;
-  if(!confirm(opening?'Reopen this store and accept new orders?':'Temporarily close your store? Use Store Settings to pick a reason.'))return;
-  if(!opening){tab='settings';return draw()}
-  tg.disabled=true;
-  try{const q=await db.rpc('papalita_set_store_availability',{p_store_id:storeUuid,p_open:true,p_reason:null});if(q.error)throw q.error;Object.assign(papaStore(),q.data);toast('Store reopened');draw()}
-  catch(e){toast('Availability update failed: '+e.message);tg.disabled=false}
- };
 }
-const papaKpi=(label,value,note)=>`<div class="papa-card papa-kpi"><small>${esc(label)}</small><strong>${esc(value)}</strong><span>${esc(note||'')}</span></div>`;
+const papaKpi=(label,value,note)=>`<div class="papa-card papa-kpi" style="padding:16px"><small style="color:var(--merchant-muted)">${esc(label)}</small><strong style="display:block;font-size:24px;margin:4px 0">${esc(value)}</strong><span style="font-size:12px;color:var(--merchant-muted)">${esc(note||'')}</span></div>`;
 async function papaFetchProducts(){const id=storeUuid;const q=await db.from('products').select('*').eq('store_id',id).order('created_at',{ascending:false});if(q.error)throw q.error;if(id===storeUuid)papaProducts=q.data||[];return papaProducts;}
 function papaDashboard(){
  const st=papaStore(),orders=papaOrdersStore===storeUuid?papaLiveOrders:[];
@@ -735,60 +793,39 @@ function papaDashboard(){
  const byDay=k=>orders.filter(o=>day(o.created_at)===k);
  const sales=a=>a.filter(o=>o.status==='completed').reduce((n,o)=>n+Number(o.total_amount||0),0);
  const t=byDay(today),y=byDay(yest);
- const pct=(a,b)=>b>0?Math.round((a-b)/b*100):(a>0?100:0);
- const delta=(a,b)=>{const d=pct(a,b);return `<em class="${d<0?'dn':''}">${d<0?'↓':'↑'} ${d>0?'+':''}${d}%</em> from yesterday`};
  const active=papaProducts.filter(p=>p.status==='active');
  const rating=st.rating!=null&&st.rating!==''&&Number.isFinite(Number(st.rating))?Number(st.rating).toFixed(1):null;
  const closed=st.is_open===false;
- const counts={all:orders.length};['pending','preparing','ready','out_for_delivery','completed','cancelled'].forEach(s=>counts[s]=orders.filter(o=>o.status===s).length);
- const chips=[['all','All'],['pending','New'],['preparing','Preparing'],['ready','Ready'],['out_for_delivery','On the Way'],['completed','Completed'],['cancelled','Cancelled']];
- const label=s=>String(s||'pending').replaceAll('_',' ');
- const days=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-(6-i));return {label:d.toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'Asia/Manila'}),sum:sales(byDay(day(d)))}});
- const max=Math.max(100,Math.ceil(Math.max(...days.map(d=>d.sum))/100)*100);
- const ticks=[1,.75,.5,.25,0].map(f=>peso(Math.round(max*f)));
  const top=new Map();orders.filter(o=>o.status==='completed').forEach(o=>(o.items||[]).forEach(i=>{const k=i.product_name||'Product',v=top.get(k)||{q:0,a:0};v.q+=Number(i.quantity)||0;v.a+=Number(i.line_total)||0;top.set(k,v)}));
  const topList=[...top.entries()].sort((a,b)=>b[1].q-a[1].q).slice(0,3);
- const img=n=>papaProducts.find(p=>p.name===n)?.image_url;
- const cover=st.cover_url?` has-img" style="--cover:url('${encodeURI(st.cover_url).replace(/'/g,'%27')}')`:'';
  const icon=(n)=>`<i data-lucide="${n}"></i>`;
  return `<div class="rf-kpis">
-  <div class="rf-kpi g"><span class="rf-kpi-ico">${icon('shopping-cart')}</span><div><span>Today's Orders</span><strong>${t.length}</strong><small>${delta(t.length,y.length)}</small></div></div>
-  <div class="rf-kpi b"><span class="rf-kpi-ico">${icon('wallet')}</span><div><span>Today's Sales</span><strong>${peso(sales(t))}</strong><small>${delta(sales(t),sales(y))}</small></div></div>
-  <div class="rf-kpi p"><span class="rf-kpi-ico">${icon('package')}</span><div><span>Total Products</span><strong>${papaProducts.length}</strong><small>${active.length} active products</small></div></div>
-  <div class="rf-kpi o"><span class="rf-kpi-ico">${icon('star')}</span><div><span>Average Rating</span><strong>${rating||'—'}</strong><small>${rating?'Store rating':'No reviews yet'}</small></div></div>
+  <div class="rf-kpi g"><span class="rf-kpi-ico">${icon('shopping-cart')}</span><div><span>Today's Orders</span><strong>${t.length}</strong></div></div>
+  <div class="rf-kpi b"><span class="rf-kpi-ico">${icon('wallet')}</span><div><span>Today's Sales</span><strong>${peso(sales(t))}</strong></div></div>
+  <div class="rf-kpi p"><span class="rf-kpi-ico">${icon('package')}</span><div><span>Total Products</span><strong>${papaProducts.length}</strong></div></div>
+  <div class="rf-kpi o"><span class="rf-kpi-ico">${icon('star')}</span><div><span>Average Rating</span><strong>${rating||'—'}</strong></div></div>
  </div>
  <div class="rf-row">
-  <section class="rf-card rf-banner${cover}"><h2>Welcome back! 👋<br>${esc(st.name||'Merchant')}</h2><p>Your store is <b>${closed?'Closed':'Open'}</b> ${closed?'and not accepting orders.':'and accepting orders.'}</p><div><button class="rf-btn p" data-jump="orders">View Orders</button> <button class="rf-btn" data-jump="menu">Manage Products</button></div></section>
-  <section class="rf-card rf-status-card"><span class="rf-status-ico">${icon('store')}</span><div><h2 style="font-size:16px">Store Status</h2><span class="rf-pill-open ${closed?'off':''}"><span class="rf-dot ${closed?'off':''}"></span>${closed?'Closed':'Open'}</span><p class="rf-mute" style="margin:0;font-size:13px;color:#68786e">${closed?'Your store is hidden from new orders.':'Your store is visible to customers.'}</p></div><button class="rf-switch-ui ${closed?'off':''}" data-rf-toggle aria-label="Toggle store"></button></section>
+  <section class="rf-card"><h2>Welcome back! 👋<br>${esc(st.name||'Merchant')}</h2><p>Your store is <b>${closed?'Closed':'Open'}</b> ${closed?'and not accepting orders.':'and accepting orders.'}</p><div style="margin-top:20px;display:flex;gap:10px"><button class="rf-btn p" data-jump="orders">View Orders</button> <button class="rf-btn" data-jump="menu">Manage Products</button></div></section>
+  <section class="rf-card"><div style="display:flex;align-items:center;gap:12px"><span style="width:48px;height:48px;background:#e3f4e9;color:#087f32;display:flex;align-items:center;justify-content:center;border-radius:12px">${icon('store')}</span><div><h2 style="margin:0;font-size:16px">Store Status</h2><p style="margin:4px 0 0;font-size:13px;color:var(--merchant-muted)">${closed?'Store is hidden from new orders.':'Store is visible to customers.'}</p></div></div></section>
  </div>
  <div class="rf-row">
-  <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>${icon('file-text')} Recent Orders</h2><button class="rf-link" data-jump="orders">View All Orders →</button></div>
-   <div class="rf-chips">${chips.map(([k,l])=>`<button class="rf-chip ${k==='all'?'on':''}" data-rf-filter="${k}">${l} (${counts[k]||0})</button>`).join('')}</div>
-   <div class="rf-table-wrap"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead><tbody>${orders.slice(0,5).map(o=>`<tr><td><b>#${esc(String(o.id).slice(0,8))}</b></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td>${(o.items||[]).reduce((n,i)=>n+(Number(i.quantity)||0),0)} item(s)</td><td><b>${peso(o.total_amount)}</b></td><td><span class="rf-pill ${esc(o.status||'pending')}">${esc(label(o.status))}</span></td><td>${esc(new Date(o.created_at).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}))}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:#68786e">No orders yet</td></tr>'}</tbody></table></div></section>
+  <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2>${icon('file-text')} Recent Orders</h2><button class="rf-btn" data-jump="orders" style="padding:6px 12px">View All</button></div>
+   <div style="overflow-x:auto"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead><tbody>${orders.slice(0,5).map(o=>`<tr><td><b>#${esc(String(o.id).slice(0,8))}</b></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td>${(o.items||[]).reduce((n,i)=>n+(Number(i.quantity)||0),0)} item(s)</td><td><b>${peso(o.total_amount)}</b></td><td><span style="padding:4px 8px;border-radius:4px;font-size:12px;background:var(--merchant-canvas);font-weight:600">${esc(String(o.status).replace('_',' '))}</span></td><td>${esc(new Date(o.created_at).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}))}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--merchant-muted)">No orders yet</td></tr>'}</tbody></table></div></section>
   <div class="rf-stack">
    <section class="rf-card"><h2>${icon('zap')} Quick Actions</h2><div class="rf-actions"><button class="first" data-jump="menu">${icon('circle-plus')}Add Product</button><button data-jump="menu">${icon('utensils')}Manage Menu</button><button data-jump="settings">${icon('settings')}Store Settings</button><button data-jump="appearance">${icon('palette')}Appearance</button></div></section>
-   <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:16px">${icon('trending-up')} Top Products <span style="font-weight:500;font-size:13px;color:#68786e">(Completed)</span></h2><button class="rf-link" data-jump="reports">View Report →</button></div>
-    ${topList.length?topList.map(([n,v])=>`<div class="rf-top-item">${img(n)?`<img src="${esc(img(n))}" alt="">`:`<span class="rf-ph">${icon('coffee')}</span>`}<b>${esc(n)}</b><span>${v.q} orders</span><strong>${peso(v.a)}</strong></div>`).join(''):'<p style="color:#68786e;font-size:13px">No completed sales yet.</p>'}</section>
+   <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2>${icon('trending-up')} Top Products</h2></div>
+    ${topList.length?topList.map(([n,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--merchant-border)"><div><b style="display:block;font-size:14px">${esc(n)}</b><span style="font-size:12px;color:var(--merchant-muted)">${v.q} orders</span></div><strong>${peso(v.a)}</strong></div>`).join(''):'<p style="color:var(--merchant-muted);font-size:13px">No completed sales yet.</p>'}</section>
   </div>
- </div>
- <div class="rf-row">
-  <section class="rf-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><h2>${icon('chart-no-axes-column')} Sales Overview</h2><p style="margin:4px 0 0;font-size:13px;color:#68786e">Daily sales for the last 7 days</p></div><button class="rf-chip" data-jump="reports">Last 7 Days ⌄</button></div>
-   <div class="rf-chart"><div class="rf-y">${ticks.map(x=>`<span>${x}</span>`).join('')}</div><div class="rf-bars">${days.map((d,i)=>`<div class="rf-bar ${i===6?'today':''}" title="${esc(d.label)}: ${peso(d.sum)}" style="height:${Math.max(3,Math.round(d.sum/max*100))}%"></div>`).join('')}</div><div class="rf-x">${days.map(d=>`<span>${esc(d.label)}</span>`).join('')}</div></div></section>
-  <section class="rf-card"><h2>${icon('info')} Store Insights</h2><div class="rf-insights">
-   <div class="rf-insight"><i style="background:#e3f4e9;color:#0a8a43">${icon('shopping-cart')}</i><div><strong>${peso(sales(t))}</strong><small>Today's Revenue</small></div></div>
-   <div class="rf-insight"><i style="background:#dcebfa;color:#1f7bd0">${icon('package')}</i><div><strong>${t.length}</strong><small>Today's Orders</small></div></div>
-   <div class="rf-insight"><i style="background:#e3f4e9;color:#0a8a43">${icon('users')}</i><div><strong>${papaProducts.length}</strong><small>Total Products</small></div></div>
-   <div class="rf-insight"><i style="background:#fdeccb;color:#e8870c">${icon('star')}</i><div><strong>${rating||'—'}</strong><small>Average Rating</small></div></div>
-  </div></section>
  </div>`;
 }
-function papaProfile(){const st=papaStore();return `<div class="papa-heading"><div><h1>Store Profile</h1><p>Edit your approved food establishment details.</p></div></div><form id="papa-profile-form" class="papa-card papa-form"><div class="papa-cover" style="${st.cover_url?`background-image:url('${encodeURI(st.cover_url).replace(/'/g,'%27')}')`:''}"><span>Store cover photo</span></div><div class="papa-fields"><div class="field"><label>Store logo / profile photo</label><input class="in" type="file" id="papa-logo-file" accept="image/png,image/jpeg,image/webp"><small>JPEG, PNG or WebP · max 5 MB</small></div><div class="field"><label>Cover photo</label><input class="in" type="file" id="papa-cover-file" accept="image/png,image/jpeg,image/webp"><small>JPEG, PNG or WebP · max 5 MB</small></div><div class="field"><label>Store name</label><input class="in" id="papa-name" maxlength="120" required value="${esc(st.name||'')}"></div><div class="field"><label>Food business type</label><select class="in" id="papa-type">${PAPA_TYPES.map(t=>`<option ${st.business_type===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div class="field papa-full"><label>Description</label><textarea class="in" id="papa-description" rows="3">${esc(st.description||'')}</textarea></div><div class="field papa-full"><label>Complete address</label><textarea class="in" id="papa-address" rows="2" required>${esc(st.address||'')}</textarea></div><div class="field"><label>Contact number</label><input class="in" id="papa-phone" type="tel" value="${esc(st.phone||'')}"></div><div class="field papa-full" id="papa-catering-setting" ${papaCateringEligible(st)?'':'hidden'}><label><input type="checkbox" id="papa-catering-enabled" ${papaCateringOn(st)?'checked':''}> Offer catering services (optional for restaurants)</label><small>Cafés and beverage shops cannot enable catering.</small></div><div class="field"><label>Open time</label><input class="in" id="papa-open" type="time" value="${esc(st.open_time||'08:00')}"></div><div class="field"><label>Close time</label><input class="in" id="papa-close" type="time" value="${esc(st.close_time||'21:00')}"></div></div><p id="papa-profile-error" class="err"></p><button class="btn p" type="submit" id="papa-save-profile">Save store information</button></form>`;}
-function papaInventory(){const low=papaProducts.filter(p=>Number(p.stock)<=Number(p.low_stock_threshold??5));return `<div class="papa-heading"><div><h1>Inventory</h1><p>${low.length} product(s) at or below their stock warning threshold.</p></div><button class="btn s" id="papa-refresh">↻ Refresh</button></div><div class="papa-card papa-table-wrap"><table class="papa-table"><thead><tr><th>Product</th><th>Current stock</th><th>Low-stock alert</th><th>Status</th><th>Action</th></tr></thead><tbody>${papaProducts.map(p=>`<tr data-inv-id="${esc(p.id)}"><td><b>${esc(p.name)}</b></td><td><input class="in" type="number" min="0" step="1" data-stock value="${Number(p.stock)||0}"></td><td><input class="in" type="number" min="0" step="1" data-threshold value="${Number(p.low_stock_threshold??5)}"></td><td>${Number(p.stock)===0?'<span class="papa-danger">Sold out</span>':Number(p.stock)<=Number(p.low_stock_threshold??5)?'<span class="papa-warn">Low stock</span>':'<span class="papa-good">In stock</span>'}</td><td><button class="btn p sm" data-save-stock>Update</button></td></tr>`).join('')||'<tr><td colspan="5">No products yet. Add your first product.</td></tr>'}</tbody></table></div>`;}
+function papaProfile(){const st=papaStore();return `<div class="papa-heading"><div><h1>Store Profile</h1><p>Edit your approved food establishment details.</p></div></div><form id="papa-profile-form" class="papa-card papa-form" style="padding:24px"><div class="papa-fields" style="display:grid;gap:16px"><div class="field"><label>Store logo / profile photo</label><input class="in" type="file" id="papa-logo-file" accept="image/png,image/jpeg,image/webp"></div><div class="field"><label>Store name</label><input class="in" id="papa-name" maxlength="120" required value="${esc(st.name||'')}"></div><div class="field"><label>Food business type</label><select class="in" id="papa-type">${PAPA_TYPES.map(t=>`<option ${st.business_type===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div><div class="field papa-full" style="grid-column:1/-1"><label>Description</label><textarea class="in" id="papa-description" rows="3">${esc(st.description||'')}</textarea></div><div class="field papa-full" style="grid-column:1/-1"><label>Complete address</label><textarea class="in" id="papa-address" rows="2" required>${esc(st.address||'')}</textarea></div><div class="field"><label>Contact number</label><input class="in" id="papa-phone" type="tel" value="${esc(st.phone||'')}"></div><div class="field papa-full" id="papa-catering-setting" style="grid-column:1/-1" ${papaCateringEligible(st)?'':'hidden'}><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="papa-catering-enabled" ${papaCateringOn(st)?'checked':''}> Offer catering services (optional)</label></div><div class="field"><label>Open time</label><input class="in" id="papa-open" type="time" value="${esc(st.open_time||'08:00')}"></div><div class="field"><label>Close time</label><input class="in" id="papa-close" type="time" value="${esc(st.close_time||'21:00')}"></div></div><p id="papa-profile-error" class="err"></p><button class="btn p" type="submit" id="papa-save-profile" style="margin-top:20px">Save store information</button></form>`;}
+function papaInventory(){const low=papaProducts.filter(p=>Number(p.stock)<=Number(p.low_stock_threshold??5));return `<div class="papa-heading"><div><h1>Inventory</h1><p>${low.length} product(s) at or below their stock warning threshold.</p></div><button class="btn s" id="papa-refresh">↻ Refresh</button></div><div class="papa-card" style="overflow-x:auto"><table class="rf-table"><thead><tr><th>Product</th><th>Current stock</th><th>Low-stock alert</th><th>Status</th><th>Action</th></tr></thead><tbody>${papaProducts.map(p=>`<tr data-inv-id="${esc(p.id)}"><td><b>${esc(p.name)}</b></td><td><input class="in" type="number" min="0" step="1" data-stock value="${Number(p.stock)||0}" style="width:80px;height:36px;min-height:36px"></td><td><input class="in" type="number" min="0" step="1" data-threshold value="${Number(p.low_stock_threshold??5)}" style="width:80px;height:36px;min-height:36px"></td><td>${Number(p.stock)===0?'<span style="color:#ef4444;font-weight:600">Sold out</span>':Number(p.stock)<=Number(p.low_stock_threshold??5)?'<span style="color:#f59e0b;font-weight:600">Low stock</span>':'<span style="color:#10b981;font-weight:600">In stock</span>'}</td><td><button class="btn p sm" data-save-stock>Update</button></td></tr>`).join('')||'<tr><td colspan="5">No products yet.</td></tr>'}</tbody></table></div>`;}
 function papaOrderActions(o){
  const status=String(o.status||'pending');
  const actions={pending:[['confirmed','✓ Accept Order'],['cancelled','✕ Reject Order']],confirmed:[['preparing','Start Preparing'],['cancelled','Cancel Order']],preparing:[['ready','Mark Ready'],['cancelled','Cancel Order']],ready:[['out_for_delivery','Hand to Rider'],['completed','Complete Pickup']],out_for_delivery:[['completed','Mark Completed']]};
  const available=actions[status]||[];
- return available.length?`<div class="row wrap" style="width:100%;gap:9px">${available.filter(([next])=>next!=='completed'||status!=='ready'||o.fulfillment_type==='pickup').filter(([next])=>next!=='out_for_delivery'||o.fulfillment_type!=='pickup').map(([next,label])=>`<button type="button" class="btn ${next==='cancelled'?'d':'p'} sm" data-papa-order-id="${esc(o.id)}" data-papa-next-status="${next}">${label}</button>`).join('')}</div>`:'';
+ return available.length?`<div style="display:flex;gap:10px;margin-top:16px">${available.filter(([next])=>next!=='completed'||status!=='ready'||o.fulfillment_type==='pickup').filter(([next])=>next!=='out_for_delivery'||o.fulfillment_type!=='pickup').map(([next,label])=>`<button type="button" class="btn ${next==='cancelled'?'d':'p'}" data-papa-order-id="${esc(o.id)}" data-papa-next-status="${next}">${label}</button>`).join('')}</div>`:'';
 }
 async function papaChangeOrderStatus(orderId,nextStatus,button){
  const order=papaLiveOrders.find(x=>String(x.id)===String(orderId));
@@ -804,97 +841,90 @@ async function papaChangeOrderStatus(orderId,nextStatus,button){
   await papaFetchOrders();
  }catch(e){console.error('[Papalita] Order status update failed',e);toast('Could not update order: '+e.message);if(button)button.disabled=false;}
 }
-function papaOrderDrawerMarkup(){return `<div class="wf-drawer-overlay" id="wf-order-overlay" hidden><div class="wf-drawer-backdrop" data-wf-close></div><aside class="wf-drawer" role="dialog" aria-modal="true" aria-label="Order details"><header class="wf-drawer-head"><div><strong id="wf-drawer-title">Order details</strong><div id="wf-drawer-state"></div></div><button type="button" class="wf-close" data-wf-close aria-label="Close">×</button></header><div id="wf-drawer-content" class="wf-drawer-content"></div><footer id="wf-drawer-actions" class="wf-drawer-footer"></footer></aside></div>`}
 function papaOrders(){
  const counts={all:papaLiveOrders.length,pending:0,confirmed:0,preparing:0,ready:0,out_for_delivery:0,completed:0,cancelled:0};
  for(const o of papaLiveOrders){if(Object.hasOwn(counts,String(o.status)))counts[o.status]++}
- const filters=[['all','All orders'],['pending','New'],['confirmed','Confirmed'],['preparing','Preparing'],['ready','Ready for pickup'],['out_for_delivery','On the way'],['completed','Completed'],['cancelled','Cancelled']];
- const head=`<div class="papa-heading wf-orders-heading"><div><h1>Orders</h1><p>Manage live incoming customer orders and fulfillment.</p></div><div class="wf-order-tools"><label class="wf-order-search"><span>⌕</span><input id="wf-order-search" type="search" placeholder="Search order ID or customer..." value="${esc(papaOrderSearch)}"></label><button class="btn s" id="papa-orders-refresh">↻ Refresh</button></div></div>`;
- if(papaOrdersLoading&&papaOrdersStore!==storeUuid)return head+'<div class="papa-card">Loading orders from Supabase...</div>';
- if(papaOrdersError)return head+`<div class="papa-card"><h2>Unable to load orders</h2><p class="papa-danger">${esc(papaOrdersError)}</p></div>`;
- if(papaOrdersStore!==storeUuid)return head+'<div class="papa-card">Loading your orders...</div>';
+ const filters=[['all','All'],['pending','New'],['confirmed','Confirmed'],['preparing','Preparing'],['ready','Ready'],['out_for_delivery','On the way'],['completed','Completed'],['cancelled','Cancelled']];
+ const head=`<div class="papa-heading"><div><h1>Orders</h1><p>Manage live incoming customer orders and fulfillment.</p></div><div class="wf-order-tools"><label class="wf-order-search" style="height:40px"><span>⌕</span><input id="wf-order-search" type="search" placeholder="Search order ID or customer..." value="${esc(papaOrderSearch)}"></label><button class="btn s" id="papa-orders-refresh" style="height:40px">↻ Refresh</button></div></div>`;
+ if(papaOrdersLoading&&papaOrdersStore!==storeUuid)return head+'<div class="papa-card" style="padding:24px">Loading orders from Supabase...</div>';
+ if(papaOrdersError)return head+`<div class="papa-card" style="padding:24px"><h2>Unable to load orders</h2><p style="color:#ef4444">${esc(papaOrdersError)}</p></div>`;
+ if(papaOrdersStore!==storeUuid)return head+'<div class="papa-card" style="padding:24px">Loading your orders...</div>';
  const visible=papaLiveOrders.filter(o=>(papaOrderFilter==='all'||o.status===papaOrderFilter)&&(!papaOrderSearch||[o.id,o.customer_name,o.contact_number,o.delivery_address].some(v=>String(v||'').toLowerCase().includes(papaOrderSearch.toLowerCase()))));
- const toolbar=`<div class="papa-order-toolbar wf-order-filters">${filters.map(([key,label])=>`<button class="papa-filter ${papaOrderFilter===key?'active':''}" data-papa-filter="${key}">${label}${counts[key]?` <span class="wf-filter-count">${counts[key]}</span>`:''}</button>`).join('')}</div>`;
- const rows=visible.map(o=>{const status=String(o.status||'pending');const items=(o.items||[]).map(i=>`${Number(i.quantity)||0}× ${i.product_name||'Product'}`).join(', ');const when=o.created_at?new Date(o.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila',hour:'numeric',minute:'2-digit'}):'—';return `<tr data-wf-order="${esc(String(o.id))}" tabindex="0" aria-label="View order ${esc(String(o.id).slice(0,8))}"><td><strong>#${esc(String(o.id).slice(0,8))}</strong></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td class="wf-items-cell" title="${esc(items)}">${esc(items||'No items listed')}</td><td><strong>${peso(o.total_amount)}</strong></td><td>${esc(when)}</td><td><span class="wf-status wf-status-${esc(status)}">${esc(status.replaceAll('_',' '))}</span></td><td class="wf-table-action"><button class="wf-view-order" data-wf-order-button="${esc(String(o.id))}">View details →</button></td></tr>`}).join('');
- return head+toolbar+`<section class="papa-card wf-orders-table-card"><div class="wf-table-scroll"><table class="wf-orders-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items summary</th><th>Total (₱)</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="wf-empty-orders">No matching orders found.</td></tr>'}</tbody></table></div></section>`+papaOrderDrawerMarkup();
+ const toolbar=`<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:8px">${filters.map(([key,label])=>`<button class="btn s sm ${papaOrderFilter===key?'p':''}" style="${papaOrderFilter!==key?'background:var(--merchant-surface)':''}" data-papa-filter="${key}">${label}${counts[key]?` (${counts[key]})`:''}</button>`).join('')}</div>`;
+ const rows=visible.map(o=>{const status=String(o.status||'pending');const items=(o.items||[]).map(i=>`${Number(i.quantity)||0}× ${i.product_name||'Product'}`).join(', ');const when=o.created_at?new Date(o.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila',hour:'numeric',minute:'2-digit'}):'—';return `<tr data-wf-order="${esc(String(o.id))}"><td><strong>#${esc(String(o.id).slice(0,8))}</strong></td><td>${esc(o.customer_name||o.contact_name||'Customer')}</td><td title="${esc(items)}">${esc(items||'No items listed')}</td><td><strong>${peso(o.total_amount)}</strong></td><td>${esc(when)}</td><td><span style="padding:4px 8px;border-radius:4px;font-size:12px;background:var(--merchant-canvas);font-weight:600">${esc(status.replaceAll('_',' '))}</span></td><td><button class="btn s sm" data-wf-order-button="${esc(String(o.id))}">Manage</button></td></tr>`}).join('');
+ return head+toolbar+`<section class="papa-card" style="overflow-x:auto"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--merchant-muted)">No matching orders found.</td></tr>'}</tbody></table></section>`+`<dialog id="papa-order-dialog" class="merchant-dialog" style="padding:0;max-width:500px"><div id="papa-order-dialog-content"></div></dialog>`;
 }
 let papaOrderSearch='';
-function papaOpenOrderDrawer(id){const o=papaLiveOrders.find(x=>String(x.id)===String(id));if(!o)return;const overlay=$('#wf-order-overlay');if(!overlay)return;
- const status=String(o.status||'pending');$('#wf-drawer-title').textContent='Order #'+String(o.id).slice(0,8);$('#wf-drawer-state').innerHTML=`<span class="wf-status wf-status-${esc(status)}">${esc(status.replaceAll('_',' '))}</span>`;
- const items=(o.items||[]).map(i=>`<div class="wf-drawer-item"><div><b>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</b>${i.selected_options&&Object.keys(i.selected_options).length?`<small>${esc(JSON.stringify(i.selected_options))}</small>`:''}${i.special_instructions?`<small>Note: ${esc(i.special_instructions)}</small>`:''}</div><b>${peso(i.line_total)}</b></div>`).join('');
- $('#wf-drawer-content').innerHTML=`<section class="wf-detail-box"><h3>Customer information</h3><div class="wf-detail-line"><span>Name</span><b>${esc(o.customer_name||o.contact_name||'Not provided')}</b></div><div class="wf-detail-line"><span>Contact</span><b>${esc(o.contact_number||'Not provided')}</b></div><div class="wf-detail-line"><span>Delivery address</span><b>${esc(o.delivery_address||'Not provided')}</b></div></section><section class="wf-detail-section"><h3>Order items</h3><div class="wf-item-list">${items||'<p>No items listed</p>'}</div></section><section class="wf-detail-box"><h3>Payment & fulfillment</h3><div class="wf-detail-line"><span>Method</span><b>${esc(o.payment_method||'Not specified')}</b></div><div class="wf-detail-line"><span>Payment status</span><b>${esc(o.payment_status||'Not specified')}</b></div><div class="wf-detail-line"><span>Fulfillment</span><b>${esc(o.fulfillment_type||'Delivery')}</b></div><div class="wf-detail-line wf-grand-total"><span>Total</span><b>${peso(o.total_amount)}</b></div></section>`;
- $('#wf-drawer-actions').innerHTML=papaOrderActions(o)||'<button type="button" class="btn s" data-wf-close>Close</button>';overlay.hidden=false;document.body.classList.add('wf-drawer-open');overlay.querySelector('.wf-close').focus();
- overlay.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=papaCloseOrderDrawer);
- overlay.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{await papaChangeOrderStatus(b.dataset.papaOrderId,b.dataset.papaNextStatus,b);papaCloseOrderDrawer()});
+function papaOpenOrderDrawer(id){
+ const o=papaLiveOrders.find(x=>String(x.id)===String(id));if(!o)return;
+ const dlg=document.getElementById('papa-order-dialog');if(!dlg)return;
+ const status=String(o.status||'pending');
+ const items=(o.items||[]).map(i=>`<div style="display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--merchant-border)"><div><b>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</b>${i.selected_options&&Object.keys(i.selected_options).length?`<br><small style="color:var(--merchant-muted)">${esc(JSON.stringify(i.selected_options))}</small>`:''}${i.special_instructions?`<br><small style="color:var(--merchant-muted)">Note: ${esc(i.special_instructions)}</small>`:''}</div><b>${peso(i.line_total)}</b></div>`).join('');
+ document.getElementById('papa-order-dialog-content').innerHTML=`
+ <div style="padding:20px;background:var(--merchant-canvas);border-bottom:1px solid var(--merchant-border);display:flex;justify-content:space-between;align-items:center"><div><h2 style="margin:0;font-size:18px">Order #${String(o.id).slice(0,8)}</h2><span style="font-size:13px;font-weight:600;color:var(--merchant-accent)">${status.toUpperCase()}</span></div><button type="button" class="btn s sm" data-wf-close>✕</button></div>
+ <div style="padding:20px;max-height:60vh;overflow-y:auto">
+  <div style="margin-bottom:20px;padding:16px;background:var(--merchant-canvas);border-radius:12px"><h3 style="margin:0 0 10px;font-size:14px">Customer Details</h3><div style="font-size:14px;display:grid;gap:6px"><div><span style="color:var(--merchant-muted)">Name:</span> <b>${esc(o.customer_name||o.contact_name||'Not provided')}</b></div><div><span style="color:var(--merchant-muted)">Contact:</span> <b>${esc(o.contact_number||'Not provided')}</b></div><div><span style="color:var(--merchant-muted)">Address:</span> <b>${esc(o.delivery_address||'Not provided')}</b></div></div></div>
+  <div style="margin-bottom:20px"><h3 style="margin:0 0 10px;font-size:14px">Order Items</h3>${items||'<p>No items</p>'}</div>
+  <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;padding-top:16px;border-top:1px solid var(--merchant-border)"><span>Total</span><span>${peso(o.total_amount)}</span></div>
+  <div style="font-size:13px;color:var(--merchant-muted);margin-top:8px">${esc(o.payment_method||'Cash')} · ${esc(o.fulfillment_type||'Delivery')}</div>
+ </div>
+ <div style="padding:20px;border-top:1px solid var(--merchant-border);background:var(--merchant-surface)">${papaOrderActions(o)||'<button type="button" class="btn s blk" data-wf-close>Close</button>'}</div>`;
+ dlg.showModal();
+ dlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>dlg.close());
+ dlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{await papaChangeOrderStatus(b.dataset.papaOrderId,b.dataset.papaNextStatus,b);dlg.close()});
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')papaCloseOrderDrawer()});
-function papaCloseOrderDrawer(){const x=$('#wf-order-overlay');if(x)x.hidden=true;document.body.classList.remove('wf-drawer-open')}
 function papaReports(){
  const rows=papaOrdersStore===storeUuid?papaLiveOrders:[];
  const completed=rows.filter(o=>o.status==='completed'&&Number.isFinite(Number(o.total_amount)));
- const now=new Date(),today=now.toDateString(),weekStart=new Date(now);weekStart.setDate(now.getDate()-((now.getDay()+6)%7));weekStart.setHours(0,0,0,0);
  const total=a=>a.reduce((n,o)=>n+Number(o.total_amount||0),0);
- const daily=completed.filter(o=>new Date(o.created_at).toDateString()===today);
- const weekly=completed.filter(o=>new Date(o.created_at)>=weekStart);
- const monthly=completed.filter(o=>{const d=new Date(o.created_at);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
- const days=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(now.getDate()-(6-i));const amount=total(completed.filter(o=>new Date(o.created_at).toDateString()===d.toDateString()));return {label:d.toLocaleDateString('en-PH',{weekday:'short'}),amount}});
- const max=Math.max(1,...days.map(x=>x.amount));
  const products=new Map();for(const o of completed)for(const item of o.items||[]){const key=String(item.product_name||'Product');products.set(key,(products.get(key)||0)+Number(item.quantity||0))}
  const top=[...products.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
  return `<div class="papa-heading"><div><h1>Sales & Reports 📈</h1><p>Real completed orders · ${esc(papaStore().name||'Your store')}</p></div><button class="btn s" id="papa-refresh">↻ Refresh</button></div>
- <div class="papa-kpis">${papaKpi('Sales today',peso(total(daily)),'Completed orders')}${papaKpi('This week',peso(total(weekly)),'Since Monday')}${papaKpi('This month',peso(total(monthly)),'Current calendar month')}${papaKpi('Completed orders',String(completed.length),'In loaded order history')}</div>
- <div class="papa-columns"><section class="papa-card"><h2>📊 Sales performance</h2><p class="papa-muted">Last 7 days · completed orders</p><div class="papa-sales-bars">${days.map(x=>`<div class="papa-sales-day" title="${esc(x.label)}: ${esc(peso(x.amount))}"><div class="bar" style="height:${Math.max(3,Math.round(x.amount/max*170))}px"></div><small>${esc(x.label)}</small></div>`).join('')}</div><p class="papa-sales-note">Sales use completed orders only. Values are based on the most recent loaded orders (up to 100), not a full accounting ledger.</p></section><section class="papa-card"><h2>🏆 Top-selling products</h2><p class="papa-muted">By quantity in completed orders</p><div class="papa-sales-list">${top.length?top.map(([name,qty],i)=>`<div class="papa-sales-item"><span>${i+1}. ${esc(name)}</span><strong>${qty} sold</strong></div>`).join(''):'<p class="papa-muted">No completed product sales in loaded orders yet.</p>'}</div></section></div>`;
+ <div class="rf-kpis">${papaKpi('Total Sales',peso(total(completed)),'From loaded orders')}${papaKpi('Completed Orders',String(completed.length),'All time')}</div>
+ <section class="papa-card" style="padding:24px"><h2>🏆 Top-selling products</h2><p style="color:var(--merchant-muted);margin-bottom:16px">By quantity in completed orders</p><div style="display:grid;gap:12px">${top.length?top.map(([name,qty],i)=>`<div style="display:flex;justify-content:space-between;padding:12px;background:var(--merchant-canvas);border-radius:8px"><span><b>${i+1}. ${esc(name)}</b></span><strong>${qty} sold</strong></div>`).join(''):'<p style="color:var(--merchant-muted)">No completed product sales in loaded orders yet.</p>'}</div></section>`;
 }
 function papaAvailabilityCard(){
  const st=papaStore(),closed=st.is_open===false;
  const options=['Emergency','Power interruption','Out of stock','Staff unavailable','Others'];
  const current=st.closure_reason||'Emergency';const selected=options.includes(current)?current:'Others';
- return `<section class="papa-card papa-availability"><div class="papa-availability-title"><span class="papa-store-icon">▣</span><div><h2>Store status</h2><p class="papa-muted">Manage availability for new orders.</p></div></div><div class="papa-availability-body"><div class="papa-current-state"><span class="papa-field-title">Current status</span><strong class="papa-state ${closed?'is-closed':'is-open'}">● ${closed?'Temporarily closed':'Open'}</strong><p class="papa-muted">${closed?'Store marked unavailable':'Store is accepting orders'}</p>${closed?`<p class="papa-muted">${esc(st.closure_reason||'')} · ${st.temporarily_closed_at?esc(new Date(st.temporarily_closed_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'})):''}</p>`:''}</div><div class="papa-closure-controls"><h3>${closed?'Reopen your store':'Emergency close store'}</h3><p class="papa-muted">${closed?'Resume accepting new orders.':'Temporarily stop accepting new orders.'}</p><div class="papa-close-row"><div class="papa-close-input"><label for="papa-closure-reason">Closure reason</label><select class="in" id="papa-closure-reason" ${closed?'disabled':''}>${options.map(x=>`<option value="${esc(x)}" ${selected===x?'selected':''}>${esc(x)}</option>`).join('')}</select><div id="papa-closure-other-wrap" ${selected==='Others'&&!closed?'':'hidden'}><label for="papa-closure-other">Specify reason</label><textarea class="in" id="papa-closure-other" maxlength="200" placeholder="Enter closure reason…">${selected==='Others'?esc(options.includes(current)?'':current):''}</textarea></div></div><button class="btn ${closed?'p':'d'}" id="papa-emergency-toggle">${closed?'Reopen store':'Close store'}</button></div><p class="papa-muted papa-closure-note">Existing orders are not automatically cancelled. Customer checkout protection must be enabled separately.</p></div></div></section>`;
+ return `<section class="papa-card" style="padding:24px;margin-bottom:24px"><div style="display:flex;align-items:flex-start;gap:16px"><div style="flex:1"><h2 style="margin:0 0 4px">Store Availability</h2><p style="margin:0;color:var(--merchant-muted)">Manage if customers can place new orders.</p><div style="margin-top:16px;padding:16px;background:var(--merchant-canvas);border-radius:12px;border:1px solid var(--merchant-border)">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="width:12px;height:12px;border-radius:50%;background:${closed?'#ef4444':'#10b981'}"></span><strong style="font-size:16px">${closed?'Temporarily Closed':'Store is Open'}</strong></div>
+  <p style="margin:0;color:var(--merchant-muted);font-size:14px">${closed?`Reason: ${esc(st.closure_reason||'Closed by owner')}`:'Your store is accepting orders on the customer app.'}</p>
+ </div>
+ <div style="margin-top:20px;display:flex;gap:12px;align-items:flex-end">
+  <div style="flex:1;max-width:300px" ${closed?'hidden':''}><label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px">Reason for closing</label><select class="in" id="papa-closure-reason" style="height:46px">${options.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select></div>
+  <button class="btn ${closed?'p':'d'}" id="papa-emergency-toggle">${closed?'Reopen store':'Close store'}</button>
+ </div></div></div></section>`;
 }
 let papaSetTab='workspace';
 function papaAppearancePanel(){
- const old=papaAppearanceWorkspace(),st=papaStore();
- const tabs=[['account','Account'],['integrations','Integrations'],['workspace','Workspace']];
- const bar=`<div class="wf-settings-tabs">${tabs.map(([k,l])=>`<button type="button" class="wf-tab ${papaSetTab===k?'on':''}" data-wf-settab="${k}">${l}</button>`).join('')}</div>`;
- const i=old.indexOf('<div class="wf-settings-tabs">'),j=old.indexOf('</div>',i)+6;
- const head=old.slice(0,i),body=old.slice(j);
- if(papaSetTab==='workspace')return head+bar+body;
- const row=(a,b)=>`<div class="wf-settings-info-row"><span>${a}</span><strong>${b}</strong></div>`;
- if(papaSetTab==='account')return head+bar+`<div class="wf-settings-layout"><section class="papa-card wf-settings-info"><h2>Account</h2><p class="papa-muted">Your sign-in and store owner details.</p>${row('Store',esc(st.name||'—'))}${row('Email',esc(papaUserEmail||'—'))}${row('Business type',esc(st.business_type||'—'))}${row('Store status',esc(st.status||'approved'))}</section><section class="papa-card wf-settings-info"><h2>Security</h2><p class="papa-muted">Change your password or sign out of this device.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button type="button" class="wf-reset-appearance" id="papa-pw-reset">Send password reset email</button><button type="button" class="wf-settings-go" id="papa-acct-logout" style="margin-top:0">Sign out</button></div><p class="err" id="papa-acct-msg"></p></section></div>`;
- return head+bar+`<div class="wf-settings-layout"><section class="papa-card wf-settings-info"><h2>Integrations</h2><p class="papa-muted">Services connected to your store.</p><div class="wf-int-row"><div><b>Supabase database</b><small>Orders, products and catering requests</small></div><span class="wf-badge">Connected</span></div><div class="wf-int-row"><div><b>Live order updates</b><small>Realtime listener with 12-second refresh</small></div><span class="wf-badge">Active</span></div><div class="wf-int-row"><div><b>Catering requests</b><small>${papaCateringEligible(st)?'Turn on or off in Store Profile':'Not available for this business type'}</small></div><span class="wf-badge ${papaCateringOn(st)?'':'off'}">${papaCateringOn(st)?'Enabled':'Off'}</span></div></section><section class="papa-card wf-settings-info"><h2>Notifications</h2><p class="papa-muted">Sound alert when a new order arrives.</p><div class="wf-int-row"><div><b>New order sound</b><small>Plays while this page is open</small></div><button type="button" class="wf-reset-appearance" id="wf-sound-btn">${papaAudioEnabled?'Turn off':'Turn on'}</button></div></section></div>`;
+ const tabs=[['workspace','Appearance'],['integrations','Integrations']];
+ const bar=`<div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--merchant-border);padding-bottom:12px">${tabs.map(([k,l])=>`<button type="button" class="btn sm ${papaSetTab===k?'s p':'s'}" style="${papaSetTab!==k?'border-color:transparent':''}" data-wf-settab="${k}">${l}</button>`).join('')}</div>`;
+ 
+ if(papaSetTab==='integrations')return `<div class="papa-heading"><div><h1>Integrations</h1><p>Services connected to your store.</p></div></div>`+bar+`<div style="display:grid;gap:16px"><section class="papa-card" style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="display:block;font-size:16px">Supabase Database</b><small style="color:var(--merchant-muted)">Orders, products and catering requests</small></div><span style="padding:4px 12px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:700">Connected</span></div><hr style="border:0;border-top:1px solid var(--merchant-border);margin:16px 0"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="display:block;font-size:16px">Live Order Updates</b><small style="color:var(--merchant-muted)">Realtime listener active</small></div><span style="padding:4px 12px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:700">Active</span></div></section></div>`;
+ 
+ return `<div class="papa-heading"><div><h1>Appearance</h1><p>Choose how your Papalita workspace looks.</p></div></div>`+bar+`<section class="papa-card" style="padding:24px;max-width:600px"><h2 style="margin:0 0 16px">Theme Settings</h2><div style="display:grid;gap:16px"><div class="field"><label>Interface Mode</label><select class="in" id="papa-theme-mode"><option value="light">Light Mode</option><option value="dark">Dark Mode</option></select></div><div class="field"><label>Brand Accent Color</label><select class="in" id="papa-theme-accent"><option value="green">Papalita Green</option><option value="indigo">Indigo</option><option value="blue">Blue</option><option value="orange">Orange</option><option value="purple">Purple</option></select></div></div><p style="color:var(--merchant-muted);font-size:13px;margin-top:16px">Appearance settings are saved locally on this device.</p></section>`;
 }
-function papaAppearanceWorkspace(){return `<div class="papa-heading"><div><h1>Appearance & Theme</h1><p>Choose how your Papalita workspace looks.</p></div></div><div class="wf-settings-tabs"><span>Account</span><span>Integrations</span><strong>Workspace</strong></div><div class="wf-settings-layout"><section class="papa-card papa-appearance wf-appearance"><div class="wf-appearance-title"><h2>Appearance</h2><p class="papa-muted">Your preference is saved on this device.</p></div><label class="wf-control-label">Sidebar theme</label><div class="wf-theme-segment"><button type="button" data-wf-theme="light">☀ Light</button><button type="button" data-wf-theme="dark">☾ Dark</button></div><select class="wf-native-select" id="papa-theme-mode" aria-label="Sidebar theme"><option value="light">Light</option><option value="dark">Dark</option></select><label class="wf-control-label">Accent</label><div class="wf-accent-swatches"><button type="button" data-wf-accent="green" style="--swatch:#087f32" aria-label="Papalita green"></button><button type="button" data-wf-accent="indigo" style="--swatch:#6366f1" aria-label="Indigo"></button><button type="button" data-wf-accent="blue" style="--swatch:#93c5fd" aria-label="Blue"></button><button type="button" data-wf-accent="orange" style="--swatch:#f8bd47" aria-label="Orange"></button><button type="button" data-wf-accent="purple" style="--swatch:#c084fc" aria-label="Purple"></button></div><select class="wf-native-select" id="papa-theme-accent" aria-label="Accent color"><option value="green">Green</option><option value="indigo">Indigo</option><option value="blue">Blue</option><option value="orange">Orange</option><option value="purple">Purple</option></select><button class="wf-reset-appearance" type="button" id="papa-theme-reset">Reset appearance</button></section><section class="papa-card wf-settings-info"><h2>Workspace</h2><p class="papa-muted">Your store profile and business details are managed in Store Profile and Store Settings.</p><div class="wf-settings-info-row"><span>Brand</span><strong>Papalita Merchant</strong></div><div class="wf-settings-info-row"><span>Currency</span><strong>PHP (₱)</strong></div><div class="wf-settings-info-row"><span>Time zone</span><strong>Asia/Manila</strong></div><button class="wf-settings-go" type="button" data-jump="profile">Manage store profile →</button></section></div>`;}
-
-function papaApplyAppearance(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){};const mode=['dark','light'].includes(prefs.mode)?prefs.mode:'light';const accent=['green','indigo','blue','orange','purple'].includes(prefs.accent)?prefs.accent:'green';document.documentElement.dataset.merchantMode=mode;document.documentElement.dataset.merchantAccent=accent;const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent');if(m)m.value=mode;if(a)a.value=accent;document.querySelectorAll('[data-wf-theme]').forEach(b=>{b.classList.toggle('selected',b.dataset.wfTheme===mode);b.setAttribute('aria-pressed',String(b.dataset.wfTheme===mode))});document.querySelectorAll('[data-wf-accent]').forEach(b=>{b.classList.toggle('selected',b.dataset.wfAccent===accent);b.setAttribute('aria-pressed',String(b.dataset.wfAccent===accent))});}
-function papaBindAppearance(){papaApplyAppearance();const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent'),r=document.getElementById('papa-theme-reset');const save=()=>{try{localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify({mode:m.value,accent:a.value}))}catch(e){}papaApplyAppearance()};if(m&&a){m.onchange=save;a.onchange=save;}document.querySelectorAll('[data-wf-theme]').forEach(b=>b.onclick=()=>{m.value=b.dataset.wfTheme;save()});document.querySelectorAll('[data-wf-accent]').forEach(b=>b.onclick=()=>{a.value=b.dataset.wfAccent;save()});if(r)r.onclick=()=>{try{localStorage.removeItem('papalita_merchant_appearance_v1')}catch(e){}papaApplyAppearance()};}
-function papaSettings(){return `<div class="papa-heading"><div><h1>Store settings</h1><p>Control store availability and store information.</p></div></div>${papaAvailabilityCard()}<section class="papa-card"><h2>Store profile</h2><p class="papa-muted">Edit contact details, photos and opening hours in Store Profile.</p><button class="btn s" data-jump="profile">Go to store profile</button></section>`;}
+function papaApplyAppearance(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){};const mode=['dark','light'].includes(prefs.mode)?prefs.mode:'light';const accent=['green','indigo','blue','orange','purple'].includes(prefs.accent)?prefs.accent:'green';document.documentElement.dataset.merchantMode=mode;document.documentElement.dataset.merchantAccent=accent;const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent');if(m)m.value=mode;if(a)a.value=accent;}
+function papaBindAppearance(){papaApplyAppearance();const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent');const save=()=>{try{localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify({mode:m.value,accent:a.value}))}catch(e){}papaApplyAppearance()};if(m&&a){m.onchange=save;a.onchange=save;}}
+function papaSettings(){return `<div class="papa-heading"><div><h1>Store settings</h1><p>Control store availability and store information.</p></div></div>${papaAvailabilityCard()}<section class="papa-card" style="padding:24px"><h2>Store profile</h2><p style="color:var(--merchant-muted);margin-bottom:16px">Edit contact details, photos and opening hours in Store Profile.</p><button class="btn s" data-jump="profile">Go to store profile</button></section>`;}
 async function papaUpload(file,kind){if(!file)return null;if(file.size>5*1024*1024)throw Error('Photo must be 5 MB or smaller');const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];if(!ext)throw Error('Please use JPEG, PNG or WebP');const path=`${storeUuid}/${kind}-${crypto.randomUUID()}.${ext}`;const q=await db.storage.from('store-images').upload(path,file,{contentType:file.type,upsert:false});if(q.error)throw Error('Photo upload failed: '+q.error.message+' (check store-images Storage RLS)');return db.storage.from('store-images').getPublicUrl(path).data.publicUrl;}
 async function papaBind(){
  $$('[data-papa-filter]').forEach(b=>b.onclick=()=>{papaOrderFilter=b.dataset.papaFilter;draw()});
  $$('[data-wf-settab]').forEach(b=>b.onclick=()=>{papaSetTab=b.dataset.wfSettab;draw()});
- const pwBtn=$('#papa-pw-reset');if(pwBtn)pwBtn.onclick=async()=>{const m=$('#papa-acct-msg');pwBtn.disabled=true;try{if(!papaUserEmail)throw Error('No email on this account.');const r=await db.auth.resetPasswordForEmail(papaUserEmail);if(r.error)throw r.error;m.style.color='#0c7a3a';m.textContent='Reset link sent to '+papaUserEmail+'.'}catch(e){m.style.color='';m.textContent=e.message}finally{pwBtn.disabled=false}};
- const outBtn=$('#papa-acct-logout');if(outBtn)outBtn.onclick=()=>$('#papa-logout').click();
- const sndBtn=$('#wf-sound-btn');if(sndBtn)sndBtn.onclick=()=>{papaAudioEnabled=!papaAudioEnabled;if(papaAudioEnabled)papaBeep();draw()};
  const wfSearch=$('#wf-order-search');if(wfSearch)wfSearch.oninput=()=>{papaOrderSearch=wfSearch.value;const pos=wfSearch.selectionStart;draw();const n=$('#wf-order-search');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
- $$('[data-wf-order]').forEach(r=>{r.onclick=e=>{if(!e.target.closest('[data-papa-next-status]'))papaOpenOrderDrawer(r.dataset.wfOrder)};r.onkeydown=e=>{if(e.key==='Enter')papaOpenOrderDrawer(r.dataset.wfOrder)}});
  $$('[data-wf-order-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();papaOpenOrderDrawer(b.dataset.wfOrderButton)});
  const orderRefresh=$('#papa-orders-refresh');if(orderRefresh)orderRefresh.onclick=()=>{void papaFetchOrders()};
- $$('[data-papa-next-status]').forEach(b=>b.onclick=()=>{void papaChangeOrderStatus(b.dataset.papaOrderId,b.dataset.papaNextStatus,b)});
  $$('[data-jump]').forEach(b=>b.onclick=()=>{tab=b.dataset.jump;draw()});
- $$('[data-rf-filter]').forEach(b=>b.onclick=()=>{papaOrderFilter=b.dataset.rfFilter;tab='orders';draw();void papaFetchOrders()});
- const rfToggle=$('#papa-content [data-rf-toggle]');
- if(rfToggle)rfToggle.onclick=()=>{const t=$('.papa-side [data-rf-toggle]');if(t)t.click()};
  const refresh=$('#papa-refresh');if(refresh)refresh.onclick=()=>Promise.all([papaLoad(),papaFetchOrders()]).catch(e=>toast(e.message));
  const typeSelect=$('#papa-type');if(typeSelect)typeSelect.onchange=()=>{const field=$('#papa-catering-setting');if(field){const allowed=papaCateringEligible({business_type:typeSelect.value});field.hidden=!allowed;if(!allowed)$('#papa-catering-enabled').checked=false;}};
- const form=$('#papa-profile-form');if(form)form.onsubmit=async e=>{e.preventDefault();const btn=$('#papa-save-profile');btn.disabled=true;const err=$('#papa-profile-error');err.textContent='';try{const phone=$('#papa-phone').value.trim();if(phone&&!/^(09\d{9}|\+639\d{9})$/.test(phone))throw Error('Enter a valid Philippine mobile number');const changes={name:$('#papa-name').value.trim(),business_type:$('#papa-type').value,catering_enabled:papaCateringEligible({business_type:$('#papa-type').value})&&$('#papa-catering-enabled').checked,description:$('#papa-description').value.trim(),address:$('#papa-address').value.trim(),phone,open_time:$('#papa-open').value,close_time:$('#papa-close').value};if(!changes.name||!changes.address)throw Error('Name and address are required');const logo=await papaUpload($('#papa-logo-file').files[0],'logo');const cover=await papaUpload($('#papa-cover-file').files[0],'cover');if(logo)changes.logo_url=logo;if(cover)changes.cover_url=cover;const q=await db.from('stores').update(changes).eq('id',storeUuid).eq('status','approved').select('*').single();if(q.error)throw q.error;Object.assign(papaStore(),q.data);toast('Store profile saved!');draw()}catch(ex){err.textContent=ex.message}finally{btn.disabled=false}};
+ const form=$('#papa-profile-form');if(form)form.onsubmit=async e=>{e.preventDefault();const btn=$('#papa-save-profile');btn.disabled=true;const err=$('#papa-profile-error');err.textContent='';try{const phone=$('#papa-phone').value.trim();if(phone&&!/^(09\d{9}|\+639\d{9})$/.test(phone))throw Error('Enter a valid Philippine mobile number');const changes={name:$('#papa-name').value.trim(),business_type:$('#papa-type').value,catering_enabled:papaCateringEligible({business_type:$('#papa-type').value})&&$('#papa-catering-enabled').checked,description:$('#papa-description').value.trim(),address:$('#papa-address').value.trim(),phone,open_time:$('#papa-open').value,close_time:$('#papa-close').value};if(!changes.name||!changes.address)throw Error('Name and address are required');const logo=await papaUpload($('#papa-logo-file').files[0],'logo');if(logo)changes.logo_url=logo;const q=await db.from('stores').update(changes).eq('id',storeUuid).eq('status','approved').select('*').single();if(q.error)throw q.error;Object.assign(papaStore(),q.data);toast('Store profile saved!');draw()}catch(ex){err.textContent=ex.message}finally{btn.disabled=false}};
  $$('[data-save-stock]').forEach(b=>b.onclick=async()=>{const tr=b.closest('tr');const stock=Number(tr.querySelector('[data-stock]').value),threshold=Number(tr.querySelector('[data-threshold]').value);if(!Number.isInteger(stock)||stock<0||!Number.isInteger(threshold)||threshold<0)return toast('Enter valid nonnegative whole numbers');b.disabled=true;try{const q=await db.from('products').update({stock,low_stock_threshold:threshold}).eq('id',tr.dataset.invId).eq('store_id',storeUuid).select('id');if(q.error)throw q.error;if(!q.data?.length)throw Error('Update blocked by RLS');toast('Stock updated');await papaLoad()}catch(e){toast(e.message)}finally{b.disabled=false}});
  const reasonSelect=$('#papa-closure-reason');
- if(reasonSelect)reasonSelect.onchange=()=>{$('#papa-closure-other-wrap').hidden=reasonSelect.value!=='Others'};
  const toggle=$('#papa-emergency-toggle');
  if(toggle)toggle.onclick=async()=>{
   const opening=papaStore().is_open===false;
-  const reason=reasonSelect.value==='Others'?$('#papa-closure-other').value.trim():reasonSelect.value;
-  if(!opening&&(!reason||reason.length>200))return toast('Please enter a closure reason (up to 200 characters).');
+  const reason=reasonSelect?reasonSelect.value:'Closed by owner';
   if(!confirm(opening?'Reopen this store and accept new orders?':'Temporarily close your store? New orders should be blocked.'))return;
   toggle.disabled=true;
   try{
@@ -905,22 +935,17 @@ async function papaBind(){
   }catch(e){toast('Availability update failed: '+e.message);toggle.disabled=false;}
  };
 }
-function draw(){if(!storeUuid)return gate();if(tab==='cat'&&!papaCateringOn(papaStore()))tab='dashboard';const content=tab==='dashboard'?papaDashboard():tab==='profile'?papaProfile():tab==='menu'?'<div id="papalita-products" class="papa-card">Loading products...</div>':tab==='inventory'?papaInventory():tab==='orders'?papaOrders():tab==='reports'?papaReports():tab==='settings'?papaSettings():tab==='appearance'?papaAppearancePanel():`<div class="papa-heading"><div><h1>Catering Requests</h1><p>Manage your Supabase catering inquiries.</p></div><button class="btn s" id="papa-catering-refresh">↻ Refresh</button></div>${realCateringHTML()}`;papaShell(content);papaBind();papaBindAppearance();if(tab==='menu')renderSellerProducts();if(tab==='cat'){$$('[data-real-status]').forEach(el=>el.onchange=async()=>{try{await updateCatering(el.dataset.realStatus,el.value)}catch(e){toast(e.message)}});const b=$('#papa-catering-refresh');if(b)b.onclick=async()=>{await fetchCatering();draw()}};
+function draw(){if(!storeUuid)return gate();if(tab==='cat'&&!papaCateringOn(papaStore()))tab='dashboard';const content=tab==='dashboard'?papaDashboard():tab==='profile'?papaProfile():tab==='menu'?'<div id="papalita-products" class="papa-card" style="padding:24px">Loading products...</div>':tab==='inventory'?papaInventory():tab==='orders'?papaOrders():tab==='reports'?papaReports():tab==='settings'?papaSettings():tab==='appearance'?papaAppearancePanel():`<div class="papa-heading"><div><h1>Catering Requests</h1><p>Manage your Supabase catering inquiries.</p></div><button class="btn s" id="papa-catering-refresh">↻ Refresh</button></div>${realCateringHTML()}`;papaShell(content);papaBind();papaBindAppearance();if(tab==='menu')renderSellerProducts();if(tab==='cat'){$$('[data-real-status]').forEach(el=>el.onchange=async()=>{try{await updateCatering(el.dataset.realStatus,el.value)}catch(e){toast(e.message)}});const b=$('#papa-catering-refresh');if(b)b.onclick=async()=>{await fetchCatering();draw()}};
  if(window.lucide&&window.lucide.createIcons)window.lucide.createIcons();}
 async function papaLoad(){const seq=++papaLoadSeq;try{await papaFetchProducts();if(seq===papaLoadSeq)draw();if(seq===papaLoadSeq&&tab==='orders')await papaFetchOrders()}catch(e){toast('Products: '+e.message);if(seq===papaLoadSeq)draw()}}
 
-// Per-product customization stored as products.options JSONB; no shared hardcoded coffee choices.
 let sellerOptionGroups=[];
 const optionId=()=> 'opt_'+Math.random().toString(36).slice(2,10);
 function optionTemplate(){return [
- {id:optionId(),label:'Size',type:'radio',req:true,ch:[{n:'Small',p:0},{n:'Medium',p:15},{n:'Large',p:30}]},
- {id:optionId(),label:'Sugar level',type:'radio',req:true,ch:[{n:'No sugar (0%)',p:0},{n:'Less sugar (25%)',p:0},{n:'Half sugar (50%)',p:0},{n:'Regular (100%)',p:0}]},
- {id:optionId(),label:'Milk choice',type:'radio',req:false,ch:[{n:'Regular milk',p:0},{n:'Oat milk',p:30}]},
- {id:optionId(),label:'Ice level',type:'radio',req:false,ch:[{n:'No ice',p:0},{n:'Less ice',p:0},{n:'Regular ice',p:0}]},
- {id:optionId(),label:'Add-ons',type:'checkbox',req:false,ch:[{n:'Extra espresso shot',p:25},{n:'Whipped cream',p:20}]}
+ {id:optionId(),label:'Size',type:'radio',req:true,ch:[{n:'Small',p:0},{n:'Medium',p:15},{n:'Large',p:30}]}
 ]}
 function renderOptionGroups(){const host=$('#sp-option-groups');if(!host)return;
- host.innerHTML=sellerOptionGroups.map((g,gi)=>`<div class="panel" data-og="${gi}" style="margin-bottom:12px;padding:12px;background:var(--merchant-surface)"><div class="row sp wrap"><b>Option group ${gi+1}</b><button type="button" class="btn d sm" data-og-remove="${gi}">Remove group</button></div><div class="two" style="margin-top:8px"><div class="field"><label>Group name</label><input class="in" data-og-label="${gi}" value="${esc(g.label)}" placeholder="e.g. Milk choice" maxlength="70"></div><div class="field"><label>Selection type</label><select class="in" data-og-type="${gi}"><option value="radio" ${g.type==='radio'?'selected':''}>Choose one</option><option value="checkbox" ${g.type==='checkbox'?'selected':''}>Choose multiple</option></select></div></div><label class="row sm" style="margin-bottom:8px"><input type="checkbox" data-og-req="${gi}" ${g.req?'checked':''}> Required selection</label><div>${g.ch.map((c,ci)=>`<div class="row" style="margin-bottom:7px"><input class="in" style="min-width:0;flex:1" data-oc-name="${gi}:${ci}" value="${esc(c.n)}" placeholder="Choice name" maxlength="80"><input class="in" style="width:100px;flex:none" type="number" min="0" step="0.01" data-oc-price="${gi}:${ci}" value="${Number(c.p)||0}" aria-label="Additional price"><button type="button" class="btn d sm" data-oc-remove="${gi}:${ci}" aria-label="Remove choice">×</button></div>`).join('')}</div><button type="button" class="btn s sm" data-oc-add="${gi}">+ Add choice</button></div>`).join('');
+ host.innerHTML=sellerOptionGroups.map((g,gi)=>`<div style="margin-bottom:12px;padding:12px;background:var(--merchant-surface);border:1px solid var(--merchant-border);border-radius:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Option group ${gi+1}</b><button type="button" class="btn d sm" data-og-remove="${gi}">Remove</button></div><div class="two" style="margin-bottom:8px"><div class="field"><label>Group name</label><input class="in" data-og-label="${gi}" value="${esc(g.label)}" placeholder="e.g. Size"></div><div class="field"><label>Type</label><select class="in" data-og-type="${gi}"><option value="radio" ${g.type==='radio'?'selected':''}>Choose one</option><option value="checkbox" ${g.type==='checkbox'?'selected':''}>Choose multiple</option></select></div></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px"><input type="checkbox" data-og-req="${gi}" ${g.req?'checked':''}> Required selection</label><div>${g.ch.map((c,ci)=>`<div style="display:flex;gap:8px;margin-bottom:8px"><input class="in" style="flex:1" data-oc-name="${gi}:${ci}" value="${esc(c.n)}" placeholder="Choice name"><input class="in" style="width:100px;flex:none" type="number" min="0" step="0.01" data-oc-price="${gi}:${ci}" value="${Number(c.p)||0}" placeholder="Add ₱"><button type="button" class="btn d sm" data-oc-remove="${gi}:${ci}">✕</button></div>`).join('')}</div><button type="button" class="btn s sm" data-oc-add="${gi}">+ Add choice</button></div>`).join('');
  host.querySelectorAll('[data-og-remove]').forEach(b=>b.onclick=()=>{sellerOptionGroups.splice(+b.dataset.ogRemove,1);renderOptionGroups()});
  host.querySelectorAll('[data-oc-add]').forEach(b=>b.onclick=()=>{sellerOptionGroups[+b.dataset.ocAdd].ch.push({n:'',p:0});renderOptionGroups()});
  host.querySelectorAll('[data-oc-remove]').forEach(b=>b.onclick=()=>{const [g,c]=b.dataset.ocRemove.split(':').map(Number);sellerOptionGroups[g].ch.splice(c,1);renderOptionGroups()});
@@ -930,7 +955,7 @@ function renderOptionGroups(){const host=$('#sp-option-groups');if(!host)return;
  host.querySelectorAll('[data-oc-name]').forEach(e=>e.oninput=()=>{const [g,c]=e.dataset.ocName.split(':').map(Number);sellerOptionGroups[g].ch[c].n=e.value});
  host.querySelectorAll('[data-oc-price]').forEach(e=>e.oninput=()=>{const [g,c]=e.dataset.ocPrice.split(':').map(Number);sellerOptionGroups[g].ch[c].p=Number(e.value)});
 }
-function validatedProductOptions(){return sellerOptionGroups.map(g=>{const label=g.label.trim();if(!label)throw Error('Every option group needs a name.');if(!g.ch.length)throw Error(label+' needs at least one choice.');const ch=g.ch.map(c=>{const n=c.n.trim(),p=Number(c.p);if(!n||!Number.isFinite(p)||p<0)throw Error('Check choices and additional prices in '+label);return {n,p};});if(new Set(ch.map(c=>c.n.toLowerCase())).size!==ch.length)throw Error('Duplicate choices in '+label);return {id:g.id||optionId(),label,type:g.type==='checkbox'?'checkbox':'radio',req:!!g.req,ch}})}
+function validatedProductOptions(){return sellerOptionGroups.map(g=>{const label=g.label.trim();if(!label)throw Error('Every option group needs a name.');if(!g.ch.length)throw Error(label+' needs at least one choice.');const ch=g.ch.map(c=>{const n=c.n.trim(),p=Number(c.p);if(!n||!Number.isFinite(p)||p<0)throw Error('Check choices and additional prices in '+label);return {n,p};});return {id:g.id||optionId(),label,type:g.type==='checkbox'?'checkbox':'radio',req:!!g.req,ch}})}
 async function renderSellerProducts(){
   const target=$('#papalita-products');if(!target||!storeUuid)return;
   try{
@@ -938,33 +963,30 @@ async function renderSellerProducts(){
     if(q.error)throw q.error;
     if(!$('#papalita-products'))return;
     const rows=q.data||[];
-    target.innerHTML=`<div class="row sp wrap"><div><h3>My products</h3><p class="sm mu">Active products publish automatically to customers while your store is approved. Stock 0 = sold out.</p></div><button class="btn s sm" id="reload-products">Refresh</button></div>
-    <form id="seller-product-form" class="panel" style="margin-top:14px"><h3 id="seller-form-title">Add product</h3><input type="hidden" id="seller-product-id"><div class="two"><div class="field"><label>Name</label><input class="in" id="sp-name" required maxlength="120"></div><div class="field"><label>Category</label><input class="in" id="sp-cat" placeholder="Meals" required></div><div class="field"><label>Price (₱)</label><input class="in" id="sp-price" type="number" step="0.01" min="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="sp-stock" type="number" min="0" step="1" value="0" required></div></div><div class="field"><label>Description</label><textarea class="in" id="sp-desc"></textarea></div><div class="field"><label>Photo (optional, JPEG/PNG/WebP, max 5 MB)</label><input class="in" id="sp-file" type="file" accept="image/jpeg,image/png,image/webp"></div><div class="field"><label>Or image URL</label><input class="in" id="sp-img" type="url" placeholder="https://..."></div><section class="panel" id="sp-option-editor" style="margin:14px 0;background:var(--merchant-canvas);border:1px solid var(--merchant-border)">
-<h3 style="margin-bottom:6px">Product customization</h3><p class="sm mu" style="margin-bottom:12px">Each product has its own options. Examples: Size, Sugar Level, Milk, Ice, Add-ons. Extra prices are added to the base price.</p>
-<div id="sp-option-groups"></div><div class="row wrap"><button type="button" class="btn s sm" id="sp-add-group">+ Add option group</button><button type="button" class="btn s sm" id="sp-cafe-template">Use café starter groups</button></div>
-<p class="sm mu" style="margin-top:8px">Starter groups are editable; remove any option that your product does not offer. Save product to publish the changes.</p></section><div class="field"><label>Visibility</label><select class="in" id="sp-status"><option value="active">Published</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div><div class="row wrap"><button class="btn p" id="sp-save">Save product</button><button class="btn s" type="button" id="sp-clear">Clear form</button></div><p class="err" id="sp-error"></p></form>
-    <div class="tw" style="overflow-x:auto"><table class="papa-table"><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><br><small>${esc(x.category||'')}</small></td><td>${peso(x.price)}</td><td>${Number(x.stock)||0}</td><td>${esc(x.status)}</td><td><button class="btn s sm" data-edit-product="${x.id}">Edit</button> <button class="btn d sm" data-delete-product="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5">No products yet.</td></tr>'}</tbody></table></div>`;
+    target.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h3 style="margin:0">My products</h3><p style="margin:4px 0 0;font-size:13px;color:var(--merchant-muted)">Manage your store's menu.</p></div><button class="btn s sm" id="reload-products">Refresh</button></div>
+    <form id="seller-product-form" class="papa-card" style="padding:24px;margin-bottom:24px"><h3 id="seller-form-title" style="margin:0 0 16px">Add product</h3><input type="hidden" id="seller-product-id"><div class="two"><div class="field"><label>Name</label><input class="in" id="sp-name" required maxlength="120"></div><div class="field"><label>Category</label><input class="in" id="sp-cat" required></div><div class="field"><label>Price (₱)</label><input class="in" id="sp-price" type="number" step="0.01" min="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="sp-stock" type="number" min="0" step="1" value="0" required></div></div><div class="field"><label>Description</label><textarea class="in" id="sp-desc" rows="2"></textarea></div><div class="field"><label>Photo (optional, max 5 MB)</label><input class="in" id="sp-file" type="file" accept="image/jpeg,image/png,image/webp"></div><div style="margin:24px 0;padding:20px;background:var(--merchant-canvas);border-radius:12px;border:1px solid var(--merchant-border)"><h3 style="margin:0 0 8px;font-size:15px">Product Customization</h3><p style="margin:0 0 16px;font-size:13px;color:var(--merchant-muted)">Add options like size, sugar level, or add-ons.</p><div id="sp-option-groups"></div><div style="display:flex;gap:10px;margin-top:12px"><button type="button" class="btn s sm" id="sp-add-group">+ Add option group</button><button type="button" class="btn s sm" id="sp-cafe-template">Use starter template</button></div></div><div class="field"><label>Visibility</label><select class="in" id="sp-status"><option value="active">Published</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div><div style="display:flex;gap:12px;margin-top:20px"><button class="btn p" id="sp-save">Save product</button><button class="btn s" type="button" id="sp-clear">Clear form</button></div><p class="err" id="sp-error"></p></form>
+    <div class="papa-card" style="overflow-x:auto"><table class="rf-table"><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><br><small style="color:var(--merchant-muted)">${esc(x.category||'')}</small></td><td>${peso(x.price)}</td><td>${Number(x.stock)||0}</td><td><span style="padding:4px 8px;background:var(--merchant-canvas);border-radius:4px;font-size:12px;font-weight:600">${esc(x.status)}</span></td><td><button class="btn s sm" data-edit-product="${x.id}">Edit</button> <button class="btn d sm" data-delete-product="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--merchant-muted)">No products yet.</td></tr>'}</tbody></table></div>`;
     const clear=()=>{$('#seller-product-form').reset();$('#seller-product-id').value='';$('#seller-form-title').textContent='Add product';sellerOptionGroups=[];renderOptionGroups();};
     $('#sp-add-group').onclick=()=>{sellerOptionGroups.push({id:optionId(),label:'',type:'radio',req:false,ch:[{n:'',p:0}]});renderOptionGroups();};
-    $('#sp-cafe-template').onclick=()=>{if(sellerOptionGroups.length&&!confirm('Replace current option groups with café starter groups?'))return;sellerOptionGroups=optionTemplate();renderOptionGroups();};
+    $('#sp-cafe-template').onclick=()=>{if(sellerOptionGroups.length&&!confirm('Replace current option groups?'))return;sellerOptionGroups=optionTemplate();renderOptionGroups();};
     renderOptionGroups();
     $('#sp-clear').onclick=clear;
     $('#reload-products').onclick=renderSellerProducts;
-    $$('[data-edit-product]').forEach(b=>b.onclick=()=>{const x=rows.find(p=>p.id===b.dataset.editProduct);if(!x)return;$('#seller-product-id').value=x.id;$('#sp-name').value=x.name;$('#sp-cat').value=x.category||'';$('#sp-price').value=x.price;$('#sp-stock').value=x.stock;$('#sp-desc').value=x.description||'';$('#sp-img').value=x.image_url||'';$('#sp-status').value=x.status||'draft';sellerOptionGroups=Array.isArray(x.options)?JSON.parse(JSON.stringify(x.options)):[];renderOptionGroups();$('#seller-form-title').textContent='Edit product';$('#seller-product-form').scrollIntoView({behavior:'smooth'});});
+    $$('[data-edit-product]').forEach(b=>b.onclick=()=>{const x=rows.find(p=>p.id===b.dataset.editProduct);if(!x)return;$('#seller-product-id').value=x.id;$('#sp-name').value=x.name;$('#sp-cat').value=x.category||'';$('#sp-price').value=x.price;$('#sp-stock').value=x.stock;$('#sp-desc').value=x.description||'';$('#sp-status').value=x.status||'draft';sellerOptionGroups=Array.isArray(x.options)?JSON.parse(JSON.stringify(x.options)):[];renderOptionGroups();$('#seller-form-title').textContent='Edit product';$('#seller-product-form').scrollIntoView({behavior:'smooth'});});
     $$('[data-delete-product]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete this product permanently?'))return;try{const q=await db.from('products').delete().eq('id',b.dataset.deleteProduct).eq('store_id',storeUuid).select('id');if(q.error)throw q.error;if(!q.data?.length)throw Error('Not permitted by RLS');toast('Product deleted');renderSellerProducts();}catch(e){toast(e.message);}});
     $('#seller-product-form').onsubmit=async e=>{e.preventDefault();const btn=$('#sp-save');btn.disabled=true;$('#sp-error').textContent='';try{
-      const file=$('#sp-file').files[0];let url=$('#sp-img').value.trim();
+      const file=$('#sp-file').files[0];let url=null;
       if(file){if(file.size>5*1024*1024)throw Error('Image must be under 5 MB');if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Only JPEG, PNG or WebP');const path=storeUuid+'/'+crypto.randomUUID()+'.'+(file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg');const up=await db.storage.from('product-images').upload(path,file,{contentType:file.type,upsert:false});if(up.error)throw up.error;url=db.storage.from('product-images').getPublicUrl(path).data.publicUrl;}
-      const row={store_id:storeUuid,name:$('#sp-name').value.trim(),category:$('#sp-cat').value.trim(),price:Number($('#sp-price').value),stock:Number($('#sp-stock').value),description:$('#sp-desc').value.trim(),status:$('#sp-status').value,image_url:url||null,options:validatedProductOptions(),updated_at:new Date().toISOString()};
-      if(!row.name||!row.category||!(row.price>0)||!Number.isInteger(row.stock)||row.stock<0)throw Error('Please check product name, category, price and stock');
+      const row={store_id:storeUuid,name:$('#sp-name').value.trim(),category:$('#sp-cat').value.trim(),price:Number($('#sp-price').value),stock:Number($('#sp-stock').value),description:$('#sp-desc').value.trim(),status:$('#sp-status').value,options:validatedProductOptions(),updated_at:new Date().toISOString()};
+      if(url)row.image_url=url;
+      if(!row.name||!row.category||!(row.price>0)||!Number.isInteger(row.stock)||row.stock<0)throw Error('Check product inputs');
       const id=$('#seller-product-id').value;
       const q=id?await db.from('products').update(row).eq('id',id).eq('store_id',storeUuid).select('id'):await db.from('products').insert(row).select('id');
-      if(q.error)throw q.error;if(!q.data?.length)throw Error('Not permitted by Supabase RLS');toast('Product saved to Supabase');renderSellerProducts();
+      if(q.error)throw q.error;if(!q.data?.length)throw Error('Not permitted by Supabase RLS');toast('Product saved');renderSellerProducts();
     }catch(err){$('#sp-error').textContent=err.message;}finally{btn.disabled=false;}};
   }catch(err){target.textContent='Could not load products: '+err.message;}
 }
 
-/* Live incoming order popup: only Supabase orders belonging to the signed-in store. */
 function papaBeep(){
  if(!papaAudioEnabled)return;
  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;const ctx=new AC();const now=ctx.currentTime;[0,.18,.36].forEach((t,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=i===2?1046:880;gain.gain.setValueAtTime(.0001,now+t);gain.gain.exponentialRampToValueAtTime(.13,now+t+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+t+.14);osc.connect(gain);gain.connect(ctx.destination);osc.start(now+t);osc.stop(now+t+.15)});setTimeout(()=>ctx.close().catch(()=>{}),1100)}catch(e){console.warn('Order sound unavailable:',e)}
@@ -984,19 +1006,17 @@ function papaQueuePopup(order){
 function papaShowNextPopup(){
  if(papaPopupActive||!papaPopupQueue.length||!storeUuid)return;
  const order=papaPopupQueue.shift();papaPopupActive=true;
- const overlay=document.createElement('div');overlay.className='papa-popup-backdrop';overlay.id='papa-order-popup';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','New Papalita order');
- const details=(order.items||[]).map(i=>`<div class="row sp" style="padding:7px 0"><span>${Number(i.quantity)||0} × ${esc(i.product_name||'Product')}</span><b>${peso(i.line_total)}</b></div>`).join('');
- overlay.innerHTML=`<div class="papa-popup"><div class="papa-popup-header"><button type="button" class="papa-popup-close" data-popup-close aria-label="Close">✕</button><div>🔔 NEW CUSTOMER ORDER</div><h2>You've got a new order!</h2><p>Order #${esc(String(order.id).slice(0,8))} · ${esc(new Date(order.created_at).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit'}))}</p></div><div class="papa-popup-body"><div>${details||'<p>Open the order to see its items.</p>'}</div><hr style="border:0;border-top:1px solid #e5eee6;margin:15px 0"><div class="row sp"><span>Order total</span><strong style="font-size:24px;color:#087F32">${peso(order.total_amount)}</strong></div><p class="papa-muted">${esc(order.fulfillment_type||'delivery')} · ${esc(order.delivery_address||'No address')}</p></div><div class="papa-popup-footer"><button type="button" class="btn s" data-popup-view>View order</button><button type="button" class="btn p" data-popup-accept>✓ Accept order</button></div></div>`;
+ const overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+ const details=(order.items||[]).map(i=>`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</span><b>${peso(i.line_total)}</b></div>`).join('');
+ overlay.innerHTML=`<div style="background:var(--merchant-surface);color:var(--merchant-ink);padding:24px;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04)"><div style="margin-bottom:16px"><span style="display:inline-block;padding:4px 10px;background:#fee2e2;color:#ef4444;border-radius:999px;font-size:12px;font-weight:800;margin-bottom:12px">🔔 NEW ORDER</span><h2 style="margin:0 0 4px;font-size:20px">New customer order!</h2><p style="margin:0;color:var(--merchant-muted);font-size:13px">Order #${esc(String(order.id).slice(0,8))}</p></div><div style="background:var(--merchant-canvas);padding:16px;border-radius:12px;margin-bottom:20px">${details||'<p>Open to see items</p>'}<hr style="border:0;border-top:1px solid var(--merchant-border);margin:12px 0"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">Total</span><strong style="font-size:20px;color:var(--merchant-accent)">${peso(order.total_amount)}</strong></div></div><div style="display:flex;gap:10px"><button type="button" class="btn s" data-popup-close style="flex:1">Dismiss</button><button type="button" class="btn p" data-popup-view style="flex:2">View Order</button></div></div>`;
  document.body.append(overlay);
  const close=()=>{overlay.remove();papaPopupActive=false;papaShowNextPopup()};
  overlay.querySelector('[data-popup-close]').onclick=close;
  overlay.querySelector('[data-popup-view]').onclick=()=>{tab='orders';papaOrderFilter='pending';draw();close()};
- overlay.querySelector('[data-popup-accept]').onclick=async e=>{const b=e.currentTarget;b.disabled=true;await papaChangeOrderStatus(order.id,'confirmed',b);close()};
 }
 function papaStopOrderListener(){
  if(papaPollTimer){clearInterval(papaPollTimer);papaPollTimer=null}
  if(papaLiveChannel&&db){db.removeChannel(papaLiveChannel).catch(()=>{});papaLiveChannel=null}
- const overlay=document.getElementById('papa-order-popup');if(overlay)overlay.remove();
  papaPopupQueue=[];papaPopupActive=false;papaKnownIds=new Set();papaInitialOrdersLoaded=false;papaLiveOrders=[];papaOrdersStore=null;
 }
 function papaStartOrderListener(){
