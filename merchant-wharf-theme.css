@@ -1,10 +1,80 @@
-/* Papalita Merchant Portal — consolidated FINAL visual corrections (2026-11-04)
-   Visual styling only; does not change Supabase, DOM IDs or event handlers.
-   This stylesheet must be the LAST stylesheet in <head>. */
+/* Papalita Merchant Portal — consolidated FINAL visual corrections (2026-11-04) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* =========================================================
-   1. BASE DASHBOARD GRID (.rf-* CLASSES) - RESTORED LAYOUT
+   1. BASE SHELL & SIDEBAR STRUCTURE (.papa-* CLASSES)
+   (Nag-gunit sa flexbox ug sticky layout sa kilid)
+   ========================================================= */
+.papa-reference-shell, .papa-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.papa-side {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 14px 12px;
+  overflow-y: auto;
+}
+.papa-side nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.papa-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.papa-nav-icon {
+  font-size: 20px;
+  width: 24px;
+  display: inline-grid;
+  place-items: center;
+}
+/* Kani ang mo-push sa profile ug logout paubos */
+.papa-side-bottom, .papa-side-foot {
+  margin-top: auto; 
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.papa-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.papa-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+@media(max-width: 800px) {
+  .papa-reference-shell { display: block !important; }
+  .papa-side {
+    display: none !important;
+    position: fixed !important;
+    top: 74px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: min(280px, 85vw) !important;
+    height: auto !important;
+    z-index: 100 !important;
+    box-shadow: 10px 0 25px rgba(0,0,0,0.1) !important;
+  }
+  .papa-side.papa-side-open { display: flex !important; }
+}
+
+/* =========================================================
+   2. BASE DASHBOARD GRID (.rf-* CLASSES)
    ========================================================= */
 :root{--rf-green:#0a7a3b;--rf-green-d:#075c2d;--rf-ink:#14231b;--rf-mute:#68786e;--rf-line:#e3ebe5;--rf-card:#fff;--rf-canvas:#f6f9f7}
 .rf-card{background:var(--rf-card);border:1px solid var(--rf-line);border-radius:14px;box-shadow:0 2px 10px #0f2c1a0a;padding:18px 20px}
@@ -57,11 +127,11 @@
 .rf-insight i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;font-style:normal}
 .rf-insight strong{display:block;font-size:18px}.rf-insight small{color:var(--rf-mute);font-size:12px}
 @media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
-@media(max-width:800px){html body .papa-reference-shell{display:block!important}.rf-search{display:none}.rf-actions{grid-template-columns:repeat(2,1fr)}.rf-status-card{grid-template-columns:auto 1fr}}
+@media(max-width:800px){.rf-search{display:none}.rf-actions{grid-template-columns:repeat(2,1fr)}.rf-status-card{grid-template-columns:auto 1fr}}
 @media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-insights{grid-template-columns:1fr}}
 
 /* =========================================================
-   2. WHARF V2 VISUAL OVERRIDES & APPEARANCE (YOUR EXISTING CODE)
+   3. WHARF V2 VISUAL OVERRIDES & APPEARANCE
    ========================================================= */
 :root {--merchant-accent:#087f32;--merchant-surface:#fff;--merchant-canvas:#f7f9fb;--merchant-ink:#17251e;--merchant-muted:#66766c;--merchant-border:#e2e8e4;}
 html[data-merchant-accent="indigo"]{--merchant-accent:#4f46e5}
