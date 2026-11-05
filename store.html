@@ -1008,18 +1008,16 @@ function papaOrders(){
  return head+toolbar+`<section class="papa-card papa-table-wrapper"><table class="rf-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--merchant-muted)">No matching orders found.</td></tr>'}</tbody></table></section>`+`<dialog id="papa-order-dialog" class="merchant-dialog" style="padding:0;max-width:500px;border-radius:16px"><div id="papa-order-dialog-content"></div></dialog>`;
 }
 let papaOrderSearch='';
+
 function papaOpenOrderDrawer(id){
  const o=papaLiveOrders.find(x=>String(x.id)===String(id));if(!o)return;
  const dlg=document.getElementById('papa-order-dialog');if(!dlg)return;
- 
- // Reset event listeners to prevent double triggers
- const newDlg = dlg.cloneNode(false);
- dlg.parentNode.replaceChild(newDlg, dlg);
 
  const status=String(o.status||'pending');
  const items=(o.items||[]).map(i=>`<div class="item-row"><div><b>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</b>${i.selected_options&&Object.keys(i.selected_options).length?`<br><small style="color:var(--merchant-muted)">${esc(JSON.stringify(i.selected_options))}</small>`:''}${i.special_instructions?`<br><small style="color:var(--merchant-muted)">Note: ${esc(i.special_instructions)}</small>`:''}</div><b>${peso(i.line_total)}</b></div>`).join('');
- 
- document.getElementById('papa-order-dialog-content').innerHTML=`
+
+ // Directly inject content without using cloneNode to prevent breaking the dialog structure
+ dlg.innerHTML=`
  <div class="papa-drawer-content">
   <div style="padding:20px 24px;background:var(--merchant-canvas);border-bottom:1px solid var(--merchant-border);display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0">
    <div><h2 style="margin:0">Order #${String(o.id).slice(0,8)}</h2><span style="font-size:12px;font-weight:700;color:var(--merchant-accent);text-transform:uppercase;letter-spacing:0.05em">${status.replaceAll('_',' ')}</span></div>
@@ -1043,16 +1041,18 @@ function papaOpenOrderDrawer(id){
   </div>
   <div style="padding:20px 24px;border-top:1px solid var(--merchant-border);background:var(--merchant-surface);border-radius:0 0 16px 16px">${papaOrderActions(o)||'<button type="button" class="btn s blk" data-wf-close>Close</button>'}</div>
  </div>`;
- 
- newDlg.showModal();
+
+ dlg.showModal();
  if(window.lucide) window.lucide.createIcons();
- 
- newDlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>newDlg.close());
- newDlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{
+
+ // Fresh listeners attached directly to the new buttons
+ dlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>dlg.close());
+ dlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{
+   dlg.close(); // Close dialog immediately to prevent stuck backdrop when DOM refreshes
    await papaChangeOrderStatus(b.dataset.papaOrderId, b.dataset.papaNextStatus, b);
-   newDlg.close();
  });
 }
+
 function papaReports(){
  const rows=papaOrdersStore===storeUuid?papaLiveOrders:[];
  const completed=rows.filter(o=>o.status==='completed'&&Number.isFinite(Number(o.total_amount)));
