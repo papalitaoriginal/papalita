@@ -205,7 +205,7 @@ main.auth>*{min-width:0}
 </style>
 
 <style id="reference-theme">
-/* Papalita Merchant Portal — FINAL POLISH (2026-11-04) */
+/* Papalita Merchant Portal — FINAL POLISH (2026-11-05) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* =========================================================
@@ -231,12 +231,47 @@ html[data-merchant-accent="indigo"] { --merchant-accent: #4f46e5; }
 html[data-merchant-accent="blue"] { --merchant-accent: #2563eb; }
 html[data-merchant-accent="orange"] { --merchant-accent: #ea580c; }
 html[data-merchant-accent="purple"] { --merchant-accent: #9333ea; }
+
+/* FIX: PROPER DARK MODE OVERRIDES */
 html[data-merchant-mode="dark"] {
   --merchant-surface: #18181b;
   --merchant-canvas: #09090b;
   --merchant-ink: #fafafa;
   --merchant-muted: #a1a1aa;
-  --merchant-border: #27272a;
+  --merchant-border: #3f3f46;
+  --ink: #fafafa;
+  --ink-soft: #a1a1aa;
+}
+
+html[data-merchant-mode="dark"] body,
+html[data-merchant-mode="dark"] h1,
+html[data-merchant-mode="dark"] h2,
+html[data-merchant-mode="dark"] h3,
+html[data-merchant-mode="dark"] b,
+html[data-merchant-mode="dark"] strong,
+html[data-merchant-mode="dark"] .field label,
+html[data-merchant-mode="dark"] label {
+  color: var(--merchant-ink) !important;
+}
+
+html[data-merchant-mode="dark"] p,
+html[data-merchant-mode="dark"] small,
+html[data-merchant-mode="dark"] span,
+html[data-merchant-mode="dark"] .papa-muted {
+  color: var(--merchant-muted) !important;
+}
+
+/* Force dark background on input fields and textareas in dark mode */
+html[data-merchant-mode="dark"] .in,
+html[data-merchant-mode="dark"] input,
+html[data-merchant-mode="dark"] select,
+html[data-merchant-mode="dark"] textarea {
+  background-color: var(--merchant-canvas) !important;
+  color: var(--merchant-ink) !important;
+  border-color: var(--merchant-border) !important;
+}
+html[data-merchant-mode="dark"] .in::placeholder {
+  color: var(--merchant-muted) !important;
 }
 
 /* =========================================================
@@ -372,9 +407,11 @@ html body .papa-reference-shell .papa-nav {
 html body .papa-reference-shell .papa-nav i { width: 18px !important; height: 18px !important; flex: none !important; }
 html body .papa-reference-shell .papa-nav:hover { background: var(--merchant-canvas) !important; color: var(--merchant-ink) !important; }
 html body .papa-reference-shell .papa-nav.active { background: var(--merchant-accent) !important; color: #fff !important; font-weight: 600 !important; }
+
+/* FIX: PROPER NUMBER BADGE FOR SIDEBAR */
 html body .papa-reference-shell .papa-nav-count {
   font-size: 11px !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   min-width: 20px !important;
   height: 20px !important;
   display: flex !important;
@@ -384,6 +421,7 @@ html body .papa-reference-shell .papa-nav-count {
   margin-left: auto !important;
   background: #ef4444 !important;
   color: #fff !important;
+  padding: 0 6px !important;
 }
 
 html body .papa-reference-shell .papa-side-bottom,
@@ -443,7 +481,6 @@ html body .papa-reference-shell .papa-top {
 }
 html body .papa-reference-shell .papa-top .rf-title { flex: 1 !important; display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 480px; }
 
-/* FIX: GLOBAL SEARCH BAR & ORDERS SEARCH BAR (Centered & Polished) */
 html body .papa-reference-shell .rf-search,
 html body .papa-reference-shell .wf-order-search {
   display: inline-flex !important;
@@ -527,9 +564,20 @@ html body .papa-reference-shell .papa-icon-btn {
 html body .papa-reference-shell .papa-icon-btn:hover { background: var(--merchant-canvas); border-color: #d1d5db; }
 html body .papa-reference-shell .papa-icon-btn i { width: 20px; height: 20px; color: var(--merchant-muted); }
 html body .papa-reference-shell .papa-icon-btn:hover i { color: var(--merchant-ink); }
+
+/* FIX: PULSING NOTIFICATION BELL (NUMBER INSTEAD OF OBLONG) */
+@keyframes papa-pulse-red {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
 html body .papa-reference-shell .papa-icon-btn .badge {
-  position: absolute; top: -2px; right: -2px; width: 12px; height: 12px;
-  background: #ef4444; border: 2px solid var(--merchant-surface); border-radius: 50%;
+  position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px;
+  background: #ef4444; border: 2px solid var(--merchant-surface); border-radius: 999px;
+  color: #fff; font-size: 10px; font-weight: 800; display:flex; align-items:center; justify-content:center; padding: 0 4px;
+}
+html body .papa-reference-shell .papa-icon-btn .badge.pulsing {
+  animation: papa-pulse-red 2s infinite;
 }
 
 html body .papa-reference-shell .papa-heading {
@@ -619,13 +667,13 @@ html body .papa-reference-shell .panel {
 .papa-status-pill.ok { background: #d1fae5; color: #047857; }
 
 .papa-timer-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 700; background: var(--merchant-canvas); color: var(--merchant-muted); }
-.papa-timer-badge.urgent { background: #fee2e2; color: #ef4444; }
+.papa-timer-badge.urgent { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5;}
 
 /* Dark mode version for Pills */
 html[data-merchant-mode="dark"] .papa-status-pill.out { background: #7f1d1d; color: #fca5a5; }
 html[data-merchant-mode="dark"] .papa-status-pill.low { background: #78350f; color: #fcd34d; }
 html[data-merchant-mode="dark"] .papa-status-pill.ok { background: #064e3b; color: #6ee7b7; }
-html[data-merchant-mode="dark"] .papa-timer-badge.urgent { background: #7f1d1d; color: #fca5a5; }
+html[data-merchant-mode="dark"] .papa-timer-badge.urgent { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
 
 /* FIX: TABLE SCROLLING / PAGINATION ALTERNATIVE */
 .papa-table-wrapper {
@@ -675,14 +723,6 @@ html body .papa-reference-shell .rf-table td {
 }
 
 /* INPUTS */
-html[data-merchant-mode="dark"] body .papa-reference-shell input,
-html[data-merchant-mode="dark"] body .papa-reference-shell select,
-html[data-merchant-mode="dark"] body .papa-reference-shell textarea {
-  background: var(--merchant-canvas) !important;
-  color: var(--merchant-ink) !important;
-  border-color: var(--merchant-border) !important;
-}
-
 html body .papa-reference-shell .wf-order-tools { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: flex-end; }
 html body .papa-reference-shell .wf-order-tools .btn { height: 42px; padding: 0 16px; border-radius: 9px; }
 
@@ -694,16 +734,6 @@ html body .papa-reference-shell .wf-order-tools .btn { height: 42px; padding: 0 
 .papa-popup-anim {
   animation: slideInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-/* MODAL / DRAWER POLISH */
-.papa-drawer-content { font-family: Inter, system-ui, sans-serif; color: var(--merchant-ink); }
-.papa-drawer-content h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-.papa-drawer-content h3 { margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--merchant-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.papa-drawer-content .info-grid { display: grid; gap: 8px; font-size: 14px; line-height: 1.5; }
-.papa-drawer-content .info-grid b { color: var(--merchant-ink); font-weight: 600; }
-.papa-drawer-content .item-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--merchant-border); }
-.papa-drawer-content .item-row:last-child { border-bottom: none; padding-bottom: 0; }
-.papa-drawer-content .total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; margin-top: 16px; border-top: 2px dashed var(--merchant-border); font-size: 20px; font-weight: 800; color: var(--merchant-accent); }
 
 /* MISC UI ELEMENTS */
 html body .papa-reference-shell .wf-welcome-banner { background: linear-gradient(110deg, #07552d, #0b7e3d 65%, #19a052) !important; color: #fff !important; }
@@ -893,7 +923,7 @@ function papaShell(content){
     </button>
     <button class="papa-icon-btn" data-papa-tab="orders" aria-label="Orders">
       <i data-lucide="bell"></i>
-      ${pending?'<span class="badge"></span>':''}
+      ${pending?'<span class="badge pulsing">'+pending+'</span>':''}
     </button>
     <button class="papa-icon-btn" id="papa-sound-toggle" aria-label="Sound Toggle">
       <i data-lucide="${papaAudioEnabled?'volume-2':'volume-x'}"></i>
@@ -963,12 +993,21 @@ async function papaChangeOrderStatus(orderId,nextStatus,button){
  if(!order)throw Error('Order not found. Refresh orders.');
  if(nextStatus==='cancelled'&&!confirm('Cancel/reject this order? This action cannot be undone.'))return;
  if(nextStatus==='completed'&&!confirm('Confirm this order has been fulfilled?'))return;
+
+ // NEW: Mag-ask og ETA kung mudawat sa order
+ let etaNotes = "";
+ if(nextStatus==='confirmed') {
+    const eta = prompt(`Set estimated delivery/prep time in minutes for Order #${String(order.id).slice(0,8)}\n\n(Example: type "30" for 30 minutes)`, "30");
+    if(eta === null) return; // if gituyo og cancel sa owner
+    etaNotes = eta.trim() ? `ETA: ${eta} mins` : "";
+ }
+
  if(button)button.disabled=true;
  try{
   const {data,error}=await db.rpc('papalita_merchant_update_order_status',{p_order_id:orderId,p_new_status:nextStatus});
   if(error)throw error;
   if(!data)throw Error('Server did not confirm status update.');
-  toast('Order updated to '+nextStatus.replaceAll('_',' '));
+  toast(`Order updated to ${nextStatus.replaceAll('_',' ')}` + (etaNotes ? ` | Customer notified: ${etaNotes}` : ''));
   await papaFetchOrders();
  }catch(e){console.error('[Papalita] Order status update failed',e);toast('Could not update order: '+e.message);if(button)button.disabled=false;}
 }
@@ -981,7 +1020,7 @@ function papaOrders(){
  if(papaOrdersError)return head+`<div class="papa-card" style="padding:24px"><h2>Unable to load orders</h2><p style="color:#ef4444">${esc(papaOrdersError)}</p></div>`;
  if(papaOrdersStore!==storeUuid)return head+'<div class="papa-card" style="padding:24px">Loading your orders...</div>';
  
- // FIX: Sorting oldest first for active workflows
+ // Sorting oldest first for active workflows
  const visible=papaLiveOrders
   .filter(o=>(papaOrderFilter==='all'||o.status===papaOrderFilter)&&(!papaOrderSearch||[o.id,o.customer_name,o.contact_number,o.delivery_address].some(v=>String(v||'').toLowerCase().includes(papaOrderSearch.toLowerCase()))))
   .sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
@@ -995,7 +1034,7 @@ function papaOrders(){
   // Add time tracking (FIFO Priority)
   const createdAtMs = new Date(o.created_at).getTime();
   const elapsedMins = Math.floor((Date.now() - createdAtMs) / 60000);
-  const urgent = elapsedMins > 15 && status !== 'completed' && status !== 'cancelled';
+  const urgent = elapsedMins > 30 && status !== 'completed' && status !== 'cancelled';
   const timerBadge = status === 'completed' || status === 'cancelled' 
     ? '' 
     : `<br><span class="papa-timer-badge ${urgent ? 'urgent' : ''}"><i data-lucide="clock" style="width:12px;height:12px"></i> ${elapsedMins}m ago</span>`;
@@ -1013,42 +1052,105 @@ function papaOpenOrderDrawer(id){
  const o=papaLiveOrders.find(x=>String(x.id)===String(id));if(!o)return;
  const dlg=document.getElementById('papa-order-dialog');if(!dlg)return;
 
+ const newDlg = dlg.cloneNode(false);
+ dlg.parentNode.replaceChild(newDlg, dlg);
+
  const status=String(o.status||'pending');
- const items=(o.items||[]).map(i=>`<div class="item-row"><div><b>${Number(i.quantity)||0}× ${esc(i.product_name||'Product')}</b>${i.selected_options&&Object.keys(i.selected_options).length?`<br><small style="color:var(--merchant-muted)">${esc(JSON.stringify(i.selected_options))}</small>`:''}${i.special_instructions?`<br><small style="color:var(--merchant-muted)">Note: ${esc(i.special_instructions)}</small>`:''}</div><b>${peso(i.line_total)}</b></div>`).join('');
+ const store = papaStore();
+ 
+ // TIME LOGIC UG FREEBIES WARNING
+ const createdAtMs = new Date(o.created_at).getTime();
+ const elapsedMins = Math.floor((Date.now() - createdAtMs) / 60000);
+ const orderTimeStr = new Date(o.created_at).toLocaleTimeString('en-PH', {timeZone: 'Asia/Manila', hour:'numeric', minute:'2-digit'});
+ 
+ let overdueHtml = '';
+ if (elapsedMins > 30 && status !== 'completed' && status !== 'cancelled') {
+    overdueHtml = `
+    <div style="background:#fee2e2; border:2px dashed #ef4444; color:#b91c1c; padding:12px; margin-bottom:16px; font-family:'Plus Jakarta Sans', sans-serif; font-size:12px; text-align:center; border-radius:8px;">
+      <b style="font-size:14px;">⚠️ OVERDUE ORDER!</b><br>
+      Customer has been waiting for <b>${elapsedMins} mins</b>.<br>
+      <i>Tip: Message the customer or consider giving a small freebie!</i>
+    </div>`;
+ } else if (status !== 'completed' && status !== 'cancelled') {
+    overdueHtml = `
+    <div style="background:var(--merchant-canvas); padding:10px; margin-bottom:16px; font-family:'Plus Jakarta Sans', sans-serif; font-size:12px; text-align:center; border:1px dashed var(--merchant-border); border-radius:8px;">
+      <b>Wait time:</b> ${elapsedMins} mins
+    </div>`;
+ }
 
- // Directly inject content without using cloneNode to prevent breaking the dialog structure
- dlg.innerHTML=`
- <div class="papa-drawer-content">
-  <div style="padding:20px 24px;background:var(--merchant-canvas);border-bottom:1px solid var(--merchant-border);display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0">
-   <div><h2 style="margin:0">Order #${String(o.id).slice(0,8)}</h2><span style="font-size:12px;font-weight:700;color:var(--merchant-accent);text-transform:uppercase;letter-spacing:0.05em">${status.replaceAll('_',' ')}</span></div>
-   <button type="button" class="papa-icon-btn" data-wf-close><i data-lucide="x"></i></button>
-  </div>
-  <div style="padding:24px;max-height:60vh;overflow-y:auto">
-   <div style="margin-bottom:24px;padding:16px;background:var(--merchant-canvas);border-radius:12px;border:1px solid var(--merchant-border)">
-    <h3>Customer Details</h3>
-    <div class="info-grid">
-     <div><span style="color:var(--merchant-muted)">Name:</span> <b>${esc(o.customer_name||o.contact_name||'Not provided')}</b></div>
-     <div><span style="color:var(--merchant-muted)">Contact:</span> <b>${esc(o.contact_number||'Not provided')}</b></div>
-     <div><span style="color:var(--merchant-muted)">Address:</span> <b>${esc(o.delivery_address||'Not provided')}</b></div>
+ const items=(o.items||[]).map(i=>`
+  <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:flex-start;">
+    <div style="flex:1; padding-right:10px;">
+      <b>${Number(i.quantity)||0}x</b> ${esc(i.product_name||'Product')}
+      ${i.selected_options&&Object.keys(i.selected_options).length?`<br><small style="color:#666; font-family:sans-serif; font-size:11px;">${esc(JSON.stringify(i.selected_options))}</small>`:''}
+      ${i.special_instructions?`<br><small style="color:#666; font-family:sans-serif; font-size:11px;">Note: ${esc(i.special_instructions)}</small>`:''}
     </div>
-   </div>
-   <div style="margin-bottom:24px">
-    <h3>Order Items</h3>
-    ${items||'<p>No items</p>'}
-   </div>
-   <div class="total-row"><span>Total</span><span>${peso(o.total_amount)}</span></div>
-   <div style="font-size:13px;color:var(--merchant-muted);margin-top:8px;text-align:right">${esc(o.payment_method||'Cash').toUpperCase()} · ${esc(o.fulfillment_type||'Delivery').toUpperCase()}</div>
-  </div>
-  <div style="padding:20px 24px;border-top:1px solid var(--merchant-border);background:var(--merchant-surface);border-radius:0 0 16px 16px">${papaOrderActions(o)||'<button type="button" class="btn s blk" data-wf-close>Close</button>'}</div>
- </div>`;
+    <b style="flex:none;">${peso(i.line_total)}</b>
+  </div>`).join('');
 
- dlg.showModal();
+ newDlg.innerHTML=`
+ <div style="background:#fff; color:#111; font-family:'Courier New', Courier, monospace; width:100%; max-width:380px; margin:0 auto; padding:24px; border-radius:12px; box-shadow:0 20px 40px rgba(0,0,0,0.25);">
+  
+  ${overdueHtml}
+
+  <!-- Receipt Header -->
+  <div style="text-align:center; margin-bottom:16px; border-bottom:2px dashed #ccc; padding-bottom:16px;">
+   <h2 style="margin:0 0 4px; font-size:22px; font-weight:900; text-transform:uppercase; font-family: 'Plus Jakarta Sans', sans-serif;">${esc(store.name || 'Papalita Merchant')}</h2>
+   <p style="margin:0; font-size:14px; color:#555;">Order #${String(o.id).slice(0,8)}</p>
+   <p style="margin:4px 0 0; font-size:13px; color:#111; font-weight:bold; font-family: 'Plus Jakarta Sans', sans-serif;">Ordered at: ${orderTimeStr}</p>
+   <div style="margin-top:12px;">
+     <span style="background:var(--merchant-canvas); border: 1px solid var(--merchant-border); color:var(--merchant-ink); padding:4px 10px; border-radius:99px; font-size:12px; font-weight:bold; font-family: 'Plus Jakarta Sans', sans-serif;">
+       STATUS: ${status.toUpperCase().replaceAll('_',' ')}
+     </span>
+   </div>
+  </div>
+
+  <!-- Customer Details -->
+  <div style="margin-bottom:16px; border-bottom:2px dashed #ccc; padding-bottom:16px; font-size:13px; line-height:1.6;">
+   <div><b>CUSTOMER:</b> ${esc(o.customer_name||o.contact_name||'N/A')}</div>
+   <div><b>CONTACT:</b> ${esc(o.contact_number||'N/A')}</div>
+   <div><b>ADDRESS:</b> ${esc(o.delivery_address||'Pickup')}</div>
+  </div>
+
+  <!-- Order Items -->
+  <div style="margin-bottom:16px; border-bottom:2px dashed #ccc; padding-bottom:16px; font-size:14px;">
+   <div style="margin-bottom:12px; font-weight:bold; display:flex; justify-content:space-between;">
+     <span>QTY ITEM</span>
+     <span>AMOUNT</span>
+   </div>
+   ${items||'<div>No items</div>'}
+  </div>
+
+  <!-- Totals -->
+  <div style="margin-bottom:24px;">
+   <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;">
+    <span style="font-size:16px;">TOTAL</span>
+    <span style="font-size:24px; font-family:'Plus Jakarta Sans', sans-serif; color:var(--merchant-accent);">${peso(o.total_amount)}</span>
+   </div>
+   <div style="text-align:right; font-size:12px; color:#666; margin-top:4px; font-family: 'Plus Jakarta Sans', sans-serif;">
+    ${esc(o.payment_method||'Cash').toUpperCase()} · ${esc(o.fulfillment_type||'Delivery').toUpperCase()}
+   </div>
+  </div>
+
+  <!-- Actions (Buttons) -->
+  <div style="display:flex; flex-direction:column; gap:10px; font-family: 'Plus Jakarta Sans', sans-serif;">
+   ${papaOrderActions(o)||''}
+   <button type="button" class="btn s blk" data-wf-close style="border-radius:8px;">Close Receipt</button>
+  </div>
+ </div>`;
+ 
+ newDlg.style.padding = '0';
+ newDlg.style.background = 'transparent';
+ newDlg.style.boxShadow = 'none';
+ newDlg.style.maxWidth = '400px';
+ newDlg.style.margin = 'auto'; 
+ 
+ newDlg.showModal();
  if(window.lucide) window.lucide.createIcons();
 
- // Fresh listeners attached directly to the new buttons
- dlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>dlg.close());
- dlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{
-   dlg.close(); // Close dialog immediately to prevent stuck backdrop when DOM refreshes
+ newDlg.querySelectorAll('[data-wf-close]').forEach(x=>x.onclick=()=>newDlg.close());
+ newDlg.querySelectorAll('[data-papa-next-status]').forEach(b=>b.onclick=async()=>{
+   newDlg.close(); 
    await papaChangeOrderStatus(b.dataset.papaOrderId, b.dataset.papaNextStatus, b);
  });
 }
@@ -1077,16 +1179,56 @@ function papaAvailabilityCard(){
  </div></div></div></section>`;
 }
 let papaSetTab='workspace';
+
+// APPEARANCE PANEL WITH BUTTONS INSTEAD OF DROPDOWNS
 function papaAppearancePanel(){
  const tabs=[['workspace','Appearance'],['integrations','Integrations']];
  const bar=`<div style="display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--merchant-border);padding-bottom:12px">${tabs.map(([k,l])=>`<button type="button" class="btn sm ${papaSetTab===k?'s p':'s'}" style="${papaSetTab!==k?'border-color:transparent':''}" data-wf-settab="${k}">${l}</button>`).join('')}</div>`;
  
- if(papaSetTab==='integrations')return `<div class="papa-heading"><div><h1>Integrations</h1><p>Services connected to your store.</p></div></div>`+bar+`<div style="display:grid;gap:16px"><section class="papa-card" style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="display:block;font-size:16px">Supabase Database</b><small style="color:var(--merchant-muted)">Orders, products and catering requests</small></div><span style="padding:4px 12px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:700">Connected</span></div><hr style="border:0;border-top:1px solid var(--merchant-border);margin:16px 0"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="display:block;font-size:16px">Live Order Updates</b><small style="color:var(--merchant-muted)">Realtime listener active</small></div><span style="padding:4px 12px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:700">Active</span></div></section></div>`;
+ if(papaSetTab==='integrations')return `<div class="papa-heading"><div><h1>Integrations</h1><p>Services connected to your store.</p></div></div>`+bar+`<div style="display:grid;gap:16px"><section class="papa-card" style="padding:24px"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="display:block;font-size:16px;color:var(--merchant-ink)">Supabase Database</b><small style="color:var(--merchant-muted)">Orders, products and catering requests</small></div><span style="padding:4px 12px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:700">Connected</span></div><hr style="border:0;border-top:1px solid var(--merchant-border);margin:16px 0"><div style="display:flex;justify-content:space-between;align-items:center"><div><b style="display:block;font-size:16px;color:var(--merchant-ink)">Live Order Updates</b><small style="color:var(--merchant-muted)">Realtime listener active</small></div><span style="padding:4px 12px;background:#dcfce7;color:#166534;border-radius:999px;font-size:12px;font-weight:700">Active</span></div></section></div>`;
  
- return `<div class="papa-heading"><div><h1>Appearance</h1><p>Choose how your Papalita workspace looks.</p></div></div>`+bar+`<section class="papa-card" style="padding:24px;max-width:600px"><h2 style="margin:0 0 16px">Theme Settings</h2><div style="display:grid;gap:16px"><div class="field"><label>Interface Mode</label><select class="in" id="papa-theme-mode"><option value="light">Light Mode</option><option value="dark">Dark Mode</option></select></div><div class="field"><label>Brand Accent Color</label><select class="in" id="papa-theme-accent"><option value="green">Papalita Green</option><option value="indigo">Indigo</option><option value="blue">Blue</option><option value="orange">Orange</option><option value="purple">Purple</option></select></div></div><p style="color:var(--merchant-muted);font-size:13px;margin-top:16px">Appearance settings are saved locally on this device.</p></section>`;
+ let prefs={};try{prefs=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){};
+ const curMode = document.documentElement.dataset.merchantMode || 'light';
+ const curAccent = document.documentElement.dataset.merchantAccent || 'green';
+ 
+ const modes=[{v:'light',i:'sun',l:'Light Mode'},{v:'dark',i:'moon',l:'Dark Mode'}];
+ const accents=[{v:'green',c:'#087f32'},{v:'indigo',c:'#4f46e5'},{v:'blue',c:'#2563eb'},{v:'orange',c:'#ea580c'},{v:'purple',c:'#9333ea'}];
+
+ return `<div class="papa-heading"><div><h1>Appearance</h1><p>Choose how your Papalita workspace looks.</p></div></div>`+bar+`<section class="papa-card" style="padding:24px;max-width:600px">
+  <h2 style="margin:0 0 16px;color:var(--merchant-ink)">Theme Settings</h2>
+  <div style="display:grid;gap:24px">
+   <div>
+    <label style="display:block;font-size:13px;font-weight:700;margin-bottom:10px;color:var(--merchant-ink)">Interface Mode</label>
+    <div style="display:flex;gap:12px;">
+      ${modes.map(m=>`<button type="button" class="btn s" data-theme-mode="${m.v}" style="flex:1; border:2px solid ${curMode===m.v?'var(--merchant-accent)':'var(--merchant-border)'}; background:${curMode===m.v?'var(--merchant-canvas)':'transparent'}; color:var(--merchant-ink)"><i data-lucide="${m.i}"></i> ${m.l}</button>`).join('')}
+    </div>
+   </div>
+   <div>
+    <label style="display:block;font-size:13px;font-weight:700;margin-bottom:10px;color:var(--merchant-ink)">Brand Accent Color</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      ${accents.map(a=>`<button type="button" data-theme-accent="${a.v}" style="width:48px;height:48px;border-radius:50%;border:4px solid ${curAccent===a.v?'var(--merchant-ink)':'transparent'};background:${a.c};cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.1);transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></button>`).join('')}
+    </div>
+   </div>
+  </div>
+  <p style="color:var(--merchant-muted);font-size:13px;margin-top:24px">Appearance settings are saved locally on this device.</p>
+ </section>`;
 }
-function papaApplyAppearance(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){};const mode=['dark','light'].includes(prefs.mode)?prefs.mode:'light';const accent=['green','indigo','blue','orange','purple'].includes(prefs.accent)?prefs.accent:'green';document.documentElement.dataset.merchantMode=mode;document.documentElement.dataset.merchantAccent=accent;const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent');if(m)m.value=mode;if(a)a.value=accent;}
-function papaBindAppearance(){papaApplyAppearance();const m=document.getElementById('papa-theme-mode'),a=document.getElementById('papa-theme-accent');const save=()=>{try{localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify({mode:m.value,accent:a.value}))}catch(e){}papaApplyAppearance()};if(m&&a){m.onchange=save;a.onchange=save;}}
+function papaApplyAppearance(){let prefs={};try{prefs=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){};const mode=['dark','light'].includes(prefs.mode)?prefs.mode:'light';const accent=['green','indigo','blue','orange','purple'].includes(prefs.accent)?prefs.accent:'green';document.documentElement.dataset.merchantMode=mode;document.documentElement.dataset.merchantAccent=accent;}
+function papaBindAppearance(){
+ papaApplyAppearance();
+ $$('[data-theme-mode]').forEach(b=>b.onclick=()=>{
+   let p={};try{p=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){}
+   p.mode=b.dataset.themeMode;
+   localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify(p));
+   papaApplyAppearance();draw();
+ });
+ $$('[data-theme-accent]').forEach(b=>b.onclick=()=>{
+   let p={};try{p=JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')}catch(e){}
+   p.accent=b.dataset.themeAccent;
+   localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify(p));
+   papaApplyAppearance();draw();
+ });
+}
 function papaSettings(){return `<div class="papa-heading"><div><h1>Store settings</h1><p>Control store availability and store information.</p></div></div>${papaAvailabilityCard()}<section class="papa-card" style="padding:24px"><h2>Store profile</h2><p style="color:var(--merchant-muted);margin-bottom:16px">Edit contact details, photos and opening hours in Store Profile.</p><button class="btn s" data-jump="profile">Go to store profile</button></section>`;}
 async function papaUpload(file,kind){if(!file)return null;if(file.size>5*1024*1024)throw Error('Photo must be 5 MB or smaller');const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];if(!ext)throw Error('Please use JPEG, PNG or WebP');const path=`${storeUuid}/${kind}-${crypto.randomUUID()}.${ext}`;const q=await db.storage.from('store-images').upload(path,file,{contentType:file.type,upsert:false});if(q.error)throw Error('Photo upload failed: '+q.error.message+' (check store-images Storage RLS)');return db.storage.from('store-images').getPublicUrl(path).data.publicUrl;}
 async function papaBind(){
