@@ -747,6 +747,534 @@ html body .papa-reference-shell .papa-filter:not(.active) { background: var(--me
 @media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-actions{grid-template-columns:1fr}}
 </style>
 <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<style id="papalita-portal-upgrade">
+html body .pp-shell{--bg:#f7f7f2;--surface:#fff;--ink:#22251f;--muted:#73766e;--border:#e8e9e2;--accent:#087f32;--accent-soft:#edf6ee;--yellow:#f1d46d;--shadow:0 2px 3px #20291a02;--side:#171d18;--side-ink:#b6beb6;--radius:14px;color-scheme:light;font-family:Inter,Arial,sans-serif;font-size:13px;color:var(--ink);background:var(--bg)}
+html body .pp-shell *{box-sizing:border-box}
+html body .pp-shell{margin:0}
+html body .pp-shell button,html body .pp-shell input,html body .pp-shell textarea,html body .pp-shell select{font:inherit}
+html body .pp-shell button,html body .pp-shell a,html body .pp-shell input,html body .pp-shell select,html body .pp-shell textarea{-webkit-tap-highlight-color:transparent}
+html body .pp-shell button,html body .pp-shell a{touch-action:manipulation}
+html body .pp-shell button{cursor:pointer}
+html body .pp-shell button:disabled{cursor:wait;opacity:.55}
+html body .pp-shell button:focus-visible,html body .pp-shell a:focus-visible{outline:3px solid #71b58b;outline-offset:3px}
+html body .pp-shell a{color:var(--accent)}
+html body .pp-shell svg.pp-ico{width:19px;height:19px;flex:none;stroke:currentColor;stroke-width:1.65;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+html body .pp-shell h1,html body .pp-shell h2,html body .pp-shell h3,html body .pp-shell p{margin:0}
+html body .pp-shell h1{font-size:26px;font-weight:650;letter-spacing:-1px;line-height:1.3}
+html body .pp-shell h2{font-size:15px;font-weight:650;letter-spacing:-.3px}
+html body .pp-shell h3{font-size:14px;font-weight:650}
+html body .pp-shell p{line-height:1.65}
+html body .pp-shell small,html body .pp-shell .pp-muted{color:var(--muted)}
+html body .pp-shell small{font-size:11px}
+html body .pp-shell .pp-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-height:39px;line-height:1.2;font-weight:550;text-decoration:none;color:var(--ink);white-space:nowrap;transition:background .15s,transform .15s}
+html body .pp-shell .pp-button:hover{background:var(--bg);border-color:#c8cfc6}
+html body .pp-shell .pp-button.pp-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+html body .pp-shell .pp-button.pp-primary:hover{filter:brightness(.94)}
+html body .pp-shell .pp-button.pp-dark{background:#222820;color:#fff;border-color:#222820}
+html body .pp-shell .pp-button.pp-gold{background:var(--yellow);border-color:var(--yellow);color:#302c18}
+html body .pp-shell .pp-button.pp-danger{color:#b83c3c;background:#fff5f4;border-color:#f1d4d0}
+html body .pp-shell .pp-button.pp-small{min-height:31px;padding:7px 10px;font-size:11px}
+html body .pp-shell .pp-button.pp-link{border:0;background:none;padding:0;min-height:28px;color:var(--accent)}
+html body .pp-shell .pp-icon-button{display:inline-flex;align-items:center;justify-content:center;position:relative;border:1px solid var(--border);background:var(--surface);color:var(--ink);width:36px;height:36px;border-radius:9px}
+html body .pp-shell .pp-icon-button:hover{background:var(--bg)}
+html body .pp-shell .pp-flex{display:flex;align-items:center;gap:12px}
+html body .pp-shell .pp-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+html body .pp-shell .pp-wrap{flex-wrap:wrap}
+html body .pp-shell .pp-stack{display:grid;gap:20px}
+html body .pp-shell .pp-divider{height:1px;background:var(--border);margin:20px 0}
+html body .pp-shell .pp-pill{display:inline-flex;align-items:center;gap:6px;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:550;line-height:1;white-space:nowrap;background:#eff1eb;color:#66705e}
+html body .pp-shell .pp-pill.pp-pending,html body .pp-shell .pp-pill.pp-preparing{background:#fff5d5;color:#886c1e}
+html body .pp-shell .pp-pill.pp-confirmed,html body .pp-shell .pp-pill.pp-ready{background:#e9f3e8;color:#3a783d}
+html body .pp-shell .pp-pill.pp-completed{background:#eaf3eb;color:#2c7344}
+html body .pp-shell .pp-pill.pp-cancelled{background:#faeeeb;color:#b75b4b}
+html body .pp-shell .pp-pill.pp-out_for_delivery{background:#eaf0fc;color:#526fa2}
+html body .pp-shell .pp-dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+html body .pp-shell .pp-layout{min-height:100vh;display:grid;grid-template-columns:224px minmax(0,1fr)}
+html body .pp-shell .pp-sidebar{position:fixed;left:0;top:0;bottom:0;width:224px;background:var(--side);color:var(--side-ink);z-index:35;display:flex;flex-direction:column;padding:28px 15px 16px}
+html body .pp-shell .pp-brand{padding:0 9px 25px;display:flex;gap:9px;align-items:center;color:#fff}
+html body .pp-shell .pp-brand img{width:36px;height:36px;object-fit:contain}
+html body .pp-shell .pp-brand strong{font-size:23px;letter-spacing:-.9px;font-weight:750}
+html body .pp-shell .pp-brand small{color:#93a091;display:block;font-size:9px;margin-top:3px;letter-spacing:1.15px;text-transform:uppercase}
+html body .pp-shell .pp-store-switch{display:flex;align-items:center;gap:10px;border:1px solid #ffffff17;background:#ffffff07;color:#f3f4f0;padding:12px 10px;border-radius:9px;width:100%;text-align:left}
+html body .pp-shell .pp-store-switch .pp-store-name{font-size:12px;display:block;max-width:131px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550}
+html body .pp-shell .pp-store-switch small{display:block;font-size:9px;margin-top:5px;color:#9aa69b}
+html body .pp-shell .pp-avatar{width:35px;height:35px;flex:none;border-radius:9px;background:#f3ecd7;color:#656a41;display:inline-flex;align-items:center;justify-content:center;font-weight:650;font-size:12px;overflow:hidden}
+html body .pp-shell .pp-avatar img{width:100%;height:100%;object-fit:cover}
+html body .pp-shell .pp-side-label{font-size:9px;letter-spacing:1.3px;color:#6e7e70;padding:25px 12px 10px;font-weight:600}
+html body .pp-shell .pp-nav{display:grid;gap:5px}
+html body .pp-shell .pp-nav a{color:var(--side-ink);text-decoration:none;display:flex;align-items:center;gap:11px;border-radius:7px;padding:11px 12px;font-size:12px;min-height:39px}
+html body .pp-shell .pp-nav a:hover{background:#ffffff08;color:#fff}
+html body .pp-shell .pp-nav a.pp-active{background:#f0d777;color:#292c20;font-weight:600}
+html body .pp-shell .pp-nav .pp-ico{width:17px;height:17px}
+html body .pp-shell .pp-nav .pp-nav-count{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:26px;min-height:24px;padding:3px 7px;border:1px solid #f3d77b;border-radius:6px;background:#f3d77b;color:#19251b;font-size:12px;font-weight:750;line-height:1;font-variant-numeric:tabular-nums;text-align:center}
+html body .pp-shell .pp-nav a.pp-active .pp-nav-count{background:#223e29;border-color:#223e29;color:#ffffff}
+html body .pp-shell .pp-sidebar-bottom{margin-top:auto;padding-top:24px}
+html body .pp-shell .pp-side-help{border-radius:9px;padding:14px 12px;background:#ffffff05;border:1px solid #ffffff0a;margin:14px 0}
+html body .pp-shell .pp-side-help b{color:#d9ded4;font-size:11px;display:block;margin-bottom:5px}
+html body .pp-shell .pp-side-help p{font-size:10px;color:#829181;line-height:1.6}
+html body .pp-shell .pp-side-help button{color:#e7cf80;font-size:10px;background:none;border:0;padding:10px 0 0}
+html body .pp-shell .pp-side-owner{display:flex;align-items:center;gap:10px;padding:15px 5px 0;border-top:1px solid #ffffff12}
+html body .pp-shell .pp-side-owner b{font-size:11px;color:#e1e5de;display:block}
+html body .pp-shell .pp-side-owner small{display:block;color:#869083;font-size:9px;margin-top:4px;max-width:125px;overflow:hidden;text-overflow:ellipsis}
+html body .pp-shell .pp-side-owner .pp-avatar{border-radius:50%;width:31px;height:31px;background:#353e30;color:#d8dece;font-size:10px}
+html body .pp-shell .pp-work{grid-column:2;min-width:0}
+html body .pp-shell .pp-topbar{height:74px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;gap:15px}
+html body .pp-shell .pp-breadcrumb{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:11px}
+html body .pp-shell .pp-breadcrumb b{font-weight:500;color:var(--ink)}
+html body .pp-shell .pp-header-actions{display:flex;align-items:center;gap:12px}
+html body .pp-shell .pp-global-search{display:flex;align-items:center;gap:8px;color:var(--muted);border:1px solid var(--border);padding:0 11px;border-radius:7px;width:225px;height:34px;background:var(--bg)}
+html body .pp-shell .pp-global-search input{background:none;border:0;outline:none;min-width:0;flex:1;font-size:10px;color:var(--ink)}
+html body .pp-shell .pp-key{border:1px solid var(--border);padding:2px 4px;border-radius:3px;font-size:9px}
+html body .pp-shell .pp-topbar .pp-icon-button{border:0;background:none;width:30px}
+html body .pp-shell .pp-notification-dot{position:absolute;top:5px;right:5px;width:5px;height:5px;border-radius:50%;background:#da8760}
+html body .pp-shell .pp-topbar-avatar{width:30px;height:30px;border-radius:50%}
+html body .pp-shell .pp-menu-toggle{display:none}
+html body .pp-shell .pp-review-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 32px;font-size:10px;background:#eeefe6;color:#737761;border-bottom:1px solid var(--border)}
+html body .pp-shell .pp-review-strip b{color:#4b5543;font-weight:600}
+html body .pp-shell .pp-review-strip button{font-size:10px;min-height:25px;padding:4px 9px}
+html body .pp-shell .pp-main{padding:29px 32px 24px;max-width:1640px;margin:auto}
+html body .pp-shell .pp-page-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:25px}
+html body .pp-shell .pp-page-head p{font-size:11px;margin-top:6px;color:var(--muted)}
+html body .pp-shell .pp-page-head .pp-button{font-size:11px}
+html body .pp-shell .pp-eyebrow{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;font-weight:650;color:var(--muted);margin-bottom:8px}
+html body .pp-shell .pp-welcome{background:#f0e8cb;border:1px solid #e9dfbd;border-radius:12px;padding:22px 25px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}
+html body .pp-shell .pp-welcome .pp-eyebrow{color:#7b7659;font-size:9px;letter-spacing:1.5px}
+html body .pp-shell .pp-welcome h2{font-size:22px;letter-spacing:-.65px;font-weight:600;color:#3a402d;position:relative}
+html body .pp-shell .pp-welcome p{font-size:11px;color:#77795e;margin:7px 0 16px}
+html body .pp-shell .pp-welcome .pp-button{font-size:10px;min-height:32px}
+html body .pp-shell .pp-welcome-mark{position:absolute;right:75px;top:-25px;width:210px;height:210px;opacity:.07;transform:rotate(-15deg);pointer-events:none}
+html body .pp-shell .pp-welcome-side{z-index:1;text-align:right;border-left:1px solid #cfc6a6;padding:5px 0 5px 25px;min-width:180px}
+html body .pp-shell .pp-welcome-side .pp-pill{background:#e1e8c9;color:#566837}
+html body .pp-shell .pp-welcome-side small{display:block;font-size:10px;color:#818166;margin-top:9px}
+html body .pp-shell .pp-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:22px}
+html body .pp-shell .pp-metric{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:18px 19px;box-shadow:var(--shadow)}
+html body .pp-shell .pp-metric-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+html body .pp-shell .pp-metric-top span{font-size:11px;color:var(--muted);font-weight:500}
+html body .pp-shell .pp-metric-top .pp-ico{width:16px;height:16px;color:#999e8f}
+html body .pp-shell .pp-metric strong{font-size:25px;letter-spacing:-.85px;font-weight:600;display:block;line-height:1.3}
+html body .pp-shell .pp-metric-foot{font-size:9px;color:var(--muted);margin-top:11px;display:flex;align-items:center;gap:5px}
+html body .pp-shell .pp-trend{color:var(--accent);font-weight:550;background:var(--accent-soft);padding:3px 5px;border-radius:4px}
+html body .pp-shell .pp-columns{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:20px;margin-bottom:20px}
+html body .pp-shell .pp-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);min-width:0;overflow:hidden}
+html body .pp-shell .pp-card-head{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:20px 21px}
+html body .pp-shell .pp-card-head p{font-size:10px;color:var(--muted);margin-top:5px}
+html body .pp-shell .pp-card-head h2{font-size:13px}
+html body .pp-shell .pp-card-body{padding:0 21px 21px}
+html body .pp-shell .pp-chart-summary{display:flex;align-items:center;gap:14px;margin:2px 0 14px}
+html body .pp-shell .pp-chart-summary strong{font-size:23px;font-weight:600;letter-spacing:-.6px}
+html body .pp-shell .pp-chart-summary small{font-size:9px}
+html body .pp-shell .pp-chart-container{position:relative;height:204px;width:100%}
+html body .pp-shell .pp-sales-chart{width:100%;height:100%;overflow:visible}
+html body .pp-shell .pp-sales-chart text{fill:var(--muted);font-size:9px;font-family:Inter,sans-serif}
+html body .pp-shell .pp-chart-grid{stroke:var(--border);stroke-dasharray:3 4}
+html body .pp-shell .pp-chart-line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+html body .pp-shell .pp-chart-fill{fill:var(--accent);opacity:.075}
+html body .pp-shell .pp-chart-dot{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+html body .pp-shell .pp-chart-legend{display:flex;gap:15px;justify-content:center;font-size:9px;color:var(--muted);margin-top:6px}
+html body .pp-shell .pp-chart-legend .pp-dot{background:var(--accent)}
+html body .pp-shell .pp-product-ranking{padding:0 21px 12px;display:grid;gap:0}
+html body .pp-shell .pp-ranking-item{display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid var(--border)}
+html body .pp-shell .pp-ranking-item:last-child{border:0}
+html body .pp-shell .pp-thumb{width:40px;height:40px;flex:none;border-radius:8px;background:#f2ede3;display:flex;align-items:center;justify-content:center;color:#96724b;overflow:hidden}
+html body .pp-shell .pp-thumb img{width:100%;height:100%;object-fit:cover}
+html body .pp-shell .pp-thumb svg{width:23px;height:23px}
+html body .pp-shell .pp-ranking-info{flex:1;min-width:0}
+html body .pp-shell .pp-ranking-info b{font-size:10px;font-weight:600;display:block;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body .pp-shell .pp-ranking-info small{font-size:9px}
+html body .pp-shell .pp-ranking-item>strong{font-size:10px;font-weight:600}
+html body .pp-shell .pp-ranking-bar{height:3px;background:var(--bg);border-radius:10px;margin-top:7px;overflow:hidden}
+html body .pp-shell .pp-ranking-bar span{display:block;height:100%;background:#84a581;border-radius:10px}
+html body .pp-shell .pp-table-wrap{overflow-x:auto}
+html body .pp-shell table{border-collapse:collapse;width:100%;text-align:left;white-space:nowrap}
+html body .pp-shell th{font-size:9px;color:var(--muted);font-weight:500;background:var(--bg);border-block:1px solid var(--border);padding:11px 20px}
+html body .pp-shell td{font-size:10px;padding:14px 20px;border-bottom:1px solid var(--border);line-height:1.4}
+html body .pp-shell tr:last-child td{border-bottom:0}
+html body .pp-shell td b{font-weight:550}
+html body .pp-shell td small{font-size:9px}
+html body .pp-shell tbody tr:hover{background:color-mix(in srgb,var(--bg) 70%,transparent)}
+html body .pp-shell .pp-customer{display:flex;gap:8px;align-items:center}
+html body .pp-shell .pp-customer .pp-avatar{width:25px;height:25px;border-radius:50%;font-size:9px;background:#f1eee5;color:#85836d}
+html body .pp-shell .pp-table-foot{padding:13px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);font-size:9px;color:var(--muted)}
+html body .pp-shell .pp-pagination{display:flex;align-items:center;gap:5px}
+html body .pp-shell .pp-pagination button{width:25px;height:25px;border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:5px;font-size:9px}
+html body .pp-shell .pp-pagination button.pp-active{background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent)}
+html body .pp-shell .pp-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+html body .pp-shell .pp-quick-actions button{display:grid;justify-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:15px 8px;font-size:9px;color:var(--ink)}
+html body .pp-shell .pp-quick-actions button:hover{border-color:var(--accent);color:var(--accent)}
+html body .pp-shell .pp-quick-actions .pp-ico{width:19px;height:19px;color:#6d7864}
+html body .pp-shell .pp-status-card{padding:20px 21px}
+html body .pp-shell .pp-status-line{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+html body .pp-shell .pp-status-line b{display:block;font-size:11px}
+html body .pp-shell .pp-status-line p{font-size:9px;color:var(--muted);margin-top:5px}
+html body .pp-shell .pp-switch{width:32px;height:19px;flex:none;background:#c4c9bf;border:0;border-radius:100px;padding:3px;display:flex;align-items:center}
+html body .pp-shell .pp-switch[aria-checked=true]{background:var(--accent)}
+html body .pp-shell .pp-switch:before{content:'';display:block;width:13px;height:13px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px #0002}
+html body .pp-shell .pp-switch[aria-checked=true]:before{transform:translateX(13px)}
+html body .pp-shell .pp-footer{display:flex;align-items:center;justify-content:space-between;margin-top:28px;padding-top:15px;border-top:1px solid var(--border);color:#969b8b;font-size:9px}
+html body .pp-shell .pp-footer span{display:flex;align-items:center;gap:6px}
+html body .pp-shell .pp-footer .pp-dot{width:5px;height:5px;color:#83a27f}
+html body .pp-shell .pp-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+html body .pp-shell .pp-search-field{display:flex;gap:8px;align-items:center;color:var(--muted);border:1px solid var(--border);background:var(--surface);height:36px;padding:0 10px;border-radius:7px}
+html body .pp-shell .pp-search-field input{border:0;outline:0;background:none;color:var(--ink);font-size:11px;width:190px;min-width:0}
+html body .pp-shell .pp-tabs{display:flex;gap:5px;overflow-x:auto;padding:0 0 17px;scrollbar-width:thin}
+html body .pp-shell .pp-tabs button{display:flex;align-items:center;gap:7px;border:1px solid transparent;background:none;color:var(--muted);font-size:11px;white-space:nowrap;border-radius:7px;padding:9px 12px;min-height:34px}
+html body .pp-shell .pp-tabs button.pp-active{background:var(--surface);color:var(--ink);border-color:var(--border);font-weight:600;box-shadow:var(--shadow)}
+html body .pp-shell .pp-tabs .pp-count{font-size:9px;background:var(--bg);padding:2px 5px;border-radius:4px}
+html body .pp-shell .pp-empty{text-align:center;padding:50px 25px;color:var(--muted)}
+html body .pp-shell .pp-empty>.pp-ico{width:29px;height:29px;color:#a6af9e;margin-bottom:13px}
+html body .pp-shell .pp-empty h3{color:var(--ink);margin-bottom:7px;font-size:13px}
+html body .pp-shell .pp-empty p{font-size:11px;max-width:400px;margin:auto}
+html body .pp-shell .pp-empty .pp-button{margin-top:18px}
+html body .pp-shell .pp-products-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+html body .pp-shell .pp-product-card{border:1px solid var(--border);background:var(--surface);border-radius:12px;overflow:hidden}
+html body .pp-shell .pp-product-image{height:160px;background:#f0e9dc;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+html body .pp-shell .pp-product-image img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+html body .pp-shell .pp-product-card:hover .pp-product-image img{transform:scale(1.04)}
+html body .pp-shell .pp-product-image>.pp-ico{width:48px;height:48px;color:#b1a382}
+html body .pp-shell .pp-product-image .pp-pill{position:absolute;left:13px;top:13px;box-shadow:0 1px 5px #0001}
+html body .pp-shell .pp-product-content{padding:17px}
+html body .pp-shell .pp-product-content small{font-size:9px}
+html body .pp-shell .pp-product-content h3{font-size:13px;margin:5px 0 8px}
+html body .pp-shell .pp-product-content p{font-size:10px;color:var(--muted);min-height:32px;line-height:1.6}
+html body .pp-shell .pp-product-content .pp-between{margin-top:14px}
+html body .pp-shell .pp-product-content strong{font-size:16px;font-weight:600}
+html body .pp-shell .pp-product-content .pp-stock{font-size:9px;color:var(--muted)}
+html body .pp-shell .pp-product-card-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 17px;border-top:1px solid var(--border);font-size:10px}
+html body .pp-shell .pp-filter-row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:20px}
+html body .pp-shell .pp-filter-row .pp-tabs{padding:0;max-width:70%}
+html body .pp-shell .pp-form-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:22px}
+html body .pp-shell .pp-form-card{padding:24px}
+html body .pp-shell .pp-form-intro{padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+html body .pp-shell .pp-form-intro p{font-size:10px;color:var(--muted);margin-top:6px}
+html body .pp-shell .pp-fields{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+html body .pp-shell .pp-field{display:grid;align-content:start;gap:7px}
+html body .pp-shell .pp-field.pp-full{grid-column:1/-1}
+html body .pp-shell .pp-field label{font-weight:550;font-size:11px}
+html body .pp-shell .pp-field input,html body .pp-shell .pp-field select,html body .pp-shell .pp-field textarea,html body .pp-shell .pp-input{background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:7px;padding:11px 12px;min-height:39px;width:100%;outline:0;line-height:1.4}
+html body .pp-shell .pp-field input:focus,html body .pp-shell .pp-field textarea:focus,html body .pp-shell .pp-field select:focus,html body .pp-shell .pp-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+html body .pp-shell .pp-field textarea{resize:vertical;min-height:85px}
+html body .pp-shell .pp-field small{font-size:9px}
+html body .pp-shell .pp-field input[type=file]{padding:8px;font-size:10px}
+html body .pp-shell .pp-form-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:23px;padding-top:20px;border-top:1px solid var(--border)}
+html body .pp-shell .pp-logo-upload{display:flex;align-items:center;gap:18px;margin-bottom:25px}
+html body .pp-shell .pp-logo-upload .pp-avatar{width:72px;height:72px;border-radius:14px;font-size:23px;border:1px solid var(--border)}
+html body .pp-shell .pp-logo-upload label{font-size:11px;font-weight:550}
+html body .pp-shell .pp-logo-upload p{font-size:9px;color:var(--muted);margin-top:6px}
+html body .pp-shell .pp-store-preview-cover{height:85px;background:linear-gradient(135deg,#e5eacb,#cadbc9);position:relative;overflow:hidden}
+html body .pp-shell .pp-store-preview-cover img{position:absolute;width:105px;height:105px;right:15px;top:-5px;opacity:.15;transform:rotate(-20deg)}
+html body .pp-shell .pp-store-preview-info{padding:0 20px 22px}
+html body .pp-shell .pp-store-preview-info .pp-avatar{width:54px;height:54px;border:4px solid var(--surface);margin-top:-25px;position:relative;font-size:17px}
+html body .pp-shell .pp-store-preview-info h3{font-size:15px;margin-top:10px}
+html body .pp-shell .pp-store-preview-info p{font-size:10px;color:var(--muted);margin:9px 0}
+html body .pp-shell .pp-notice{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:10px;line-height:1.7}
+html body .pp-shell .pp-notice .pp-ico{width:16px;height:16px;margin-top:1px}
+html body .pp-shell .pp-notice.pp-warning{background:#f6f0df;color:#8b7948}
+html body .pp-shell .pp-notice.pp-error{background:#fcf0ed;color:#b34439}
+html body .pp-shell .pp-error-text{font-size:11px;color:#c24d3b;line-height:1.6;margin-top:12px}
+html body .pp-shell .pp-menu-price{width:95px!important;padding:8px 10px!important;min-height:33px!important}
+html body .pp-shell .pp-options-box{border:1px solid var(--border);background:var(--bg);padding:14px;border-radius:8px;margin-bottom:12px}
+html body .pp-shell .pp-option-choice{display:flex;gap:8px;margin-top:8px}
+html body .pp-shell .pp-option-choice input:first-child{flex:1;min-width:0}
+html body .pp-shell .pp-option-choice input:nth-child(2){width:85px}
+html body .pp-shell .pp-option-choice .pp-icon-button{flex:none}
+html body .pp-shell .pp-settings-tabs{margin-bottom:7px}
+html body .pp-shell .pp-theme-options{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:18px 0 26px}
+html body .pp-shell .pp-theme-option{padding:12px;text-align:left;border:1px solid var(--border);border-radius:9px;color:var(--ink);background:var(--surface)}
+html body .pp-shell .pp-theme-option.pp-active{border:2px solid var(--accent);padding:11px;background:var(--accent-soft)}
+html body .pp-shell .pp-theme-swatch{height:80px;background:#f6f6f1;border:1px solid #dfe3d7;border-radius:5px;display:flex;padding:7px;gap:6px;margin-bottom:10px}
+html body .pp-shell .pp-theme-swatch:before{content:'';width:22%;background:#252e22;border-radius:3px}
+html body .pp-shell .pp-theme-swatch:after{content:'';width:75%;background:linear-gradient(#e0e7d2 27%,transparent 27%,transparent 36%,#fff 36%,#fff 75%,transparent 75%);border-radius:3px}
+html body .pp-shell .pp-theme-option[data-mode=dark] .pp-theme-swatch{background:#1f2820;border-color:#303d30}
+html body .pp-shell .pp-theme-option[data-mode=dark] .pp-theme-swatch:before{background:#131c14}
+html body .pp-shell .pp-theme-option[data-mode=dark] .pp-theme-swatch:after{background:linear-gradient(#4c6044 27%,transparent 27%,transparent 36%,#303b2d 36%,#303b2d 75%,transparent 75%)}
+html body .pp-shell .pp-theme-option[data-mode=system] .pp-theme-swatch{background:linear-gradient(90deg,#f6f6f1 50%,#242e24 50%)}
+html body .pp-shell .pp-theme-option span{font-size:11px}
+html body .pp-shell .pp-accent-options{display:flex;gap:14px;margin:18px 0 24px;flex-wrap:wrap}
+html body .pp-shell .pp-accent-choice{background:var(--color);height:30px;width:30px;border:4px solid var(--surface);border-radius:50%;outline:1px solid var(--border)}
+html body .pp-shell .pp-accent-choice.pp-active{outline:2px solid var(--color)}
+html body .pp-shell .pp-payment-method{padding:16px 0;border-bottom:1px solid var(--border)}
+html body .pp-shell .pp-payment-method:last-child{border-bottom:0}
+html body .pp-shell .pp-payment-method .pp-ico{padding:10px;box-sizing:content-box;width:19px;height:19px;background:var(--bg);border-radius:9px;color:#747e68}
+html body .pp-shell .pp-payment-method b{font-size:12px}
+html body .pp-shell .pp-payment-method small{display:block;margin-top:5px}
+html body .pp-shell .pp-payment-method strong{font-size:14px;font-weight:600}
+html body .pp-shell .pp-report-range{display:flex;gap:10px;align-items:center}
+html body .pp-shell .pp-report-range select{width:auto;min-width:120px;padding:9px 11px;font-size:11px}
+html body .pp-shell .pp-mobile-overlay{display:none}
+html body .pp-shell .pp-boot{height:100vh;display:grid;place-content:center;justify-items:center;gap:20px;color:var(--muted);font-size:12px}
+html body .pp-shell .pp-boot img{width:60px;height:60px}
+html body .pp-shell .pp-notice+.pp-card{margin-top:20px}
+html body .pp-shell dialog{border:1px solid var(--border);border-radius:15px;padding:0;background:var(--surface);color:var(--ink);max-width:610px;width:calc(100% - 32px);max-height:90dvh;box-shadow:0 20px 100px #0d200c40;overflow:hidden}
+html body .pp-shell dialog::backdrop{background:#17231970;backdrop-filter:blur(3px)}
+html body .pp-shell .pp-modal-head{padding:23px 24px 19px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+html body .pp-shell .pp-modal-head h2{font-size:18px}
+html body .pp-shell .pp-modal-head p{font-size:11px;color:var(--muted);margin-top:5px}
+html body .pp-shell .pp-modal-body{padding:24px;max-height:calc(90dvh - 90px);overflow:auto}
+html body .pp-shell .pp-modal-body .pp-form-actions{position:sticky;bottom:-24px;background:var(--surface);padding-bottom:14px}
+html body .pp-shell .pp-detail-block{background:var(--bg);padding:16px;border-radius:9px;margin-bottom:20px;font-size:11px}
+html body .pp-shell .pp-detail-block .pp-between{margin-bottom:10px;align-items:flex-start}
+html body .pp-shell .pp-detail-block .pp-between:last-child{margin-bottom:0}
+html body .pp-shell .pp-detail-item{display:flex;justify-content:space-between;gap:15px;padding:14px 0;border-bottom:1px solid var(--border);font-size:12px}
+html body .pp-shell .pp-detail-item small{display:block;margin-top:6px;font-size:10px}
+html body .pp-shell .pp-toast{position:relative;max-width:400px;padding:13px 17px;background:var(--ink);color:var(--surface);border-radius:10px;font-size:12px;box-shadow:0 4px 25px #0002;margin-top:10px;line-height:1.6}
+html body .pp-shell #toasts{position:fixed;right:24px;bottom:24px;z-index:1000}
+html body .pp-shell .pp-auth-logo{width:46px;height:46px;object-fit:contain;margin-bottom:15px}
+html body .pp-shell .pp-password-wrap{display:flex;position:relative}
+html body .pp-shell .pp-password-wrap input{padding-right:43px}
+html body .pp-shell .pp-password-wrap button{position:absolute;right:2px;top:2px;border:0;background:none;height:35px;width:35px;color:var(--muted)}
+html body .pp-shell .pp-checkbox-label{display:flex;align-items:center;gap:8px;font-size:11px}
+html body .pp-shell .pp-checkbox-label input{accent-color:var(--accent)}
+html body .pp-shell .pp-full-button{width:100%}
+html body .pp-shell .pp-account-actions{display:grid;gap:10px}
+html body .pp-shell .pp-top-note{font-size:10px;color:var(--muted);margin-bottom:17px}
+html body .pp-shell .pp-row-actions{display:flex;gap:6px}
+html body .pp-shell .pp-chart-select{background:var(--surface);color:var(--muted);border:1px solid var(--border);font-size:9px;padding:6px 7px;border-radius:6px}
+html body .pp-shell .pp-save-hint{font-size:10px;color:var(--muted);margin-right:auto}
+html body .pp-shell .pp-mobile-only{display:none}
+html[data-theme=dark] body .pp-shell{--bg:#151b16;--surface:#1d251e;--ink:#e0e7dc;--muted:#99a795;--border:#30392f;--accent:#75bc88;--accent-soft:#253d2d;--yellow:#dfc46d;--side:#101810;--side-ink:#a8b7a6;color-scheme:dark}
+html[data-theme=dark] body .pp-shell .pp-button.pp-primary{color:#132618}
+html[data-theme=dark] body .pp-shell .pp-welcome{background:#303c29;border-color:#435039}
+html[data-theme=dark] body .pp-shell .pp-welcome h2{color:#e0e8d4}
+html[data-theme=dark] body .pp-shell .pp-welcome p,html[data-theme=dark] body .pp-shell .pp-welcome .pp-eyebrow,html[data-theme=dark] body .pp-shell .pp-welcome-side small{color:#b5bca2}
+html[data-theme=dark] body .pp-shell .pp-welcome-side{border-color:#536146}
+html[data-theme=dark] body .pp-shell .pp-welcome-side .pp-pill{background:#435d35;color:#d2e6bd}
+html[data-theme=dark] body .pp-shell .pp-review-strip{background:#252e20;color:#b4bea5}
+html[data-theme=dark] body .pp-shell .pp-review-strip b{color:#dce4ce}
+html[data-theme=dark] body .pp-shell .pp-thumb,html[data-theme=dark] body .pp-shell .pp-avatar,html[data-theme=dark] body .pp-shell .pp-customer .pp-avatar{background:#394431;color:#cbd0a9}
+html[data-theme=dark] body .pp-shell .pp-pill{background:#323d2d;color:#bfccaf}
+html[data-theme=dark] body .pp-shell .pp-pill.pp-pending,html[data-theme=dark] body .pp-shell .pp-pill.pp-preparing{background:#4c4327;color:#ecce79}
+html[data-theme=dark] body .pp-shell .pp-pill.pp-completed,html[data-theme=dark] body .pp-shell .pp-pill.pp-confirmed,html[data-theme=dark] body .pp-shell .pp-pill.pp-ready{background:#2b4430;color:#a7d6ad}
+html[data-theme=dark] body .pp-shell .pp-pill.pp-cancelled{background:#4c302b;color:#ecaa99}
+html[data-theme=dark] body .pp-shell .pp-pill.pp-out_for_delivery{background:#303e57;color:#acc6ef}
+html[data-theme=dark] body .pp-shell .pp-notice.pp-warning{background:#3b3424;color:#d3c28d}
+html[data-theme=dark] body .pp-shell .pp-notice.pp-error{background:#482e28;color:#e8ab98}
+html[data-theme=dark] body .pp-shell .pp-product-image{background:#333c2d}
+html[data-theme=dark] body .pp-shell .pp-button.pp-danger{background:#412b27;color:#eeb3a3;border-color:#5d3b32}
+html[data-theme=dark] body .pp-shell .pp-store-preview-cover{background:linear-gradient(135deg,#465536,#314c38)}
+html[data-theme=dark] body .pp-shell .pp-theme-swatch{color-scheme:light}
+@media(min-width:1550px){html body .pp-shell .pp-main{padding-top:34px}
+html body .pp-shell .pp-columns{grid-template-columns:minmax(0,1fr) 320px}
+html body .pp-shell .pp-chart-container{height:240px}
+html body .pp-shell .pp-welcome{padding-block:28px}
+html body .pp-shell td{padding-block:17px}
+html body .pp-shell .pp-product-image{height:190px}}
+@media(max-width:1200px){html body .pp-shell .pp-layout{grid-template-columns:200px minmax(0,1fr)}
+html body .pp-shell .pp-sidebar{width:200px;padding-inline:12px}
+html body .pp-shell .pp-store-switch .pp-store-name{max-width:110px}
+html body .pp-shell .pp-main{padding:25px 24px}
+html body .pp-shell .pp-topbar{padding-inline:24px}
+html body .pp-shell .pp-review-strip{padding-inline:24px}
+html body .pp-shell .pp-columns{grid-template-columns:minmax(0,1fr) 255px;gap:16px}
+html body .pp-shell .pp-metrics{gap:12px}
+html body .pp-shell .pp-metric{padding:16px}
+html body .pp-shell .pp-metric strong{font-size:23px}
+html body .pp-shell .pp-global-search{width:190px}
+html body .pp-shell .pp-card-head,html body .pp-shell .pp-card-body{padding-left:17px;padding-right:17px}
+html body .pp-shell .pp-product-ranking{padding-inline:17px}
+html body .pp-shell .pp-form-layout{grid-template-columns:minmax(0,1fr) 235px}
+html body .pp-shell .pp-products-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1000px){html body .pp-shell .pp-columns{grid-template-columns:minmax(0,1fr)}
+html body .pp-shell .pp-columns>.pp-stack{grid-template-columns:1fr 1fr;align-items:start}
+html body .pp-shell .pp-global-search{display:none}
+html body .pp-shell .pp-form-layout{grid-template-columns:1fr}
+html body .pp-shell .pp-form-layout>aside{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+html body .pp-shell .pp-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+html body .pp-shell .pp-welcome-side{min-width:145px}
+html body .pp-shell .pp-welcome-mark{right:0}
+html body .pp-shell .pp-page-head h1{font-size:24px}
+html body .pp-shell .pp-ranking-item{padding-block:12px}
+html body .pp-shell .pp-side-help{display:none}
+html body .pp-shell .pp-theme-options{gap:10px}}
+@media(max-width:760px){html body .pp-shell .pp-layout{display:block}
+html body .pp-shell .pp-sidebar{transform:translateX(-100%);transition:transform .2s;width:240px;padding:24px 16px}
+html body .pp-shell .pp-sidebar.pp-open{transform:translateX(0)}
+html body .pp-shell .pp-mobile-overlay.pp-open{display:block;position:fixed;inset:0;background:#15261177;z-index:30;border:0;width:100%;height:100%}
+html body .pp-shell .pp-menu-toggle{display:inline-flex}
+html body .pp-shell .pp-topbar{height:61px;padding-inline:18px}
+html body .pp-shell .pp-header-actions{gap:7px}
+html body .pp-shell .pp-topbar-avatar{width:28px;height:28px}
+html body .pp-shell .pp-breadcrumb{font-size:10px;gap:9px}
+html body .pp-shell .pp-breadcrumb>span{display:none}
+html body .pp-shell .pp-review-strip{padding:8px 18px;font-size:9px;gap:7px}
+html body .pp-shell .pp-review-strip .pp-flex{gap:5px;flex-wrap:wrap}
+html body .pp-shell .pp-review-strip .pp-button{font-size:9px;padding:5px 8px;flex:none}
+html body .pp-shell .pp-main{padding:23px 18px}
+html body .pp-shell .pp-page-head{align-items:flex-start;margin-bottom:20px;gap:12px}
+html body .pp-shell .pp-page-head h1{font-size:25px}
+html body .pp-shell .pp-page-head p{font-size:10px;max-width:230px;line-height:1.6}
+html body .pp-shell .pp-page-head .pp-button{min-height:33px;padding:8px 10px;font-size:10px}
+html body .pp-shell .pp-page-head .pp-button .pp-ico{width:15px;height:15px}
+html body .pp-shell .pp-page-head>.pp-flex{gap:7px;flex-wrap:wrap;justify-content:flex-end}
+html body .pp-shell .pp-page-head .pp-button.pp-export-label{font-size:0;gap:0;width:34px}
+html body .pp-shell .pp-welcome{padding:22px 19px;margin-bottom:18px}
+html body .pp-shell .pp-welcome h2{font-size:21px}
+html body .pp-shell .pp-welcome p{font-size:10px;max-width:235px}
+html body .pp-shell .pp-welcome-side{display:none}
+html body .pp-shell .pp-welcome-mark{right:-15px;top:-5px;width:195px}
+html body .pp-shell .pp-metrics{gap:11px;margin-bottom:18px}
+html body .pp-shell .pp-metric{padding:16px 14px}
+html body .pp-shell .pp-metric-top{margin-bottom:11px}
+html body .pp-shell .pp-metric-top span{font-size:10px}
+html body .pp-shell .pp-metric strong{font-size:24px}
+html body .pp-shell .pp-metric-foot{font-size:8px;gap:3px;flex-wrap:wrap;line-height:1.6}
+html body .pp-shell .pp-metric-top .pp-ico{width:14px;height:14px}
+html body .pp-shell .pp-columns{gap:18px;margin-bottom:18px}
+html body .pp-shell .pp-columns>.pp-stack{gap:18px}
+html body .pp-shell .pp-card-head{padding:18px 17px}
+html body .pp-shell .pp-card-head h2{font-size:13px}
+html body .pp-shell .pp-card-head .pp-button{font-size:10px}
+html body .pp-shell .pp-chart-container{height:190px}
+html body .pp-shell .pp-chart-summary strong{font-size:22px}
+html body .pp-shell .pp-table-foot{padding:12px 15px;gap:8px}
+html body .pp-shell .pp-footer{font-size:8px;align-items:flex-start;line-height:1.7}
+html body .pp-shell .pp-products-grid{gap:13px}
+html body .pp-shell .pp-product-image{height:130px}
+html body .pp-shell .pp-product-content{padding:13px}
+html body .pp-shell .pp-product-content h3{font-size:12px}
+html body .pp-shell .pp-product-content p{font-size:9px}
+html body .pp-shell .pp-product-card-foot{padding:10px 13px}
+html body .pp-shell .pp-filter-row{flex-wrap:wrap}
+html body .pp-shell .pp-filter-row .pp-tabs{max-width:100%;width:100%}
+html body .pp-shell .pp-filter-row .pp-search-field{width:100%}
+html body .pp-shell .pp-filter-row .pp-search-field input{width:100%}
+html body .pp-shell .pp-fields{gap:15px}
+html body .pp-shell .pp-form-card{padding:20px}
+html body .pp-shell .pp-form-layout>aside{grid-template-columns:1fr}
+html body .pp-shell .pp-theme-swatch{height:65px}
+html body .pp-shell .pp-theme-option{padding:9px}
+html body .pp-shell .pp-theme-option.pp-active{padding:8px}
+html body .pp-shell .pp-theme-option span{font-size:10px}
+html body .pp-shell .pp-toolbar{padding:14px 15px}
+html body .pp-shell .pp-search-field input{width:160px}
+html body .pp-shell .pp-form-actions{flex-wrap:wrap}
+html body .pp-shell .pp-form-actions .pp-save-hint{width:100%}
+html body .pp-shell .pp-modal-head{padding:20px}
+html body .pp-shell .pp-modal-body{padding:20px}
+html body .pp-shell .pp-form-intro h2{font-size:14px}
+html body .pp-shell .pp-product-ranking .pp-thumb{width:32px;height:32px}
+html body .pp-shell .pp-ranking-info b{font-size:9px}
+html body .pp-shell .pp-ranking-item>strong{font-size:9px}
+html body .pp-shell .pp-quick-actions{gap:7px}
+html body .pp-shell .pp-quick-actions button{font-size:9px;padding:13px 5px}
+html body .pp-shell .pp-report-range{flex-wrap:wrap}
+html body .pp-shell .pp-report-range select{min-width:105px}
+html body .pp-shell .pp-mobile-only{display:inline-flex}
+html body .pp-shell .pp-side-owner small{max-width:150px}
+html body .pp-shell .pp-side-owner .pp-icon-button{margin-left:auto;background:#ffffff05;border-color:#ffffff10;color:#c8d2c1}}
+@media(max-width:420px){html body .pp-shell .pp-columns>.pp-stack{grid-template-columns:1fr}
+html body .pp-shell .pp-fields{grid-template-columns:1fr}
+html body .pp-shell .pp-field.pp-full{grid-column:auto}
+html body .pp-shell .pp-products-grid{grid-template-columns:1fr 1fr}
+html body .pp-shell .pp-product-image{height:115px}
+html body .pp-shell .pp-product-content p{display:none}
+html body .pp-shell .pp-product-content .pp-between{margin-top:10px;flex-wrap:wrap;gap:5px}
+html body .pp-shell .pp-product-content strong{font-size:15px}
+html body .pp-shell .pp-product-card-foot{font-size:9px;padding-inline:11px}
+html body .pp-shell .pp-product-content{padding:11px}
+html body .pp-shell .pp-theme-options{grid-template-columns:1fr 1fr 1fr;gap:6px}
+html body .pp-shell .pp-theme-swatch{height:50px;padding:5px;gap:3px}
+html body .pp-shell .pp-theme-option span{font-size:9px}
+html body .pp-shell .pp-review-strip .pp-flex>span{display:none}
+html body .pp-shell .pp-breadcrumb{gap:6px}
+html body .pp-shell .pp-breadcrumb .pp-ico{width:12px;height:12px}
+html body .pp-shell .pp-page-head{gap:7px}
+html body .pp-shell .pp-page-head p{max-width:200px}
+html body .pp-shell .pp-topbar{padding-inline:14px}
+html body .pp-shell .pp-main{padding-inline:14px}
+html body .pp-shell .pp-review-strip{padding-inline:14px}
+html body .pp-shell .pp-welcome{padding-inline:16px}
+html body .pp-shell .pp-metric-foot .pp-trend{font-size:8px}
+html body .pp-shell .pp-toolbar .pp-button{font-size:10px}
+html body .pp-shell .pp-search-field{flex:1;min-width:160px}
+html body .pp-shell .pp-search-field input{width:100%}
+html body .pp-shell td,html body .pp-shell th{padding-inline:15px}}
+@media(prefers-reduced-motion:reduce){html body .pp-shell *{scroll-behavior:auto!important;transition:none!important}}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-brand{color:#293723}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-brand small{color:#78836e}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-store-switch{color:#36422c;border-color:#cad3bf;background:#ffffff33}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-store-switch small{color:#6e7e60}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-nav a:hover{background:#dbe3cc;color:#293723}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-label{color:#78856b}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-help{background:#ffffff22;border-color:#ccd4bf}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-help b,html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-owner b{color:#39482e}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-help p,html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-owner small{color:#6e7e60}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-help button{color:#6f6c36}
+html[data-sidebar=light][data-theme=light] body .pp-shell .pp-side-owner{border-color:#cad3bf}
+@media print{html body .pp-shell .pp-sidebar,html body .pp-shell .pp-topbar,html body .pp-shell .pp-review-strip,html body .pp-shell .pp-page-head button,html body .pp-shell .pp-button,html body .pp-shell .pp-footer,html body .pp-shell .pp-tabs{display:none!important}
+html body .pp-shell .pp-layout{display:block}
+html body .pp-shell .pp-main{padding:0;max-width:none}
+html body .pp-shell .pp-card{break-inside:avoid;box-shadow:none}
+html body .pp-shell .pp-metrics{grid-template-columns:repeat(4,1fr)}
+html body .pp-shell{background:#fff;color:#000}
+html body .pp-shell .pp-work{display:block}
+html body .pp-shell .pp-columns{grid-template-columns:1fr}
+html body .pp-shell .pp-chart-container{height:180px}}
+html body .pp-shell .pp-store-switch .pp-store-identity{flex:1;min-width:0}
+html body .pp-shell .pp-store-switch button.pp-store-name{display:block;padding:0;border:0;background:none;color:inherit;font:inherit;font-size:12px;font-weight:550;line-height:1.4;text-align:left;max-width:100%;width:100%;cursor:text}
+html body .pp-shell .pp-store-switch button.pp-store-name:hover{text-decoration:underline;text-underline-offset:3px}
+html body .pp-shell .pp-store-switch small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Bridge the uploaded forms and their existing event hooks to the new visual shell. */
+html body .pp-shell{display:block;min-height:100vh;--merchant-accent:var(--accent);--merchant-surface:var(--surface);--merchant-canvas:var(--bg);--merchant-ink:var(--ink);--merchant-muted:var(--muted);--merchant-border:var(--border);--rf-green:var(--accent);--rf-ink:var(--ink);--rf-mute:var(--muted);--rf-line:var(--border);--rf-card:var(--surface);--rf-canvas:var(--bg);font-family:Inter,Arial,sans-serif}
+html body .pp-shell main.pp-main{width:auto;border:0;box-shadow:none;display:block}
+html body .pp-shell .pp-field{margin:0}
+html body .pp-shell .papa-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 24px;padding:0;background:none;border:0;box-shadow:none}
+html body .pp-shell .papa-heading h1{font-size:26px;font-weight:650;letter-spacing:-1px;line-height:1.3;margin:0;color:var(--ink)}
+html body .pp-shell .papa-heading p{font-size:11px;line-height:1.65;color:var(--muted);margin:6px 0 0}
+html body .pp-shell .papa-card,html body .pp-shell .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);color:var(--ink);min-width:0}
+html body .pp-shell .papa-card h2,html body .pp-shell .panel h3{color:var(--ink)}
+html body .pp-shell .papa-form .papa-fields{grid-template-columns:1fr 1fr;gap:18px!important}
+html body .pp-shell .papa-form .papa-fields .papa-full{grid-column:1/-1}
+html body .pp-shell .in{font-family:inherit;font-size:12px;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:7px;padding:10px 12px;min-height:40px;box-shadow:none;max-width:100%}
+html body .pp-shell textarea.in{line-height:1.6;min-height:85px}
+html body .pp-shell .in:focus{border-color:var(--accent);outline:0;box-shadow:0 0 0 3px var(--accent-soft)}
+html body .pp-shell .pp-field label{display:block;font:550 11px/1.5 Inter,Arial,sans-serif;margin:0 0 7px;color:var(--ink)}
+html body .pp-shell .btn{font:550 12px/1.25 Inter,Arial,sans-serif;min-height:39px;border-radius:8px;padding:10px 14px;box-shadow:none;border:1px solid var(--border);gap:7px}
+html body .pp-shell .btn.s{background:var(--surface);color:var(--ink);border-color:var(--border)}
+html body .pp-shell .btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+html body .pp-shell .btn.d{background:#fff5f4;border-color:#f1d4d0;color:#b83c3c}
+html body .pp-shell .btn.sm{font-size:10px;min-height:31px;padding:7px 10px}
+html body .pp-shell .papa-table-wrapper{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+html body .pp-shell .rf-table{width:100%;border-collapse:collapse;white-space:nowrap}
+html body .pp-shell .rf-table th{background:var(--bg);color:var(--muted);font-size:10px;font-weight:500;padding:12px 18px;border-block:1px solid var(--border)}
+html body .pp-shell .rf-table td{font-size:11px;color:var(--ink);padding:15px 18px;border-bottom:1px solid var(--border);vertical-align:middle}
+html body .pp-shell .rf-table tr:last-child td{border-bottom:0}
+html body .pp-shell .wf-order-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+html body .pp-shell .wf-order-search{display:flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:0 10px;min-width:200px}
+html body .pp-shell .wf-order-search input{background:none;border:0;outline:0;color:var(--ink);font-size:11px;min-width:0;width:200px}
+html body .pp-shell .papa-timer-badge{display:inline-flex;gap:4px;align-items:center;font-size:9px;color:var(--muted);margin-top:4px}
+html body .pp-shell .papa-timer-badge.urgent{color:#bd523a;font-weight:650}
+html body .pp-shell .papa-status-pill{display:inline-flex;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:600}
+html body .pp-shell .papa-status-pill.ok{background:var(--accent-soft);color:var(--accent)}
+html body .pp-shell .papa-status-pill.low{background:#fff5d5;color:#886c1e}
+html body .pp-shell .papa-status-pill.out{background:#faeeeb;color:#b75b4b}
+html body .pp-shell .ogrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+html body .pp-shell .panel{padding:22px;margin:0;display:block}
+html body .pp-shell .panel p{margin:8px 0;font-size:12px}
+html body .pp-shell .panel label{font-size:11px;display:block;margin:14px 0 7px}
+html body .pp-shell .mu{color:var(--muted)!important}
+html body .pp-shell dialog{padding:0;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:15px;max-height:90dvh;width:calc(100% - 32px);max-width:680px;box-shadow:0 20px 100px #0d200c40}
+html body .pp-shell dialog::backdrop{background:#17231970;backdrop-filter:blur(3px)}
+html body .pp-shell .pp-product-modal #papalita-products>div:first-child{display:none!important}
+html body .pp-shell .pp-product-modal #seller-product-form{padding:0!important;border:0;background:none;box-shadow:none;margin-bottom:0!important}
+html body .pp-shell .pp-product-modal #seller-form-title{display:none}
+html body .pp-shell .pp-product-modal .papa-table-wrapper{margin-top:22px;border:1px solid var(--border);border-radius:10px}
+html body .pp-shell .pp-product-modal .papa-table-wrapper th:nth-child(2),html body .pp-shell .pp-product-modal .papa-table-wrapper td:nth-child(2),html body .pp-shell .pp-product-modal .papa-table-wrapper th:nth-child(3),html body .pp-shell .pp-product-modal .papa-table-wrapper td:nth-child(3){display:none}
+html body .pp-shell .pp-editor-footer{padding-top:18px;border-top:1px solid var(--border);margin-top:18px}
+html body .pp-shell .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+html body .pp-shell .pp-product-modal .pp-field{margin-bottom:16px}
+html body .pp-shell .err{color:#b83c3c;font-size:11px;line-height:1.6}
+html[data-theme=dark] body .pp-shell .btn.d{background:#412b27;color:#eeb3a3;border-color:#5d3b32}
+html[data-theme=dark] body .pp-shell .papa-status-pill.low{background:#4c4327;color:#ecce79}
+html[data-theme=dark] body .pp-shell .papa-status-pill.out{background:#4c302b;color:#ecaa99}
+@media(max-width:760px){html body .pp-shell .papa-heading{gap:12px;flex-wrap:wrap}html body .pp-shell .papa-heading h1{font-size:25px}html body .pp-shell .wf-order-tools{width:100%}html body .pp-shell .wf-order-search{min-width:0;flex:1}html body .pp-shell .wf-order-search input{width:100%}html body .pp-shell .papa-form{padding:20px!important}html body .pp-shell .papa-form .papa-fields{grid-template-columns:1fr!important}html body .pp-shell .papa-form .papa-fields .papa-full{grid-column:auto!important}html body .pp-shell .ogrid{grid-template-columns:1fr}html body .pp-shell .two{grid-template-columns:1fr}html body .pp-shell .rf-table td,html body .pp-shell .rf-table th{padding:12px 15px}}
+
+html body .pp-shell .pp-product-modal .papa-table-wrapper{display:none!important}
+
+@media(max-width:760px){html body .pp-shell .in{font-size:16px}}
+html body .pp-shell input[type=checkbox],html body .pp-shell input[type=radio]{width:17px!important;min-width:17px;max-width:17px;height:17px;min-height:17px!important;flex:none;padding:0;margin:0;box-shadow:none;accent-color:var(--accent)}
+html body .pp-shell dialog{position:fixed;inset:0;margin:auto;height:fit-content}
+
+</style>
 </head>
 <body>
 <div id="root"></div>
@@ -1349,6 +1877,190 @@ function papaStartOrderListener(){
  papaLiveChannel=db.channel('papalita-merchant-orders-'+id).on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:'store_id=eq.'+id},()=>{if(storeUuid===id)void papaFetchOrders()}).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:'store_id=eq.'+id},()=>{if(storeUuid===id)void papaFetchOrders()}).subscribe();
  papaPollTimer=setInterval(()=>{if(storeUuid===id&&document.visibilityState==='visible')void papaFetchOrders()},12000);
 }
+
+/* PAPALITA MERCHANT INTERFACE UPGRADE: presentation only; original services retained below. */
+(function papalitaInterfaceUpgrade(){
+const paths={"grid": "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z", "bag": "M5 7h14l1 14H4L5 7z M9 8V6a3 3 0 0 1 6 0v2", "box": "m12 3 9 5-9 5-9-5 9-5z M3 8v9l9 5 9-5V8 M12 13v9 M7.5 5.5l9 5", "menu": "M4 4h16v16H4z M8 8h8 M8 12h8 M8 16h4", "settings": "m9 3-1 3-3 1-2 3 2 3 1 3 3 1 3 2 3-2 3-1 1-3 2-3-2-3-3-1-1-3H9z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0", "wallet": "M20 7V4H4v16h16V7H4 M16 11h5v5h-5z M17 13.5h1", "chart": "M4 3v18h18 M8 16v-5 M13 16V7 M18 16v-8", "palette": "M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-4 2 2 0 0 1 1-4h3c4 0 3-10-6-10z M7 8h.01 M12 6h.01 M17 8h.01 M6 13h.01", "search": "M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0", "bell": "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4", "help": "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20 M9 8a3 3 0 1 1 4 3c-1 1-1 2-1 3 M12 18h.01", "chevron": "m9 5 7 7-7 7", "down": "m6 9 6 6 6-6", "plus": "M12 5v14 M5 12h14", "download": "M12 3v12 m-5-5 5 5 5-5 M4 16v5h16v-5", "calendar": "M5 5h14v16H5z M8 3v4 M16 3v4 M5 10h14", "arrow": "M5 12h14 m-5-5 5 5-5 5", "refresh": "M20 7a9 9 0 1 0 1 9 M20 2v6h-6", "coffee": "M4 8h12v7a6 6 0 0 1-12 0V8z M16 8h2a3 3 0 0 1 0 6h-2 M3 22h15 M7 2v2 M12 2v2", "store": "M3 10 5 3h14l2 7 M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0 M5 13v8h14v-8 M9 21v-6h6v6", "clock": "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0 M12 6v6l4 2", "check": "m5 12 4 4L19 6", "x": "m6 6 12 12 M6 18 18 6", "more": "M5 12h.01 M12 12h.01 M19 12h.01", "mail": "M3 5h18v14H3z m0 0 9 8 9-8", "eye": "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0", "logout": "M9 4H4v16h5 M10 12h12 m-5-5 5 5-5 5", "bars": "M4 6h16 M4 12h16 M4 18h16", "pin": "M19 9c0 6-7 12-7 12S5 15 5 9a7 7 0 1 1 14 0z M14 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0", "info": "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0 M12 11v6 M12 7h.01", "edit": "m4 16-1 5 5-1L21 7l-5-5L4 16z M14 4l5 5", "trash": "M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7", "peso": "M8 21V3h5a5 5 0 0 1 0 10H8 M4 7h15 M4 10h15", "star": "m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z", "shield": "m12 2 9 4v6c0 5-9 10-9 10S3 17 3 12V6l9-4z m-4 10 3 3 5-6", "sound": "M3 9h4l5-5v16l-5-5H3V9z M16 8a6 6 0 0 1 0 8 M19 5a10 10 0 0 1 0 14"};
+const accents={"green": ["#087f32", "#edf6ee", "#75bc88", "#253d2d"], "indigo": ["#4f56b8", "#eff0fc", "#a6acf5", "#303251"], "blue": ["#2974b0", "#edf4fa", "#86bff0", "#273c50"], "orange": ["#a76326", "#faf0e6", "#e4ad79", "#493829"], "purple": ["#8052a6", "#f4edf8", "#c7a2e4", "#41304e"]};
+let prefs={mode:'light',accent:'green',sidebar:'dark'};
+try{prefs={...prefs,...JSON.parse(localStorage.getItem('papalita_merchant_appearance_v1')||'{}')};}catch{}
+const state={
+ preview:false,page:'dashboard',days:7,category:'All',productSearch:'',
+ get store(){return papaStore();},get stores(){return sellerStores;},get user(){return {email:papaUserEmail};},
+ get products(){return papaProducts;},get orders(){return papaOrdersStore===storeUuid?papaLiveOrders:[];},
+ get catering(){return realCatering;},get errors(){return {};},get loading(){return papaOrdersLoading;},
+ get realtime(){return papaPollTimer?'polling':'idle';},get orderFilter(){return papaOrderFilter;},get search(){return papaOrderSearch;}
+};
+let ppLabelSequence=0,ppNavigationOpen=false;
+const ppClassMap={"card": "pp-card", "top-note": "pp-top-note", "link": "pp-link", "gold": "pp-gold", "eyebrow": "pp-eyebrow", "wrap": "pp-wrap", "side-owner": "pp-side-owner", "store-preview-info": "pp-store-preview-info", "products-grid": "pp-products-grid", "store-name": "pp-store-name", "welcome-side": "pp-welcome-side", "welcome": "pp-welcome", "muted": "pp-muted", "toast": "pp-toast", "chart-fill": "pp-chart-fill", "store-preview-cover": "pp-store-preview-cover", "confirmed": "pp-confirmed", "menu-price": "pp-menu-price", "divider": "pp-divider", "footer": "pp-footer", "form-actions": "pp-form-actions", "flex": "pp-flex", "dark": "pp-dark", "notice": "pp-notice", "modal-head": "pp-modal-head", "auth-logo": "pp-auth-logo", "customer": "pp-customer", "form-layout": "pp-form-layout", "header-actions": "pp-header-actions", "field": "pp-field", "metric-foot": "pp-metric-foot", "ico": "pp-ico", "detail-item": "pp-detail-item", "primary": "pp-primary", "modal-body": "pp-modal-body", "danger": "pp-danger", "side-label": "pp-side-label", "ranking-bar": "pp-ranking-bar", "topbar": "pp-topbar", "ready": "pp-ready", "thumb": "pp-thumb", "chart-grid": "pp-chart-grid", "full-button": "pp-full-button", "page-head": "pp-page-head", "chart-dot": "pp-chart-dot", "dot": "pp-dot", "store-switch": "pp-store-switch", "key": "pp-key", "password-wrap": "pp-password-wrap", "chart-container": "pp-chart-container", "avatar": "pp-avatar", "chart-legend": "pp-chart-legend", "sales-chart": "pp-sales-chart", "mobile-overlay": "pp-mobile-overlay", "switch": "pp-switch", "quick-actions": "pp-quick-actions", "save-hint": "pp-save-hint", "work": "pp-work", "accent-choice": "pp-accent-choice", "logo-upload": "pp-logo-upload", "card-body": "pp-card-body", "error": "pp-error", "nav-count": "pp-nav-count", "trend": "pp-trend", "product-ranking": "pp-product-ranking", "options-box": "pp-options-box", "empty": "pp-empty", "store-identity": "pp-store-identity", "warning": "pp-warning", "columns": "pp-columns", "sidebar-bottom": "pp-sidebar-bottom", "cancelled": "pp-cancelled", "product-content": "pp-product-content", "form-intro": "pp-form-intro", "boot": "pp-boot", "topbar-avatar": "pp-topbar-avatar", "completed": "pp-completed", "breadcrumb": "pp-breadcrumb", "stock": "pp-stock", "form-card": "pp-form-card", "pending": "pp-pending", "search-field": "pp-search-field", "chart-select": "pp-chart-select", "tabs": "pp-tabs", "table-foot": "pp-table-foot", "preparing": "pp-preparing", "card-head": "pp-card-head", "small": "pp-small", "pagination": "pp-pagination", "full": "pp-full", "brand": "pp-brand", "chart-summary": "pp-chart-summary", "chart-line": "pp-chart-line", "between": "pp-between", "open": "pp-open", "count": "pp-count", "pill": "pp-pill", "option-choice": "pp-option-choice", "row-actions": "pp-row-actions", "report-range": "pp-report-range", "filter-row": "pp-filter-row", "ranking-info": "pp-ranking-info", "theme-option": "pp-theme-option", "metrics": "pp-metrics", "stack": "pp-stack", "welcome-mark": "pp-welcome-mark", "mobile-only": "pp-mobile-only", "sidebar": "pp-sidebar", "layout": "pp-layout", "status-line": "pp-status-line", "product-card-foot": "pp-product-card-foot", "global-search": "pp-global-search", "button": "pp-button", "active": "pp-active", "table-wrap": "pp-table-wrap", "status-card": "pp-status-card", "menu-toggle": "pp-menu-toggle", "theme-options": "pp-theme-options", "review-strip": "pp-review-strip", "payment-method": "pp-payment-method", "side-help": "pp-side-help", "theme-swatch": "pp-theme-swatch", "detail-block": "pp-detail-block", "notification-dot": "pp-notification-dot", "fields": "pp-fields", "input": "pp-input", "account-actions": "pp-account-actions", "product-card": "pp-product-card", "toolbar": "pp-toolbar", "main": "pp-main", "product-image": "pp-product-image", "checkbox-label": "pp-checkbox-label", "ranking-item": "pp-ranking-item", "nav": "pp-nav", "metric": "pp-metric", "icon-button": "pp-icon-button", "out_for_delivery": "pp-out_for_delivery", "metric-top": "pp-metric-top", "export-label": "pp-export-label", "accent-options": "pp-accent-options", "settings-tabs": "pp-settings-tabs", "error-text": "pp-error-text"};
+function ppNormalize(root){if(!root)return;for(const el of [root,...root.querySelectorAll("[class]")])for(const name of [...el.classList])if(ppClassMap[name])el.classList.replace(name,ppClassMap[name]);for(const label of root.querySelectorAll("label")){if(label.htmlFor||label.querySelector("input,select,textarea"))continue;const control=label.parentElement?.querySelector("input,select,textarea");if(control){if(!control.id)control.id="pp-view-field-"+(++ppLabelSequence);label.htmlFor=control.id;}}}
+const money = n => '₱' + (Number(n)||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const integerMoney = n => '₱' + (Number(n)||0).toLocaleString('en-PH',{maximumFractionDigits:0});
+const day = d => new Date(d).toLocaleDateString('en-CA',{timeZone:'Asia/Manila'});
+const time = d => new Date(d).toLocaleTimeString('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'});
+const date = d => new Date(d).toLocaleDateString('en-PH',{month:'short',day:'numeric',timeZone:'Asia/Manila'});
+const sum = rows => rows.reduce((a,o)=>a+(Number(o.total_amount)||0),0);
+const initials = n => String(n||'Store').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+const icon = name => `<svg class="pp-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]||paths.box}"/></svg>`;
+const safeImage = value => { if(typeof value!=='string'||!value.trim())return '';try { const u=new URL(value,location.href);return ['http:','https:','blob:'].includes(u.protocol)||/^data:image\/(png|jpeg|webp);base64,/.test(value)?esc(u.href):''; } catch{return '';} };
+const avatar = (name,url,extra='') => `<span class="avatar ${extra}">${safeImage(url)?`<img src="${safeImage(url)}" alt="${esc(name)}">`:esc(initials(name))}</span>`;
+const thumb = p => `<span class="thumb">${safeImage(p?.image_url)?`<img src="${safeImage(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`:icon('coffee')}</span>`;
+const labelStatus = s => ({pending:'New',out_for_delivery:'On the way',active:'Published',inactive:'Inactive',draft:'Draft',completed:'Completed',confirmed:'Confirmed',preparing:'Preparing',ready:'Ready',cancelled:'Cancelled'}[s]||s||'Unknown');
+const pill = s => `<span class="pill ${esc(s)}"><span class="dot"></span>${esc(labelStatus(s))}</span>`;
+const btn = (text,action,cls='',ic='') => `<button class="button ${cls}" data-action="${action}">${ic?icon(ic):''}${text}</button>`;
+const pageHead = (title,sub,actions='') => `<div class="page-head"><div><h1>${title}</h1><p>${sub}</p></div><div class="flex">${actions}</div></div>`;
+const notice = (text,type='') => `<div class="notice ${type}">${icon('info')}<span>${text}</span></div>`;
+const empty = (title,text,action='',ic='bag') => `<div class="empty">${icon(ic)}<h3>${title}</h3><p>${text}</p>${action}</div>`;
+const inRange = o => {const cutoff=new Date();cutoff.setDate(cutoff.getDate()-(state.days-1));return day(o.created_at)>=day(cutoff);};
+const completed = () => state.orders.filter(o=>o.status==='completed'&&inRange(o));
+const metric = function metric(title,value,foot,ic){return `<div class="metric"><div class="metric-top"><span>${title}</span>${icon(ic)}</div><strong>${value}</strong><div class="metric-foot">${foot}</div></div>`;};
+const chart = function chart(){
+    const count=state.days===30?10:7, span=state.days===30?3:1, now=new Date(), values=[], labels=[];
+    for(let i=count-1;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i*span);const end=day(d);d.setDate(d.getDate()-span+1);const start=day(d);values.push(sum(state.orders.filter(o=>o.status==='completed'&&day(o.created_at)>=start&&day(o.created_at)<=end)));labels.push(date(d));}
+    const max=Math.max(...values,100), ceiling=Math.ceil(max/500)*500||500, W=640,H=190,left=44,right=15,top=12,bottom=32;
+    const coords=values.map((v,i)=>[left+i*(W-left-right)/(count-1),top+(1-v/ceiling)*(H-top-bottom)]);
+    const points=coords.map(p=>p.join(',')).join(' '), floor=H-bottom;
+    return `<div class="chart-container"><svg class="sales-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Completed order sales for the last ${state.days} days">${[0,1,2,3,4].map(i=>{const y=top+i*(H-top-bottom)/4;return `<line class="chart-grid" x1="${left}" x2="${W-right}" y1="${y}" y2="${y}"/><text x="0" y="${y+3}">${integerMoney(ceiling*(4-i)/4)}</text>`;}).join('')}<polygon class="chart-fill" points="${left},${floor} ${points} ${W-right},${floor}"/><polyline class="chart-line" points="${points}"/>${coords.map(([x,y],i)=>`<circle class="chart-dot" cx="${x}" cy="${y}" r="3"><title>${labels[i]}: ${money(values[i])}</title></circle><text x="${x}" y="${H-7}" text-anchor="middle">${labels[i]}</text>`).join('')}</svg></div><div class="chart-legend"><span><i class="dot"></i> Completed sales</span></div>`;
+  };
+const topProducts = function topProducts(){const map=new Map();for(const o of completed())for(const i of o.items||[]){const k=i.product_id||i.product_name,v=map.get(k)||{name:i.product_name,quantity:0,total:0,product:state.products.find(p=>p.id===i.product_id)};v.quantity+=Number(i.quantity)||0;v.total+=Number(i.line_total)||0;map.set(k,v);}return [...map.values()].sort((a,b)=>b.quantity-a.quantity);};
+const topProductsCard = function topProductsCard(){const top=topProducts().slice(0,4);return `<section class="card"><div class="card-head"><div><h2>Top products</h2><p>Customer favorites this week</p></div>${icon('star')}</div>${top.length?`<div class="product-ranking">${top.map(p=>`<div class="ranking-item">${thumb(p.product)}<div class="ranking-info"><b>${esc(p.name)}</b><small>${p.quantity} sold</small><div class="ranking-bar"><span style="width:${p.quantity/top[0].quantity*100}%"></span></div></div><strong>${integerMoney(p.total)}</strong></div>`).join('')}</div>`:empty('Your next bestseller is waiting','Top products appear after completed orders.','','box')}</section>`;};
+const salesCard = function salesCard(){return `<section class="card"><div class="card-head"><div><h2>Sales overview</h2><p>A little progress, every day.</p></div><select class="chart-select" aria-label="Sales date range" data-range><option value="7" ${state.days===7?'selected':''}>Last 7 days</option><option value="30" ${state.days===30?'selected':''}>Last 30 days</option></select></div><div class="card-body"><div class="chart-summary"><strong>${money(sum(completed()))}</strong><small>Completed sales · ${state.days} days</small></div>${chart()}</div></section>`;};
+const dashboard = function dashboard(){
+    const today=state.orders.filter(o=>day(o.created_at)===day(new Date())),paid=today.filter(o=>o.status==='completed'),active=state.products.filter(p=>p.status==='active'),pending=state.orders.filter(o=>o.status==='pending').length;
+    return pageHead('Dashboard','A good day to grow your business.',`<span class="button">${icon('calendar')}${esc(new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',timeZone:'Asia/Manila'}))}</span>${btn('Export','export','export-label','download')}`)+`<section class="welcome"><img class="welcome-mark" src="images/papalita_mark_color.png" alt=""><div><div class="eyebrow">YOUR LOCAL BUSINESS, A LITTLE BIGGER</div><h2>Welcome back, ${esc(state.store.name)}.</h2><p>${pending?`You have ${pending} new order${pending!==1?'s':''} waiting. Let's make someone's day.`:'Your next great order starts here. Everything you need is in one place.'}</p>${btn('View orders','orders','dark','arrow')}</div><div class="welcome-side"><span class="pill ${state.store.is_open===false?'cancelled':'completed'}"><i class="dot"></i>${state.store.is_open===false?'Store closed':'Open for good food'}</span><small>${esc(state.store.business_type||'Your local store')} · Alegria</small></div></section><div class="metrics">${metric("Today's sales",money(sum(paid)),`<span class="trend">${paid.length} completed</span> from today's orders`,'peso')}${metric("Today's orders",today.length,`<span class="trend">${pending} new</span> ready for your attention`,'bag')}${metric('Active products',active.length,`${state.products.length} products in your catalog`,'box')}${metric('Average order value',money(paid.length?sum(paid)/paid.length:0),'Across completed orders today','chart')}</div><div class="columns">${salesCard()}${topProductsCard()}</div><div class="columns"><section class="card"><div class="card-head"><div><h2>Recent orders</h2><p>A quick look at what is coming in.</p></div>${btn('View all','orders','link','arrow')}</div>${orderTable(state.orders.slice(0,5),true)}<div class="table-foot"><span>Showing the latest ${Math.min(state.orders.length,5)} of ${state.orders.length} loaded orders</span><span>All times in Philippine time</span></div></section><div class="stack"><section class="card"><div class="card-head"><h2>Quick actions</h2>${icon('plus')}</div><div class="card-body"><div class="quick-actions"><button data-action="add-product">${icon('plus')}Add product</button><button data-action="menu">${icon('menu')}Menu & pricing</button><button data-action="settings">${icon('settings')}Store settings</button><button data-action="reports">${icon('chart')}View reports</button></div></div></section><section class="card status-card"><div class="between"><h2>Store availability</h2>${icon('store')}</div><div class="status-line"><div><b>${state.store.is_open===false?'Taking a little break':'You’re open for business'}</b><p>${state.store.is_open===false?'Your store is temporarily closed.':'Customers can place new orders.'}</p></div><button class="switch" role="switch" aria-label="Accept new orders" aria-checked="${state.store.is_open!==false}" data-action="availability"></button></div><p class="muted" style="font-size:11px;margin-top:14px">Store rating: ${state.store.rating!=null&&Number.isFinite(Number(state.store.rating))?Number(state.store.rating).toFixed(1):"—"}</p></section></div></div>`;
+  };
+const orderTable = function orderTable(rows,compact=false){return rows.length?`<div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th>${compact?'':'<th>Items</th>'}<th>Amount</th><th>Status</th><th>Time</th><th><span class="muted">Action</span></th></tr></thead><tbody>${rows.map(o=>`<tr><td><b>#${esc(String(o.id).slice(0,8))}</b><br><small>${esc(o.fulfillment_type||'Delivery')}</small></td><td><div class="customer">${avatar(o.customer_name||o.contact_name||'Customer','')}<span>${esc(o.customer_name||o.contact_name||'Customer')}</span></div></td>${compact?'':`<td title="${esc((o.items||[]).map(i=>i.product_name).join(', '))}">${(o.items||[]).reduce((n,i)=>n+(Number(i.quantity)||0),0)} item(s)</td>`}<td><b>${money(o.total_amount)}</b></td><td>${pill(o.status)}</td><td>${time(o.created_at)}${compact?'':`<br><small>${date(o.created_at)}</small>`}</td><td><button class="icon-button" aria-label="View order ${esc(o.id)}" data-order="${esc(o.id)}">${icon('more')}</button></td></tr>`).join('')}</tbody></table></div>`:empty('No orders to show','New orders will appear here as customers discover your store.');};
+const productsPage = function productsPage(){
+    const cats=['All',...new Set(state.products.map(p=>p.category||'Other'))],rows=state.products.filter(p=>(state.category==='All'||p.category===state.category)&&String(p.name).toLowerCase().includes(state.productSearch.toLowerCase()));
+    return pageHead('Products','Good food starts with a great menu.',btn('Refresh','refresh','','refresh')+btn('Add product','add-product','primary','plus'))+`<div class="filter-row"><div class="tabs" aria-label="Product categories">${cats.map(c=>`<button data-category="${esc(c)}" class="${state.category===c?'active':''}">${esc(c)} ${c==='All'?`<span class="count">${state.products.length}</span>`:''}</button>`).join('')}</div><form class="search-field" id="product-search">${icon('search')}<input name="search" placeholder="Find a product…" aria-label="Find a product" value="${esc(state.productSearch)}"></form></div>${rows.length?`<div class="products-grid">${rows.map(p=>`<article class="product-card"><div class="product-image">${safeImage(p.image_url)?`<img src="${safeImage(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`:icon('coffee')}${pill(p.status)}</div><div class="product-content"><small>${esc(p.category||'Other')}</small><h3>${esc(p.name)}</h3><p>${esc((p.description||'').slice(0,85))}</p><div class="between"><strong>${money(p.price)}</strong><span class="stock">${p.stock>0?Number(p.stock)+' in stock':'Sold out'}</span></div></div><div class="product-card-foot"><span>${(p.options||[]).length} option group(s)</span><button class="button link small" data-product="${esc(p.id)}">${icon('edit')} Edit</button></div></article>`).join('')}</div>`:empty('No products found','Add your first product or try another search.',btn('Add product','add-product','primary','plus'),'box')}`;
+  };
+const rangeControl = function rangeControl(){return `<div class="report-range"><select class="input" data-range aria-label="Report date range"><option value="7" ${state.days===7?'selected':''}>Last 7 days</option><option value="30" ${state.days===30?'selected':''}>Last 30 days</option></select>${btn('Export CSV','export','','download')}</div>`;};
+const payoutsPage = function payoutsPage(){const rows=completed(),paid=rows.filter(o=>o.payment_status==='paid'),methods=[...new Set(rows.map(o=>o.payment_method||'Unspecified'))];return pageHead('Payouts','A clear view of your recorded order payments.',rangeControl())+`<div class="metrics">${metric('Completed order value',money(sum(rows)),`${state.days} days · before any fees`,'wallet')}${metric('Marked paid',money(sum(paid)),'Recorded payment status from orders','check')}${metric('Payment not confirmed',money(sum(rows.filter(o=>o.payment_status!=='paid'))),'Check collection with your records','clock')}${metric('Settlement status','Not connected','No payout provider in the existing app','shield')}</div>${notice('Papalita’s current backend does not include a payout ledger or transfer integration. Amounts below summarize order records and do not confirm bank deposits.','warning')}<div class="columns" style="margin-top:20px"><section class="card"><div class="card-head"><div><h2>Payment breakdown</h2><p>Completed orders · last ${state.days} days</p></div>${icon('wallet')}</div><div class="card-body">${methods.length?methods.map(m=>{const group=rows.filter(o=>(o.payment_method||'Unspecified')===m);return `<div class="payment-method between"><div class="flex">${icon('wallet')}<div><b>${esc(m.toUpperCase())}</b><small>${group.length} completed orders</small></div></div><strong>${money(sum(group))}</strong></div>`;}).join(''):empty('No completed payments','A breakdown appears when orders are completed.','','wallet')}</div></section><section class="card"><div class="card-head"><h2>Settlement history</h2>${icon('shield')}</div>${empty('No settlement records','Transfers are not configured in the existing Papalita app. Your order payment records remain available for reconciliation.',btn('View completed orders','completed-orders','small','arrow'),'wallet')}</section></div>`;};
+const reportsPage = function reportsPage(){const rows=state.orders.filter(inRange),done=completed(),top=topProducts();return pageHead('Reports','See what’s working. Make room for what’s next.',rangeControl())+`<div class="top-note">${state.preview?'Sample report':`Based on the latest ${state.orders.length} loaded orders (up to 100).`} Sales include completed orders only.</div><div class="metrics">${metric('Completed sales',money(sum(done)),`Last ${state.days} days`,'peso')}${metric('Orders received',rows.length,`${done.length} completed · ${rows.filter(o=>o.status==='cancelled').length} cancelled`,'bag')}${metric('Average order value',money(done.length?sum(done)/done.length:0),'Across completed orders','chart')}${metric('Items sold',done.reduce((a,o)=>a+(o.items||[]).reduce((n,i)=>n+Number(i.quantity||0),0),0),'From completed orders','box')}</div><div class="columns">${salesCard()}${topProductsCard()}</div><section class="card"><div class="card-head"><div><h2>Product performance</h2><p>Ranked by quantity sold · last ${state.days} days</p></div>${btn('Print report','print','small','download')}</div>${top.length?`<div class="table-wrap"><table><thead><tr><th>Rank</th><th>Product</th><th>Quantity sold</th><th>Item revenue</th></tr></thead><tbody>${top.map((p,i)=>`<tr><td>#${i+1}</td><td><div class="flex">${thumb(p.product)}<b>${esc(p.name)}</b></div></td><td>${p.quantity}</td><td><b>${money(p.total)}</b></td></tr>`).join('')}</tbody></table></div>`:empty('Your performance story starts here','Complete your first order to see product sales.','','chart')}</section>`;};
+const appearancePage = function appearancePage(){return pageHead('Appearance','A workspace that feels like yours.')+`<section class="card form-card" style="max-width:760px"><div class="form-intro"><h2>Make yourself at home</h2><p>Your preferences save on this device for your account.</p></div><h3>Interface theme</h3><p class="muted" style="font-size:11px;margin-top:5px">Choose a little light, a little dark, or follow your device.</p><div class="theme-options">${['light','dark','system'].map(m=>`<button class="theme-option ${prefs.mode===m?'active':''}" data-mode="${m}" aria-pressed="${prefs.mode===m}"><div class="theme-swatch"></div><span>${m[0].toUpperCase()+m.slice(1)} ${prefs.mode===m?'✓':''}</span></button>`).join('')}</div><div class="divider"></div><h3>Accent color</h3><p class="muted" style="font-size:11px;margin-top:5px">Papalita green, or a shade that suits you.</p><div class="accent-options">${Object.entries(accents).map(([n,c])=>`<button class="accent-choice ${prefs.accent===n?'active':''}" style="--color:${c[0]}" data-accent="${n}" aria-label="${n} accent" aria-pressed="${prefs.accent===n}"></button>`).join('')}</div><div class="divider"></div><div class="between"><div><h3>Sidebar appearance</h3><p class="muted" style="font-size:11px;margin-top:5px">Keep the classic dark sidebar or try a lighter look.</p></div><select class="input" style="width:120px" id="sidebar-theme" aria-label="Sidebar appearance"><option value="dark" ${prefs.sidebar==='dark'?'selected':''}>Dark</option><option value="light" ${prefs.sidebar==='light'?'selected':''}>Light</option></select></div><div class="divider"></div>${notice('Appearance changes apply instantly across your portal. Your store’s customer-facing branding stays the same.')}</section>`;};
+const csvCell = function csvCell(v){let text=String(v??'');if(/^[=+\-@\t\r]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';};
+const exportCSV = function exportCSV(){let rows;if(state.page==='products'||state.page==='menu'||state.page==='inventory'){rows=[['Product','Category','Price PHP','Stock','Visibility'],...state.products.map(p=>[p.name,p.category,p.price,p.stock,p.status])];}else{const orders=state.page==='orders'?state.orders.filter(o=>(state.orderFilter==='all'||o.status===state.orderFilter)&&[o.id,o.customer_name,o.contact_number,o.delivery_address].some(v=>String(v||'').toLowerCase().includes(state.search.toLowerCase()))):state.orders.filter(inRange);rows=[['Order ID','Created (Philippine time)','Customer','Amount PHP','Status','Payment method','Payment status','Fulfillment'],...orders.map(o=>[o.id,new Date(o.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'}),o.customer_name||o.contact_name,o.total_amount,o.status,o.payment_method,o.payment_status,o.fulfillment_type])];}const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Papalita_'+(state.preview?'Preview_':'')+state.page+'_'+day(new Date())+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('Your CSV export is ready.');};
+const render = function render(){
+    if(!storeUuid)return gate();if(document.querySelector(".pp-shell dialog[open]"))return;
+    state.page=getPage();
+    const pages={dashboard:['Dashboard','grid'],orders:['Orders','bag'],products:['Products','box'],menu:['Menu & Pricing','menu'],settings:['Store Settings','settings'],payouts:['Payouts','wallet'],reports:['Reports','chart'],appearance:['Appearance','palette'],inventory:['Inventory','box'],catering:['Catering Requests','coffee']};
+    const nav=(p)=>`<a href="#${p}" ${state.page===p?'aria-current="page"':''} class="${state.page===p?'active':''}">${icon(pages[p][1])}${pages[p][0]}${p==='orders'&&state.orders.filter(o=>o.status==='pending').length?`<span class="nav-count">${state.orders.filter(o=>o.status==='pending').length}</span>`:''}</a>`;
+    const st=state.store,owner=state.preview?'Review workspace':state.user.email;
+    $('#root').innerHTML=`<div class="pp-shell"><div class="layout"><button class="mobile-overlay" aria-label="Close navigation" data-action="close-nav"></button><aside class="sidebar" id="sidebar" aria-label="Main navigation"><div class="brand"><img src="images/papalita_mark_color.png" alt=""><div><strong>Papalita</strong><small>Merchant Portal</small></div></div><div class="store-switch">${avatar(st.name,st.logo_url)}<span class="store-identity"><button class="store-name" data-action="edit-store-name" aria-label="Edit store name" title="Edit store name">${esc(st.name)}</button><small>${esc(st.business_type||'Your local store')}</small></span></div><div class="side-label">WORKSPACE</div><nav class="nav">${['dashboard','orders','products','menu','payouts','reports'].map(nav).join('')}${cateringEnabled()?nav('catering'):''}</nav><div class="side-label">MANAGE YOUR STORE</div><nav class="nav">${nav('settings')}${nav('appearance')}</nav><div class="sidebar-bottom"><div class="side-help"><b>A little help goes a long way.</b><p>Find your way around your Papalita workspace.</p><button data-action="help">Explore quick guide ${icon('arrow')}</button></div><div class="side-owner">${avatar(state.preview?'Review':state.user.email,'')}<span><b>${state.preview?'Store owner preview':'Store owner'}</b><small>${esc(owner)}</small></span><button class="icon-button" data-action="account" aria-label="Account menu">${icon('more')}</button></div></div></aside><div class="work"><header class="topbar"><div class="flex"><button class="icon-button menu-toggle" aria-label="Open navigation" aria-expanded="false" data-action="open-nav">${icon('bars')}</button><div class="breadcrumb"><span>Workspace</span>${icon('chevron')}<b>${pages[state.page][0]}</b></div></div><div class="header-actions"><form class="global-search" id="global-search">${icon('search')}<input name="search" aria-label="Search orders" placeholder="Search orders…"><span class="key">↵</span></form><button class="icon-button" aria-label="Notifications" data-action="notifications">${icon('bell')}${state.orders.some(o=>o.status==='pending')?'<span class="notification-dot"></span>':''}</button><button class="icon-button" aria-label="Help and support" data-action="help">${icon('help')}</button><button class="icon-button" aria-label="Your account" data-action="account">${avatar(st.name,st.logo_url,'topbar-avatar')}</button></div></header>${state.preview?`<div class="review-strip"><div class="flex"><b>Design preview</b><span>·</span> Sample data. Preview changes never affect your store.</div></div>`:''}<main class="main" id="main" tabindex="-1">${state.loading?notice('Refreshing your store…'):''}${state.errors.products?notice('Products could not be loaded: '+esc(state.errors.products),'error'):''}${state.errors.orders?notice('Orders could not be loaded: '+esc(state.errors.orders),'error'):''}${({dashboard:dashboard,orders:papaOrders,products:productsPage,menu:ppPricingPage,settings:ppSettingsPage,payouts:payoutsPage,reports:reportsPage,appearance:appearancePage,inventory:papaInventory,catering:ppCateringPage}[state.page])()}<footer class="footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span><i class="dot"></i>${state.preview?'Preview workspace':state.realtime==='subscribed'?'Live updates connected':state.realtime==='polling'?'Refreshing every 12 seconds':'Connecting live updates…'}</span></footer></main></div></div></div>`;
+    ppNormalize($('#root'));bind();
+    $$('img').forEach(im=>im.onerror=()=>{const replacement=document.createElement('span');replacement.innerHTML=icon('coffee');im.replaceWith(replacement);});
+  };
+function ppSettingsPage(){
+ const st=papaStore(),profile=papaProfile(),form=profile.slice(profile.indexOf('<form'));
+ return pageHead('Store Settings','Your store, just the way customers should see it.',btn('Refresh','refresh','','refresh'))+`<div class="form-layout">${form}<aside class="stack"><section class="card"><div class="card-head"><h2>Customer preview</h2>${icon('eye')}</div><div class="store-preview-cover"><img src="${LOGO.mark}" alt=""></div><div class="store-preview-info">${avatar(st.name,st.logo_url)}<h3 id="pp-profile-name">${esc(st.name)}</h3><p id="pp-profile-description">${esc(st.description||'Tell customers about your store.')}</p><p>${icon('pin')} <span id="pp-profile-address">${esc(st.address||'Your store address')}</span></p><span class="pill completed"><span class="dot"></span>Approved store</span></div></section>${papaAvailabilityCard()}<section class="card status-card"><h2>Inventory</h2><p class="muted" style="font-size:11px;margin:10px 0">Keep stock and low-stock alerts up to date.</p>${btn('Manage inventory','inventory','small','box')}</section></aside></div>`;
+}
+function ppPricingPage(){
+ return pageHead('Menu & Pricing','Update your prices, options and product visibility.',btn('Refresh','refresh','','refresh')+btn('Add product','add-product','primary','plus'))+`<section class="card"><div class="card-head"><div><h2>Your menu</h2><p>${papaProducts.length} products · prices in Philippine pesos</p></div>${btn('Inventory','inventory','small','box')}</div>${papaProducts.length?`<div class="table-wrap"><table><thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Visibility</th><th>Options</th><th>Action</th></tr></thead><tbody>${papaProducts.map(p=>`<tr><td><div class="flex">${thumb(p)}<b>${esc(p.name)}</b></div></td><td>${esc(p.category||'Other')}</td><td><b>${money(p.price)}</b></td><td>${Number(p.stock)||0}</td><td>${pill(p.status)}</td><td>${Array.isArray(p.options)?p.options.length:0} group(s)</td><td><button class="button small" data-product="${esc(p.id)}" data-focus-price>Edit price & options</button></td></tr>`).join('')}</tbody></table></div>`:empty('Your menu is waiting','Add a product to start building your menu.',btn('Add product','add-product','primary','plus'),'menu')}</section>`;
+}
+function ppCateringPage(){return pageHead('Catering Requests','Manage event inquiries from your customers.',btn('Refresh','refresh','','refresh'))+realCateringHTML();}
+function getPage(){return ({profile:'settings',settings:'settings',cat:'catering',pricing:'menu',menu:'products'})[tab]||tab;}
+function cateringEnabled(){return papaCateringOn(papaStore());}
+function navigate(page){
+ ppNavigationOpen=false;
+ if(page==='catering'&&!cateringEnabled())page='dashboard';
+ tab=({menu:'pricing',catering:'cat'})[page]||page;
+ try{history.replaceState(null,'','#'+page);}catch{}
+ render();window.scrollTo({top:0});
+ if(page==='orders')void papaFetchOrders();
+ if(page==='catering')void fetchCatering().then(()=>{if(tab==='cat')render();}).catch(e=>toast(e.message));
+}
+function applyPrefs(){
+ const dark=prefs.mode==='dark'||prefs.mode==='system'&&matchMedia('(prefers-color-scheme: dark)').matches;
+ const root=document.documentElement;
+ root.dataset.theme=dark?'dark':'light';root.dataset.merchantMode=dark?'dark':'light';root.dataset.merchantAccent=prefs.accent;root.dataset.sidebar=prefs.sidebar;
+ const a=accents[prefs.accent]||accents.green;
+ const shell=document.querySelector('.pp-shell');if(shell){shell.style.setProperty('--accent',a[dark?2:0]);shell.style.setProperty('--accent-soft',a[dark?3:1]);shell.style.setProperty('--side',prefs.sidebar==='light'&&!dark?'#e9ece0':dark?'#101810':'#171d18');shell.style.setProperty('--side-ink',prefs.sidebar==='light'&&!dark?'#5d6b54':'#b6beb6');}
+}
+function savePrefs(){try{localStorage.setItem('papalita_merchant_appearance_v1',JSON.stringify(prefs));}catch{}applyPrefs();}
+function ppCloseNav(){ppNavigationOpen=false;const s=$('#sidebar');if(s){s.classList.remove('pp-open');s.inert=matchMedia('(max-width:760px)').matches;}$('.pp-mobile-overlay')?.classList.remove('pp-open');$('[data-action=open-nav]')?.setAttribute('aria-expanded','false');}
+function ppModal(title,sub,body){
+ $('#pp-modal')?.remove();const m=document.createElement('dialog');m.id='pp-modal';m.className='pp-dialog';
+ m.innerHTML=`<div class="modal-head"><div><h2>${title}</h2><p>${sub}</p></div><button class="icon-button" aria-label="Close dialog" data-pp-close>${icon('x')}</button></div><div class="modal-body">${body}</div>`;
+ $('.pp-shell').append(m);ppNormalize(m);$$('[data-pp-close]',m).forEach(b=>b.onclick=()=>m.close());m.showModal();return m;
+}
+function ppAccount(){
+ const m=ppModal('Your store account',esc(papaUserEmail),`<div class="account-actions">${btn('Store Settings','settings','','store')}${sellerStores.length>1?btn('Switch store','store-picker','','store'):''}${btn('Appearance','appearance','','palette')}${btn('Sign out','logout','','logout')}</div>`);
+ $$('[data-action]',m).forEach(b=>b.onclick=()=>{m.close();action(b.dataset.action);});
+}
+function ppNotifications(){
+ const n=papaLiveOrders.filter(o=>o.status==='pending').length;
+ const m=ppModal('Order notifications',n+' new order'+(n===1?'':'s')+' waiting.',`<div class="between"><div><h3>New order sound</h3><p class="muted" style="font-size:11px;margin-top:6px">Play an alert when a new order arrives.</p></div><button class="switch" role="switch" aria-label="New order sound" aria-checked="${papaAudioEnabled}" id="pp-order-sound"></button></div><div class="form-actions"><button class="button primary" id="pp-view-new-orders">View new orders</button></div>`);
+ $('#pp-order-sound').onclick=e=>{papaAudioEnabled=!papaAudioEnabled;e.currentTarget.setAttribute('aria-checked',String(papaAudioEnabled));if(papaAudioEnabled)papaBeep();};
+ $('#pp-view-new-orders').onclick=()=>{m.close();papaOrderFilter='pending';navigate('orders');};
+}
+function ppStorePicker(){
+ const m=ppModal('Your stores','Approved stores assigned to your account.',`<div class="account-actions">${sellerStores.map(st=>`<button class="button" data-pp-store="${esc(st.id)}">${avatar(st.name,st.logo_url)}${esc(st.name)}</button>`).join('')}</div>`);
+ $$('[data-pp-store]',m).forEach(b=>b.onclick=()=>{m.close();void selectStore(b.dataset.ppStore).catch(e=>toast(e.message));});
+}
+async function ppOpenProduct(id,focusPrice=false){
+ const m=ppModal(id?'Edit product':'Add product','Your existing product settings and customization options.',`<div id="papalita-products">Loading your products…</div>`);m.classList.add('pp-product-modal');
+ const activeStore=storeUuid;
+ m.addEventListener('close',()=>{if(storeUuid===activeStore)void papaFetchProducts().then(()=>{if(storeUuid===activeStore&&['products','pricing','menu'].includes(tab))render();}).catch(e=>toast(e.message));},{once:true});
+ await renderSellerProducts();
+ if(!m.open||activeStore!==storeUuid)return;
+ if(id){const edit=$$('[data-edit-product]',m).find(b=>b.dataset.editProduct===String(id));if(edit)edit.click();const del=$('[data-pp-delete]',m);if(del)del.hidden=false;}
+ if(focusPrice)$('#sp-price')?.focus();
+}
+function ppBindProductEditor(){
+ const target=$('#papalita-products');if(!target)return;ppNormalize(target);
+ const form=$('#seller-product-form');
+ if(form){const foot=document.createElement('div');foot.className='pp-editor-footer';foot.innerHTML='<button class="btn d" type="button" data-pp-delete hidden>Delete product</button> <button class="btn s" type="button" data-pp-done>Done / close</button>';form.append(foot);$('[data-pp-done]',foot).onclick=()=>$('#pp-modal')?.close();$('[data-pp-delete]',foot).onclick=()=>{const id=$('#seller-product-id')?.value;const del=$$('[data-delete-product]',target).find(b=>b.dataset.deleteProduct===id);if(del)del.click();};$('#sp-clear')?.addEventListener('click',()=>{$('[data-pp-delete]',foot).hidden=true;});}
+ // Existing edit/delete buttons remain available; all their original handlers are retained.
+}
+function ppOpenOrder(id){tab='orders';render();papaOpenOrderDrawer(id);}
+function action(a){
+ if(['dashboard','orders','products','menu','settings','payouts','reports','appearance','inventory','catering'].includes(a)){navigate(a);return;}
+ const handlers={
+  'open-nav':()=>{ppNavigationOpen=true;$('#sidebar').inert=false;$('#sidebar').classList.add('pp-open');$('.pp-mobile-overlay').classList.add('pp-open');$('[data-action=open-nav]').setAttribute('aria-expanded','true');},
+  'close-nav':ppCloseNav,'edit-store-name':()=>{navigate('settings');$('#papa-name')?.focus();},
+  'add-product':()=>void ppOpenProduct(),'account':ppAccount,'store-picker':ppStorePicker,
+  'notifications':ppNotifications,'completed-orders':()=>{papaOrderFilter='completed';navigate('orders');},
+  'availability':()=>void papaToggleStoreHeader(),'refresh':()=>void Promise.all([papaLoad(),papaFetchOrders(),fetchCatering()]).then(()=>render()).catch(e=>toast(e.message)),
+  'export':exportCSV,'print':()=>window.print(),
+  'logout':async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;me=null;gate();},
+  'help':()=>ppModal('Your Papalita workspace','A quick guide for your day.',`<div class="stack"><p>Use Orders to accept, prepare and complete customer orders. Your original order rules, ETA prompt and live notifications stay active.</p><p>Products and Menu & Pricing use your existing product editor, including size and add-on options.</p><p>Store Settings updates your approved store profile, photo, hours and availability. Catering Requests appears when catering is enabled for an eligible store.</p><p>Payouts summarizes recorded payments. It does not initiate transfers.</p></div>`)
+ };handlers[a]?.();
+}
+function bind(){
+ applyPrefs();const side=$('#sidebar');if(side){side.inert=matchMedia('(max-width:760px)').matches&&!ppNavigationOpen;side.classList.toggle('pp-open',ppNavigationOpen);}$('.pp-mobile-overlay')?.classList.toggle('pp-open',ppNavigationOpen);$('[data-action=open-nav]')?.setAttribute('aria-expanded',String(ppNavigationOpen));
+ $$('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
+ $$('.pp-nav a').forEach(a=>a.onclick=e=>{e.preventDefault();navigate(a.getAttribute('href').slice(1));});
+ $$('[data-order]').forEach(b=>b.onclick=()=>ppOpenOrder(b.dataset.order));
+ $$('[data-product]').forEach(b=>b.onclick=()=>void ppOpenProduct(b.dataset.product,b.hasAttribute('data-focus-price')));
+ $$('[data-category]').forEach(b=>b.onclick=()=>{state.category=b.dataset.category;render();});
+ $$('[data-range]').forEach(s=>s.onchange=()=>{state.days=Number(s.value);render();});
+ $$('[data-mode]').forEach(b=>b.onclick=()=>{prefs.mode=b.dataset.mode;savePrefs();render();});
+ $$('[data-accent]').forEach(b=>b.onclick=()=>{prefs.accent=b.dataset.accent;savePrefs();render();});
+ if($('#sidebar-theme'))$('#sidebar-theme').onchange=e=>{prefs.sidebar=e.target.value;savePrefs();};
+ const gs=$('#global-search');if(gs)gs.onsubmit=e=>{e.preventDefault();papaOrderSearch=gs.elements.search.value.trim();papaOrderFilter='all';navigate('orders');};
+ const ps=$('#product-search');if(ps){ps.onsubmit=e=>e.preventDefault();ps.elements.search.oninput=()=>{const text=ps.elements.search.value,pos=ps.elements.search.selectionStart;state.productSearch=text;render();const next=$('#product-search').elements.search;next.focus();try{next.setSelectionRange(pos,pos);}catch{}};}
+ // Bind the uploaded file's existing profile, stock, order, availability and catering controls.
+ void papaBind();$('#wf-order-search')?.setAttribute('aria-label','Search order ID or customer');
+ $$('[data-real-status]').forEach(el=>el.onchange=async()=>{try{await updateCatering(el.dataset.realStatus,el.value);}catch(e){toast(e.message);}});
+ for(const [id,target] of [['papa-name','pp-profile-name'],['papa-description','pp-profile-description'],['papa-address','pp-profile-address']]){const input=$('#'+id),preview=$('#'+target);if(input&&preview)input.addEventListener('input',()=>{preview.textContent=input.value;});}
+ const photo=$('#papa-logo-file');if(photo)photo.addEventListener('change',()=>{const f=photo.files[0];if(f&&['image/png','image/jpeg','image/webp'].includes(f.type)&&f.size<=5*1024*1024){const p=$('.pp-store-preview-info .pp-avatar');if(p){const url=URL.createObjectURL(f);p.innerHTML=`<img src="${url}" alt="Store photo preview">`;}}});
+}
+const ppOriginalOrderDrawer=papaOpenOrderDrawer;
+papaOpenOrderDrawer=function(id){ppOriginalOrderDrawer(id);const d=$('#papa-order-dialog');if(d)d.addEventListener('close',()=>{if(storeUuid)render();},{once:true});};
+const ppOriginalRenderProducts=renderSellerProducts;
+renderSellerProducts=async function(){await ppOriginalRenderProducts();ppBindProductEditor();};
+const ppOriginalOptionGroups=renderOptionGroups;
+renderOptionGroups=function(){ppOriginalOptionGroups();ppNormalize($('#sp-option-groups'));};
+const ppOriginalAppearance=papaApplyAppearance;
+papaApplyAppearance=function(){ppOriginalAppearance();applyPrefs();};
+draw=render;
+window.addEventListener('hashchange',()=>{if(!storeUuid)return;const page=location.hash.slice(1);if(['dashboard','orders','products','menu','settings','payouts','reports','appearance','inventory','catering'].includes(page))navigate(page);});
+window.addEventListener('keydown',e=>{if(e.key==='Escape')ppCloseNav();});
+matchMedia('(max-width:760px)').addEventListener('change',e=>{const s=$('#sidebar');if(s)s.inert=e.matches&&!s.classList.contains('pp-open');});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(prefs.mode==='system')applyPrefs();});
+
+})();
+/* END PAPALITA MERCHANT INTERFACE UPGRADE */
 setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && ['new', 'prep', 'out', 'hist'].includes(tab)) draw(); }, 4000); (async()=>{try{db=client();const {data,error}=await db.auth.getUser();if(error||!data?.user){gate();return;}if(!await completeApplication(data.user))await authorize(data.user);}catch(e){gate(e.message);}})();
 })();
 </script>
