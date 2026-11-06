@@ -5,86 +5,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-<title>Papalita — Good Food Closer to You</title>
+<title>Papalita — Good Food, Good Mood.</title>
 <meta name="description" content="Food delivery and catering in Alegria, Surigao del Norte.">
-<meta name="theme-color" content="#087F45">
+<meta name="theme-color" content="#087F32">
 
-<script id="papalita-install-early">
-/* Capture Chrome's install offer before slow catalogue/auth scripts load. */
-(function () {
-  var pendingInstall = null;
-  window.addEventListener('beforeinstallprompt', function (event) {
-    event.preventDefault();
-    pendingInstall = event;
-    window.PAPALITA_EARLY_INSTALL_EVENT = event;
-  });
-  window.addEventListener('appinstalled', function () {
-    pendingInstall = null;
-    window.PAPALITA_EARLY_INSTALL_EVENT = null;
-  });
-  document.addEventListener('click', function (event) {
-    var button = event.target.closest && event.target.closest('[data-a="install"]');
-    if (!button || !pendingInstall) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    var offer = pendingInstall;
-    pendingInstall = null;
-    window.PAPALITA_EARLY_INSTALL_EVENT = null;
-    offer.prompt();
-    Promise.resolve(offer.userChoice).then(function (choice) {
-      if (choice && choice.outcome === 'dismissed') {
-        /* Chrome decides whether another prompt can be offered. */
-      }
-    }).catch(function (err) { console.warn('[Papalita] Install prompt:', err); });
-  }, true);
-})();
-</script>
-<script id="papalita-install-welcome">
-(function () {
-  'use strict';
-  var KEY = 'papalita.install.invite.dismissed';
-  var standalone = function () { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; };
-  var isInApp = function () { return /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(navigator.userAgent); };
-  var overlay = null;
-  function close() { if (overlay) { overlay.remove(); overlay = null; } }
-  function show(success) {
-    if (overlay || (!success && (standalone() || sessionStorage.getItem(KEY)))) return;
-    overlay = document.createElement('div');
-    overlay.id = 'papalita-install-dialog';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(12,30,18,.65);display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,-apple-system,sans-serif';
-    var box = document.createElement('div');
-    box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true'); box.setAttribute('aria-label', success ? 'Papalita installed' : 'Install Papalita');
-    box.style.cssText = 'background:#fff;color:#173321;border-radius:24px;padding:28px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 70px #0004';
-    box.innerHTML = (success ? '<div style="font-size:32px;margin-bottom:10px">🎉</div>' : '') +
-      '<h2 style="font-size:23px;margin:0 0 10px">' + (success ? 'Papalita Installed!' : 'Install Papalita') + '</h2>' +
-      '<p style="font-size:14px;line-height:1.6;color:#526357;margin:0 0 20px">' +
-      (success ? 'Papalita has been added to your device. You can now open it from your home screen.' : 'Get faster access to your favorite stores and food. Add Papalita to your home screen!') + '</p>' +
-      '<button type="button" id="papalita-install-primary" style="width:100%;background:#087F32;color:#fff;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:700;cursor:pointer">' +
-      (success ? 'Open Papalita' : 'Install Now') + '</button>' +
-      '<button type="button" id="papalita-install-later" style="width:100%;margin-top:10px;background:transparent;color:#66746b;border:0;padding:12px;font-size:14px;cursor:pointer">' +
-      (success ? 'Close' : 'Maybe Later') + '</button>' +
-      '<p id="papalita-install-help" style="font-size:12px;color:#526357;line-height:1.5;margin:12px 0 0" hidden></p>';
-    overlay.appendChild(box); document.body.appendChild(overlay);
-    box.querySelector('#papalita-install-later').onclick = function () { sessionStorage.setItem(KEY, '1'); close(); };
-    box.querySelector('#papalita-install-primary').onclick = function () {
-      if (success) { close(); location.href = './index.html#/'; return; }
-      var offer = window.PAPALITA_EARLY_INSTALL_EVENT || window.PAPALITA_INSTALL_PROMPT;
-      if (offer) {
-        window.PAPALITA_EARLY_INSTALL_EVENT = null;
-        window.PAPALITA_INSTALL_PROMPT = null;
-        sessionStorage.setItem(KEY, '1'); close();
-        try { Promise.resolve(offer.prompt()).catch(function (e) { console.warn('Install prompt failed', e); }); }
-        catch (e) { console.warn('Install prompt failed', e); }
-        return;
-      }
-      var help = box.querySelector('#papalita-install-help'); help.hidden = false;
-      help.textContent = isInApp() ? 'You are using an in-app browser. Open the link in Google Chrome, then choose Install app from the Chrome menu.' : /iPad|iPhone|iPod/.test(navigator.userAgent) ? 'Open in Safari, tap Share, then Add to Home Screen.' : 'Open the Chrome three-dot menu and choose Install app or Add to Home screen. The browser controls whether direct installation is available.';
-    };
-  }
-  window.addEventListener('appinstalled', function () { sessionStorage.setItem(KEY, '1'); close(); show(true); });
-  window.addEventListener('load', function () { setTimeout(function () { show(false); }, 1100); });
-})();
-</script>
+<script src="js/customer-install.js?v=20261106-polish"></script>
+
 <link rel="manifest" href="manifest.webmanifest?v=papalita-20261027-install2">
 <link rel="icon" type="image/png" href="images/papalita_mark_color.png">
 <link rel="apple-touch-icon" href="images/papalita_mark_color.png">
@@ -318,27 +244,27 @@ h2{font-size:21px;font-weight:800;letter-spacing:-.01em}h3{font-size:16px;font-w
 
 @media(min-width:900px){
 
- .two-col{grid-template-columns:1fr 380px;align-items:start}.two-col>aside{position:sticky;top:96px}
+ .two-col{grid-template-columns:1fr 380px;align-items:start}.two-col>aside{position:sticky;top:96px}
 
- .grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+ .grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
 
- .cats{margin:0;padding-inline:2px;flex-wrap:wrap;overflow:visible}.cat{width:100px}.cat .ph{width:90px}
+ .cats{margin:0;padding-inline:2px;flex-wrap:wrap;overflow:visible}.cat{width:100px}.cat .ph{width:90px}
 
 }
 
 @media(min-width:1024px){
 
- :root{--nav:0px}.bnav{display:none}#toasts{bottom:24px}main{padding:28px 32px 60px}
+ :root{--nav:0px}.bnav{display:none}#toasts{bottom:24px}main{padding:28px 32px 60px}
 
- .topbar{display:flex;position:sticky;top:0;z-index:50;align-items:center;gap:26px;padding:12px 32px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--ln)}
+ .topbar{display:flex;position:sticky;top:0;z-index:50;align-items:center;gap:26px;padding:12px 32px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--ln)}
 
- .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.02em}.logo i{width:36px;height:36px;border-radius:12px;background:var(--or);color:#fff;display:grid;place-items:center;font-style:normal}
+ .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.02em}.logo i{width:36px;height:36px;border-radius:12px;background:var(--or);color:#fff;display:grid;place-items:center;font-style:normal}
 
- .topbar nav{display:flex;gap:4px;flex:1}.topbar nav a{padding:10px 16px;border-radius:999px;font-weight:600;color:var(--mu)}.topbar nav a:hover{background:var(--sf)}.topbar nav a.on{background:var(--or-s);color:var(--or-d)}
+ .topbar nav{display:flex;gap:4px;flex:1}.topbar nav a{padding:10px 16px;border-radius:999px;font-weight:600;color:var(--mu)}.topbar nav a:hover{background:var(--sf)}.topbar nav a.on{background:var(--or-s);color:var(--or-d)}
 
- .topbar nav a.ctr{background:var(--or);color:#fff}.topbar nav a.ctr:hover{background:var(--or-d)}
+ .topbar nav a.ctr{background:var(--or);color:#fff}.topbar nav a.ctr:hover{background:var(--or-d)}
 
- .mob-only{display:none!important}.banner{min-height:300px}.banner .tx{padding:40px 0 40px 44px}.qa{max-width:760px}
+ .mob-only{display:none!important}.banner{min-height:300px}.banner .tx{padding:40px 0 40px 44px}.qa{max-width:760px}
 
 }
 
@@ -470,7 +396,7 @@ h2{font-size:21px;font-weight:800;letter-spacing:-.01em}h3{font-size:16px;font-w
 
 .rcpt{position:relative;background:#FFFDF6 url("data:image/svg+xml,%3Csvg xmlns='http\://www\.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");color:#1d1f22;font-family:'Courier New',ui-monospace,Menlo,monospace;font-size:13.5px;padding:34px 24px 38px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.16));
 
- -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 51% repeat-x,conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/18px 51% repeat-x;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 51% repeat-x,conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/18px 51% repeat-x}
+ -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 51% repeat-x,conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/18px 51% repeat-x;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 51% repeat-x,conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/18px 51% repeat-x}
 
 .rhead{text-align:center;display:flex;flex-direction:column;gap:2px;font-size:12.5px;letter-spacing:.04em}.rhead b{font-size:21px;letter-spacing:.14em;color:var(--or)}.rhead .rst{font-weight:700;margin-top:6px;font-size:14px}
 
@@ -592,33 +518,33 @@ body.authing{background:linear-gradient(180deg,var(--or-s) 0,var(--bg) 260px) no
 
 /* =========================================
 
-   PAPALITA — MOBILE REDESIGN V1
+   PAPALITA — MOBILE REDESIGN V1
 
-   Green theme | Mobile-first
+   Green theme | Mobile-first
 
-   ========================================= */
+   ========================================= */
 
 
 
 :root {
 
-  --or: #087F32;
+  --or: #087F32;
 
-  --or-d: #066A28;
+  --or-d: #066A28;
 
-  --or-s: #E8F6EC;
+  --or-s: #E8F6EC;
 
-  --bg: #FFFFFF;
+  --bg: #FFFFFF;
 
-  --sf: #F4F6F5;
+  --sf: #F4F6F5;
 
-  --ink: #17211B;
+  --ink: #17211B;
 
-  --mu: #68756D;
+  --mu: #68756D;
 
-  --ln: #E8EDE9;
+  --ln: #E8EDE9;
 
-  --sh: 0 5px 20px rgba(17, 60, 32, .07);
+  --sh: 0 5px 20px rgba(17, 60, 32, .07);
 
 }
 
@@ -626,9 +552,9 @@ body.authing{background:linear-gradient(180deg,var(--or-s) 0,var(--bg) 260px) no
 
 body {
 
-  background: #FFFFFF;
+  background: #FFFFFF;
 
-  color: var(--ink);
+  color: var(--ink);
 
 }
 
@@ -636,9 +562,9 @@ body {
 
 main {
 
-  padding-left: 16px;
+  padding-left: 16px;
 
-  padding-right: 16px;
+  padding-right: 16px;
 
 }
 
@@ -646,7 +572,7 @@ main {
 
 .sec {
 
-  margin-top: 26px;
+  margin-top: 26px;
 
 }
 
@@ -654,11 +580,11 @@ main {
 
 .sec-h h2 {
 
-  font-size: 21px;
+  font-size: 21px;
 
-  font-weight: 800;
+  font-weight: 800;
 
-  letter-spacing: -.4px;
+  letter-spacing: -.4px;
 
 }
 
@@ -666,9 +592,9 @@ main {
 
 .locv {
 
-  color: var(--ink);
+  color: var(--ink);
 
-  font-size: 20px;
+  font-size: 20px;
 
 }
 
@@ -676,9 +602,9 @@ main {
 
 .lab {
 
-  color: var(--mu);
+  color: var(--mu);
 
-  font-size: 11px;
+  font-size: 11px;
 
 }
 
@@ -686,7 +612,7 @@ main {
 
 .search {
 
-  margin-top: 18px;
+  margin-top: 18px;
 
 }
 
@@ -694,15 +620,15 @@ main {
 
 .sbox {
 
-  height: 54px;
+  height: 54px;
 
-  background: #F4F6F5;
+  background: #F4F6F5;
 
-  border: 1px solid #E7ECE8;
+  border: 1px solid #E7ECE8;
 
-  border-radius: 16px;
+  border-radius: 16px;
 
-  box-shadow: none;
+  box-shadow: none;
 
 }
 
@@ -710,9 +636,9 @@ main {
 
 .sbox:focus-within {
 
-  background: #FFFFFF;
+  background: #FFFFFF;
 
-  border-color: var(--or);
+  border-color: var(--or);
 
 }
 
@@ -720,9 +646,9 @@ main {
 
 .chips2 {
 
-  gap: 10px !important;
+  gap: 10px !important;
 
-  margin-top: 18px !important;
+  margin-top: 18px !important;
 
 }
 
@@ -730,15 +656,15 @@ main {
 
 .chipc {
 
-  height: 48px;
+  height: 48px;
 
-  padding: 0 16px 0 7px;
+  padding: 0 16px 0 7px;
 
-  font-size: 13px;
+  font-size: 13px;
 
-  background: #F1F7F2;
+  background: #F1F7F2;
 
-  border: 1px solid #E2EFE5;
+  border: 1px solid #E2EFE5;
 
 }
 
@@ -746,7 +672,7 @@ main {
 
 .chipc .ph {
 
-  width: 34px;
+  width: 34px;
 
 }
 
@@ -754,9 +680,9 @@ main {
 
 .chipc.on {
 
-  background: var(--or);
+  background: var(--or);
 
-  color: white;
+  color: white;
 
 }
 
@@ -764,7 +690,7 @@ main {
 
 .grid2 {
 
-  gap: 14px;
+  gap: 14px;
 
 }
 
@@ -774,13 +700,13 @@ main {
 
 .card.big {
 
-  border-radius: 18px;
+  border-radius: 18px;
 
-  background: #FFFFFF;
+  background: #FFFFFF;
 
-  border: 1px solid #EFF1EF;
+  border: 1px solid #EFF1EF;
 
-  box-shadow: 0 4px 15px rgba(0, 0, 0, .055);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, .055);
 
 }
 
@@ -788,7 +714,7 @@ main {
 
 .card.big .ph {
 
-  --ar: 16/10;
+  --ar: 16/10;
 
 }
 
@@ -796,9 +722,9 @@ main {
 
 .card.big .bd {
 
-  padding: 13px 14px 16px;
+  padding: 13px 14px 16px;
 
-  gap: 6px;
+  gap: 6px;
 
 }
 
@@ -806,9 +732,9 @@ main {
 
 .card.big h3 {
 
-  font-size: 17px;
+  font-size: 17px;
 
-  line-height: 1.3;
+  line-height: 1.3;
 
 }
 
@@ -816,9 +742,9 @@ main {
 
 .meta2 {
 
-  font-size: 12px;
+  font-size: 12px;
 
-  gap: 6px;
+  gap: 6px;
 
 }
 
@@ -826,15 +752,15 @@ main {
 
 .rpill {
 
-  top: 10px;
+  top: 10px;
 
-  right: 10px;
+  right: 10px;
 
-  padding: 5px 9px;
+  padding: 5px 9px;
 
-  font-size: 12px;
+  font-size: 12px;
 
-  border-radius: 10px;
+  border-radius: 10px;
 
 }
 
@@ -842,13 +768,13 @@ main {
 
 .ftag {
 
-  left: 10px;
+  left: 10px;
 
-  bottom: 10px;
+  bottom: 10px;
 
-  font-size: 10px;
+  font-size: 10px;
 
-  padding: 6px 10px;
+  padding: 6px 10px;
 
 }
 
@@ -856,7 +782,7 @@ main {
 
 .card .bd {
 
-  padding: 12px;
+  padding: 12px;
 
 }
 
@@ -864,7 +790,7 @@ main {
 
 .card .nm {
 
-  font-size: 14px;
+  font-size: 14px;
 
 }
 
@@ -872,9 +798,9 @@ main {
 
 .card .pr {
 
-  color: var(--or-d);
+  color: var(--or-d);
 
-  font-size: 16px;
+  font-size: 16px;
 
 }
 
@@ -886,9 +812,9 @@ main {
 
 .addp {
 
-  background: var(--or);
+  background: var(--or);
 
-  color: #FFFFFF;
+  color: #FFFFFF;
 
 }
 
@@ -896,9 +822,9 @@ main {
 
 .mint {
 
-  border-radius: 17px;
+  border-radius: 17px;
 
-  background: #EAF7EE;
+  background: #EAF7EE;
 
 }
 
@@ -906,13 +832,13 @@ main {
 
 .bnav {
 
-  background: #FFFFFF;
+  background: #FFFFFF;
 
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px 20px 0 0;
 
-  border-top: 1px solid #EEF1EE;
+  border-top: 1px solid #EEF1EE;
 
-  box-shadow: 0 -4px 22px rgba(0, 0, 0, .055);
+  box-shadow: 0 -4px 22px rgba(0, 0, 0, .055);
 
 }
 
@@ -920,9 +846,9 @@ main {
 
 .bnav a {
 
-  font-size: 11px;
+  font-size: 11px;
 
-  gap: 5px;
+  gap: 5px;
 
 }
 
@@ -930,9 +856,9 @@ main {
 
 .bnav a.on {
 
-  color: var(--or);
+  color: var(--or);
 
-  font-weight: 800;
+  font-weight: 800;
 
 }
 
@@ -940,9 +866,9 @@ main {
 
 .bnav a.on svg {
 
-  fill: currentColor;
+  fill: currentColor;
 
-  fill-opacity: .1;
+  fill-opacity: .1;
 
 }
 
@@ -950,75 +876,75 @@ main {
 
 @media (max-width: 600px) {
 
-  .grid {
+  .grid {
 
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
-    gap: 11px;
+    gap: 11px;
 
-  }
-
-
-
-  .grid2 {
-
-    grid-template-columns: 1fr;
-
-  }
+  }
 
 
 
-  .card .meta {
+  .grid2 {
 
-    font-size: 11px;
+    grid-template-columns: 1fr;
 
-  }
-
-
-
-  .card .ft {
-
-    flex-wrap: wrap;
-
-  }
+  }
 
 
 
-  .card .add {
+  .card .meta {
 
-    width: 36px;
+    font-size: 11px;
 
-    height: 36px;
-
-  }
+  }
 
 
 
-  .cover {
+  .card .ft {
 
-    height: 250px;
+    flex-wrap: wrap;
 
-  }
-
-
-
-  .fcard {
-
-    padding: 19px;
-
-    border-radius: 23px;
-
-  }
+  }
 
 
 
-  .mi .ph {
+  .card .add {
 
-    width: 100px;
+    width: 36px;
 
-    border-radius: 15px;
+    height: 36px;
 
-  }
+  }
+
+
+
+  .cover {
+
+    height: 250px;
+
+  }
+
+
+
+  .fcard {
+
+    padding: 19px;
+
+    border-radius: 23px;
+
+  }
+
+
+
+  .mi .ph {
+
+    width: 100px;
+
+    border-radius: 15px;
+
+  }
 
 }
 
@@ -1733,6 +1659,8 @@ main {
  #results>.restaurant-results-grid>.card.big>.ftag{position:static!important;order:3!important;align-self:flex-start!important;margin:0 8px 8px!important;padding:3px 6px!important;font-size:9px!important;max-width:calc(100% - 16px)!important}
 }
 </style>
+<link rel="stylesheet" href="customer-polish.css?v=20261106-polish">
+<script src="js/customer-motion.js?v=20261106-polish"></script>
 </head>
 <body>
 <div id="papalita-bootstrap-skeleton" role="status" aria-live="polite" aria-label="Loading Papalita stores and products"><div class="pbs-inner"><div class="pbs-line" style="width:52%;height:24px"></div><div class="pbs-line" style="width:35%"></div><div class="pbs-line pbs-search"></div><div class="pbs-line" style="width:40%;height:21px;margin:22px 0 14px"></div><div class="pbs-grid"><div class="pbs-card"><div class="pbs-photo"></div><div class="pbs-line" style="width:74%"></div><div class="pbs-line" style="width:51%;height:12px"></div></div><div class="pbs-card"><div class="pbs-photo"></div><div class="pbs-line" style="width:74%"></div><div class="pbs-line" style="width:51%;height:12px"></div></div><div class="pbs-card"><div class="pbs-photo"></div><div class="pbs-line" style="width:74%"></div><div class="pbs-line" style="width:51%;height:12px"></div></div><div class="pbs-card"><div class="pbs-photo"></div><div class="pbs-line" style="width:74%"></div><div class="pbs-line" style="width:51%;height:12px"></div></div><div class="pbs-card"><div class="pbs-photo"></div><div class="pbs-line" style="width:74%"></div><div class="pbs-line" style="width:51%;height:12px"></div></div><div class="pbs-card"><div class="pbs-photo"></div><div class="pbs-line" style="width:74%"></div><div class="pbs-line" style="width:51%;height:12px"></div></div></div></div></div>
@@ -1755,7 +1683,7 @@ main {
 <script src="js/supabase.js?v=papalita-20261027-install2"></script>
 <script src="js/images.js?v=papalita-20261027-install2"></script>
 <script src="js/data.js?v=papalita-20261027-install2"></script>
-<script src="js/app.js?v=papalita-orders-v3"></script>
+<script src="js/app.js?v=20261106-customer-polish"></script>
 
 <script>
 (function () {
@@ -1793,7 +1721,7 @@ main {
 </script>
 
 <!-- TERMS AND PRIVACY: ONE CONTINUOUS SCROLL -->
-<div
+<dialog
   id="papalitaLegal"
   role="dialog"
   aria-modal="true"
@@ -1817,7 +1745,7 @@ main {
         <h2>Terms & Conditions</h2>
 
         <p>
-          Welcome to Papalita — Good Food Closer to You.
+          Welcome to Papalita — Good Food, Good Mood..
           Papalita connects customers with participating food
           merchants and catering providers in Alegria,
           Surigao del Norte.
@@ -1993,128 +1921,9 @@ main {
     </div>
 
   </div>
-</div>
+</dialog>
 
-<script id="papalita-legal-script">
-(function () {
-  "use strict";
-
-  const modal = document.getElementById("papalitaLegal");
-  const scrollArea = document.getElementById("legalScroll");
-  const agreeButton = document.getElementById("legalAgree");
-  const closeButton = document.getElementById("legalClose");
-  const statusText = document.getElementById("legalStatus");
-
-  let accepted = false;
-  let reachedBottom = false;
-
-  window.papalitaLegalAccepted = false;
-
-  function getCheckbox() {
-    return document.getElementById("rt");
-  }
-
-  function checkScroll() {
-    const remaining =
-      scrollArea.scrollHeight -
-      scrollArea.scrollTop -
-      scrollArea.clientHeight;
-
-    if (remaining <= 12) {
-      reachedBottom = true;
-      agreeButton.disabled = false;
-      statusText.textContent =
-        "You may now accept both policies.";
-    }
-  }
-
-  function openLegal() {
-    modal.classList.add("is-open");
-
-    scrollArea.scrollTop = 0;
-    reachedBottom = false;
-    agreeButton.disabled = true;
-
-    statusText.textContent =
-      "Scroll to the bottom to enable the agreement button.";
-
-    requestAnimationFrame(checkScroll);
-  }
-
-  function closeLegal() {
-    modal.classList.remove("is-open");
-  }
-
-  window.papalitaOpenLegal = openLegal;
-
-  // Connect to the existing app.js termsSheet function.
-  window.termsSheet = openLegal;
-
-  scrollArea.addEventListener("scroll", checkScroll);
-
-  closeButton.addEventListener("click", closeLegal);
-
-  agreeButton.addEventListener("click", function () {
-    if (!reachedBottom) return;
-
-    accepted = true;
-    window.papalitaLegalAccepted = true;
-
-    const checkbox = getCheckbox();
-
-    if (checkbox) {
-      checkbox.disabled = false;
-      checkbox.checked = true;
-
-      checkbox.dispatchEvent(
-        new Event("change", { bubbles: true })
-      );
-    }
-
-    closeLegal();
-  });
-
-  // Protect the registration agreement.
-  document.addEventListener("click", function (event) {
-    const checkbox = event.target.closest("#rt");
-
-    if (!checkbox || accepted) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    openLegal();
-  }, true);
-
-  // Registration form is dynamically rendered by app.js.
-  const observer = new MutationObserver(function () {
-    const checkbox = getCheckbox();
-
-    if (checkbox && !accepted) {
-      checkbox.checked = false;
-      checkbox.disabled = true;
-    }
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-
-  // Support explicit legal links.
-  document.addEventListener("click", function (event) {
-    const target = event.target.closest(
-      "[data-papalita-legal]"
-    );
-
-    if (!target) return;
-
-    event.preventDefault();
-    openLegal();
-  });
-
-})();
-</script>
+<script src="js/customer-legal.js?v=20261106-polish"></script>
 
 <script src="./js/notifications.js?v=1" defer></script>
 </body>
