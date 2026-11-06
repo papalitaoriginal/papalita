@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Foodie Rider</title><meta name="robots" content="noindex"><meta name="theme-color" content="#087F32">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Papalita Rider</title><meta name="robots" content="noindex"><meta name="theme-color" content="#087F32">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css">
 <style>main{max-width:720px;margin:0 auto;padding:16px 16px 60px}.tabs{position:sticky;top:0;background:var(--bg);z-index:5;padding:10px 0}.k{font-size:26px;font-weight:800;display:block}.big-btn{min-height:56px;font-size:17px;width:100%}.steps{display:flex;gap:6px;margin:10px 0}.steps i{flex:1;height:6px;border-radius:3px;background:var(--ln)}.steps i.on{background:var(--or)}</style>
 <!-- PAPALITA RIDER PRESENTATION START -->
@@ -28,14 +28,19 @@ html[data-pr-theme=dark]{--pr-bg:#121a15;--pr-card:#1c271f;--pr-ink:#edf0e7;--pr
 
 </style>
 <!-- PAPALITA RIDER PRESENTATION END -->
+
+<style id="papalita-rider-auth">.pr-ready .pr-auth-form h1{font-size:26px!important;line-height:1.25}.pr-auth-form .pr-password-wrap{position:relative}.pr-auth-form .pr-password-wrap input{padding-right:63px}.pr-password-toggle{position:absolute;right:7px;top:6px;bottom:6px;border-radius:6px;padding:0 9px;font-size:10px;color:var(--pr-green);background:var(--pr-soft)}.pr-auth-error{font-size:12px;margin:0 0 13px;color:var(--pr-danger)}.pr-auth-error:empty{display:none}.pr-auth-access{font-size:10px;line-height:1.7;color:var(--pr-muted);margin:17px 0}.pr-auth-delivery-note{border:1px solid var(--pr-line);border-radius:8px;background:var(--pr-soft);font-size:10px;color:var(--pr-muted);margin-top:15px}.pr-auth-delivery-note summary{padding:11px 12px;cursor:pointer;font-weight:600}.pr-auth-delivery-note p{padding:0 12px 13px;line-height:1.7}.pr-auth-loading{padding:0 25px 25px!important;overflow:hidden;max-width:430px;margin:auto}.pr-auth-loading .pr-gate-brand{margin-bottom:21px}.pr-auth-loading p{font-size:13px;color:var(--pr-muted)}.pr-ready .pr-local-badge{font-size:8px}.pr-auth-form button:disabled{opacity:.65;cursor:wait}
+@media(max-width:700px){.pr-ready .pr-auth-form h1{font-size:24px!important}.pr-ready .pr-auth-form .in{font-size:16px}.pr-auth-form .pr-password-wrap input{padding-right:63px}.pr-auth-form .pr-password-toggle{font-size:11px}.pr-auth-form .pr-auth-access,.pr-auth-delivery-note{font-size:11px}}
+</style>
 </head>
 <body><div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script><script src="js/images.js"></script><script src="js/data.js"></script><script src="js/ops.js"></script>
 <script>
 (() => { 'use strict';
-/* DEMO GATE ONLY. A client-side PIN is not security. In production riders sign in with Supabase Auth (role = rider) and RLS limits them to their own assignments. */
+/* Rider identity is verified by Supabase Auth and the protected user_roles table. */
 const { $, $$, esc, peso, load, save, stageOf, STEPS, R, live, setLive, update, tell, toast, addrBrgy, items, modeBar } = OPS;
-let me = JSON.parse(sessionStorage.getItem('foodie.rider') || 'null'), tab = 'jobs';
+let me = null, tab = 'jobs';
 const online = () => localStorage.getItem('foodie.rider.on.' + me.id) !== '0', setOnline = v => localStorage.setItem('foodie.rider.on.' + me.id, v ? '1' : '0');
 const skipKey = () => 'foodie.rider.skip.' + me.id, skipped = () => { try { return JSON.parse(localStorage.getItem(skipKey())) || []; } catch (e) { return []; } };
 const km = o => { const b = (window.BRGYS || []).find(x => x.n === addrBrgy(o)); return b ? b.km : null; };
@@ -46,8 +51,7 @@ function ask(title, sub, reasons, ok) { return new Promise(res => { const ov = d
   document.body.append(ov); const done = v => { document.removeEventListener('keydown', esc2); ov.remove(); res(v); }, esc2 = e => { if (e.key === 'Escape') done(null); }; document.addEventListener('keydown', esc2);
   $('[data-x]', ov).onclick = () => done(null); ov.addEventListener('mousedown', e => { if (e.target === ov) done(null); });
   $('form', ov).onsubmit = e => { e.preventDefault(); done({ reason: $('input[name=rs]:checked', ov).value, note: $('#rn', ov).value.trim() }); }; }); }
-function gate() { $('#root').innerHTML = `<main><form id="g" class="panel" novalidate style="margin-top:10vh"><h1 style="font-size:28px">Foodie Rider</h1><p class="mu" style="margin:6px 0 14px">Delivery jobs in Alegria, Surigao del Norte.</p><div class="note" style="margin-bottom:14px"><span class="demo">DEMO GATE</span> PIN is <b>1234</b>. Real access uses Supabase roles.</div><div class="field"><label for="r">Rider</label><select class="in" id="r">${window.RIDERS.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}</select></div><div class="field"><label for="p">PIN</label><input class="in" id="p" type="password" inputmode="numeric"><p class="err" id="pe"></p></div><button class="btn p blk">Sign in</button><a class="link" href="index.html">← Customer app</a></form></main>`;
-  $('#g').onsubmit = e => { e.preventDefault(); if ($('#p').value !== '1234') return $('#pe').textContent = 'Incorrect PIN.'; me = window.RIDERS.find(r => r.id === $('#r').value); sessionStorage.setItem('foodie.rider', JSON.stringify(me)); draw(); }; }
+function gate(message='') { return prRiderGate(message); }
 const mine = o => o.rider && o.rider.id === me.id;
 function card(o, act) { const r = R(o.rid), s = stageOf(o), cod = o.pay.method === 'cod' && o.pay.status !== 'paid', d = km(o);
   const first = me.name.split(' ')[0], sms = `sms:${o.contact.phone}?body=${encodeURIComponent(`Hi ${o.contact.name}, this is ${first}, your Foodie rider. I'm on my way with your order ${o.id}.`)}`;
@@ -68,7 +72,7 @@ function draw() { if (!me) return gate(); const s = load(), sk = skipped(), act 
    : `<h3 style="margin-bottom:8px">Today</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="panel" style="margin:0"><span class="mu sm">Deliveries</span><span class="k">${tdone.length}</span></div><div class="panel" style="margin:0"><span class="mu sm">Earnings</span><span class="k">${peso(sum(tdone, o => o.fee + (o.tip || 0)))}</span></div></div>
    <h3 style="margin:16px 0 8px">All time</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="panel" style="margin:0"><span class="mu sm">Deliveries</span><span class="k">${done.length}</span></div><div class="panel" style="margin:0"><span class="mu sm">Earnings</span><span class="k">${peso(sum(done, o => o.fee + (o.tip || 0)))}</span></div></div>
    <div class="panel" style="margin-top:12px"><span class="mu sm">Cash to hand over to the operator (COD, tips excluded)</span><span class="k">${peso(cashOf(done))}</span><span class="sm mu">Already remitted: ${peso(remitted)}</span></div><div class="panel"><div class="row sp sm"><span class="mu">Deliveries you cancelled</span><b>${cxn}</b></div><div class="row sp sm" style="margin-top:6px"><span class="mu">Failed deliveries</span><b>${failed.length}</b></div></div><p class="sm mu">Earnings equal the delivery fee in demo mode. Real payouts are set by your operator.</p>`}</main>`;
-  $$('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); }); $('[data-out]').onclick = () => { sessionStorage.removeItem('foodie.rider'); me = null; gate(); };
+  $$('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); }); $('[data-out]').onclick = () => { void prRiderSignOut(); };
   $('#on').onchange = e => { setOnline(e.target.checked); draw(); }; $('#modebtn').onclick = () => { setLive(!live()); draw(); };
   $$('[data-unskip]').forEach(b => b.onclick = () => { localStorage.removeItem(skipKey()); draw(); });
   $$('[data-skip]').forEach(b => b.onclick = () => { const a = skipped(); a.push(b.dataset.skip); localStorage.setItem(skipKey(), JSON.stringify(a)); toast('Job skipped.'); draw(); });
@@ -91,8 +95,6 @@ function prApplyTheme(){const dark=prTheme==='dark'||prTheme==='system'&&prMedia
 prApplyTheme();prMedia.addEventListener?.('change',prApplyTheme);
 function prModal(title,content){const previous=document.activeElement,d=document.createElement('dialog');d.className='pr-dialog ov';d.setAttribute('aria-labelledby','pr-dialog-title');d.innerHTML=`<div class="pr-dialog-head"><h2 id="pr-dialog-title">${esc(title)}</h2><button class="pr-icon-button" data-pr-close aria-label="Close dialog">${prIcon('close')}</button></div><div class="pr-dialog-body">${content}</div>`;document.body.append(d);d.querySelector('[data-pr-close]').onclick=()=>d.close();d.addEventListener('close',()=>{d.remove();if(previous?.isConnected)previous.focus();},{once:true});d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}});d.showModal();return d;}
 function prAppearance(){const d=prModal('Appearance',`<p>Choose how your rider workspace looks on this device.</p><div class="pr-theme-options">${[['light','Light','sun'],['dark','Dark','moon'],['system','System','screen']].map(([key,label,icon])=>`<button type="button" data-pr-theme="${key}" aria-pressed="${prTheme===key}">${prIcon(icon)}${label}</button>`).join('')}</div>`);d.querySelectorAll('[data-pr-theme]').forEach(b=>b.onclick=()=>{prTheme=b.dataset.prTheme;try{localStorage.setItem('papalita.rider.appearance.v1',prTheme);}catch(_){}prApplyTheme();d.querySelectorAll('[data-pr-theme]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});}
-const prOriginalGate=gate;
-gate=function(){prOriginalGate();document.title='Papalita · Rider sign in';const main=$('#root main'),form=$('#g');main.classList.add('pr-gate-main');form.insertAdjacentHTML('afterbegin',`<div class="pr-gate-brand"><img class="pr-logo" src="images/papalita_mark_color.png" alt="Papalita"><div><strong>Papalita</strong><small>Rider portal</small></div></div>`);form.querySelector('h1').textContent='Your next delivery starts here.';form.querySelector('.note').innerHTML='<span class="demo">BROWSER-ONLY VERSION</span> This supplied file uses a demo PIN: <b>1234</b>. Jobs and updates stay in this browser; Supabase sign-in and live assignments are not connected.';};
 ask=function(title,sub,reasons,ok){return new Promise(resolve=>{const d=prModal(title,`<p>${esc(sub)}</p><form id="pr-reason-form"><div class="pr-reasons">${reasons.map((reason,i)=>`<label class="pr-reason"><input type="radio" name="rs" value="${esc(reason)}" ${i===0?'checked':''} required><span>${esc(reason)}</span></label>`).join('')}</div><div class="field"><label for="rn">Note (optional)</label><textarea class="in" id="rn" maxlength="200" placeholder="Add a short explanation"></textarea></div><p class="pr-note">This updates the browser-stored delivery record in the supplied rider file.</p><div class="pr-dialog-actions"><button type="button" class="btn s" data-back>Go back</button><button class="btn d" type="submit">${esc(ok)}</button></div></form>`);let value=null;d.querySelector('[data-back]').onclick=()=>d.close();d.querySelector('form').onsubmit=e=>{e.preventDefault();value={reason:d.querySelector('input[name=rs]:checked').value,note:d.querySelector('#rn').value.trim()};d.close();};d.addEventListener('close',()=>resolve(value),{once:true});});};
 card=function(o,act){
  const rest=R(o.rid)||{},s=stageOf(o),phone=String(o.contact?.phone||'').replace(/[^+\d]/g,''),contact=o.contact||{},cod=o.pay?.method==='cod'&&o.pay?.status!=='paid',distance=km(o),earn=Number(o.fee||0)+Number(o.tip||0),first=me.name.split(' ')[0];
@@ -107,7 +109,7 @@ draw=function(){
  const root=$('#root'),main=root.querySelector('main'),header=main.firstElementChild,mode=header.nextElementSibling,tabs=main.querySelector('.tabs'),buttons=[...tabs.querySelectorAll('[data-t]')],signout=tabs.querySelector('[data-out]');
  const data=load(),all=data.orders||[],done=all.filter(o=>mine(o)&&stageOf(o)===5),today=done.filter(o=>new Date(o.upd||o.createdAt).toDateString()===new Date().toDateString()),active=all.filter(o=>mine(o)&&stageOf(o)>=2&&stageOf(o)<5),jobs=online()?all.filter(o=>o.status==='active'&&!o.rider&&stageOf(o)>=1&&stageOf(o)<=2&&!skipped().includes(o.id)):[],earn=today.reduce((n,o)=>n+Number(o.fee||0)+Number(o.tip||0),0);
  const subtitle={jobs:'Choose your next pickup in Alegria.',active:'Your pickup, customer and next step in one place.',done:'A record of your completed deliveries.',earn:'Recorded delivery fees, tips and cash handovers.'};
- const shell=document.createElement('div');shell.className='pr-shell';shell.innerHTML=`<aside class="pr-sidebar"><a class="pr-brand" href="#jobs"><img class="pr-logo" src="images/papalita_mark_color.png" alt="Papalita"><span><strong>Papalita</strong><small>Rider portal</small></span></a><div class="pr-side-tag">${prIcon('active')}<span>Your delivery workspace</span></div><p class="pr-side-label">On the road</p><nav class="pr-side-nav" aria-label="Rider navigation"></nav><div class="pr-side-bottom"><button class="pr-nav-button" data-pr-appearance>${prIcon('sun')}Appearance</button><a class="pr-nav-button" href="index.html">${prIcon('arrow')}Customer app</a><div class="pr-side-profile"><span class="pr-avatar">${esc(me.name.slice(0,1))}</span><div><strong>${esc(me.name)}</strong><small>${esc(me.vehicle||'Rider')}</small></div></div></div></aside><div class="pr-workspace"><header class="pr-topbar"><div class="pr-breadcrumb"><span>Rider workspace</span>${prIcon('arrow')}<strong>${prTabLabels[tab]||'Available jobs'}</strong></div><div class="pr-top-actions"><span class="pr-local-badge">Browser-only</span><button class="pr-icon-button" data-pr-refresh aria-label="Refresh deliveries">${prIcon('refresh')}</button><button class="pr-icon-button" data-pr-account aria-label="Your rider account">${prIcon('user')}</button></div></header><main class="pr-page"><div class="pr-page-heading"><h1>${prTabLabels[tab]||'Available jobs'}</h1><p>${subtitle[tab]||''}</p></div><section class="pr-welcome"><div><small>Good food, delivered with care</small><h2>${online()?'Ready for your next delivery?':'You’re taking a break.'}</h2><p>${online()?'Your next pickup is one tap away.':'Switch online whenever you’re ready to see jobs.'}</p></div></section><section class="pr-stats" aria-label="Rider summary">${[['Available jobs',jobs.length],['Active deliveries',active.length],['Completed today',today.length],['Today’s recorded earnings',peso(earn)]].map(([label,value])=>`<div class="pr-stat"><span>${label}</span><b>${value}</b></div>`).join('')}</section><details class="pr-mode-details" ${prModeOpen?'open':''}><summary>${prIcon('screen')}Browser-only workspace · data stays on this device ${prIcon('down')}</summary><div class="pr-mode-body"><p>The supplied rider file is not connected to Supabase assignments or real payouts.</p></div></details><div class="pr-content"></div><footer class="pr-footer"><span>Papalita · Good Food, Good Mood.</span><span>Browser-only rider file</span></footer></main></div><nav class="pr-bottom-nav" aria-label="Mobile rider navigation"></nav>`;
+ const shell=document.createElement('div');shell.className='pr-shell';shell.innerHTML=`<aside class="pr-sidebar"><a class="pr-brand" href="#jobs"><img class="pr-logo" src="images/papalita_mark_color.png" alt="Papalita"><span><strong>Papalita</strong><small>Rider portal</small></span></a><div class="pr-side-tag">${prIcon('active')}<span>Your delivery workspace</span></div><p class="pr-side-label">On the road</p><nav class="pr-side-nav" aria-label="Rider navigation"></nav><div class="pr-side-bottom"><button class="pr-nav-button" data-pr-appearance>${prIcon('sun')}Appearance</button><a class="pr-nav-button" href="index.html">${prIcon('arrow')}Customer app</a><div class="pr-side-profile"><span class="pr-avatar">${esc(me.name.slice(0,1))}</span><div><strong>${esc(me.name)}</strong><small>${esc(me.vehicle||'Rider')}</small></div></div></div></aside><div class="pr-workspace"><header class="pr-topbar"><div class="pr-breadcrumb"><span>Rider workspace</span>${prIcon('arrow')}<strong>${prTabLabels[tab]||'Available jobs'}</strong></div><div class="pr-top-actions"><span class="pr-local-badge" title="Supabase sign-in is verified. Delivery data is still local to this browser.">Local jobs</span><button class="pr-icon-button" data-pr-refresh aria-label="Refresh deliveries">${prIcon('refresh')}</button><button class="pr-icon-button" data-pr-account aria-label="Your rider account">${prIcon('user')}</button></div></header><main class="pr-page"><div class="pr-page-heading"><h1>${prTabLabels[tab]||'Available jobs'}</h1><p>${subtitle[tab]||''}</p></div><section class="pr-welcome"><div><small>Good food, delivered with care</small><h2>${online()?'Ready for your next delivery?':'You’re taking a break.'}</h2><p>${online()?'Your next pickup is one tap away.':'Switch online whenever you’re ready to see jobs.'}</p></div></section><section class="pr-stats" aria-label="Rider summary">${[['Available jobs',jobs.length],['Active deliveries',active.length],['Completed today',today.length],['Today’s recorded earnings',peso(earn)]].map(([label,value])=>`<div class="pr-stat"><span>${label}</span><b>${value}</b></div>`).join('')}</section><details class="pr-mode-details" ${prModeOpen?'open':''}><summary>${prIcon('screen')}Supabase sign-in · delivery data stays on this device ${prIcon('down')}</summary><div class="pr-mode-body"><p>Your Supabase rider account is verified. Delivery assignments, updates and earnings still use browser storage and are not synced to live assignments.</p></div></details><div class="pr-content"></div><footer class="pr-footer"><span>Papalita · Good Food, Good Mood.</span><span>Supabase login · local delivery data</span></footer></main></div><nav class="pr-bottom-nav" aria-label="Mobile rider navigation"></nav>`;
  shell.dataset.prTab=tab;const content=shell.querySelector('.pr-content');
  const candidates=[...main.childNodes];candidates.forEach(node=>{if(node!==header&&node!==mode&&node!==tabs)content.append(node);});
  header.classList.add('pr-rider-header');const oldHeading=header.querySelector('h1');if(oldHeading){const name=document.createElement('h3');name.textContent=oldHeading.textContent;oldHeading.replaceWith(name);}shell.querySelector('.pr-welcome').append(header);
@@ -120,11 +122,114 @@ draw=function(){
  content.querySelectorAll('.empty').forEach(empty=>empty.insertAdjacentHTML('afterbegin',`<span class="pr-empty-icon">${prIcon(tab==='done'?'done':'jobs')}</span>`));
  shell.querySelector('.pr-brand').onclick=e=>{e.preventDefault();tab='jobs';draw();};
  shell.querySelector('[data-pr-appearance]').onclick=prAppearance;shell.querySelector('[data-pr-refresh]').onclick=()=>{draw();toast('Browser delivery records refreshed.');};
- shell.querySelector('[data-pr-account]').onclick=()=>{const d=prModal('Your rider account',`<p><b>${esc(me.name)}</b><br>${esc(me.vehicle||'Rider')} · Alegria</p><p class="pr-note">This account comes from the rider list in the supplied browser-only file.</p><button class="btn s blk" data-pr-show-appearance>${prIcon('sun')}Appearance</button><button class="btn d blk" style="margin-top:10px" data-pr-signout>${prIcon('logout')}Sign out</button>`);d.querySelector('[data-pr-signout]').onclick=()=>{d.close();signout.onclick();};d.querySelector('[data-pr-show-appearance]').onclick=()=>{d.close();prAppearance();};};
+ shell.querySelector('[data-pr-account]').onclick=()=>{const d=prModal('Your rider account',`<p><b>${esc(me.name)}</b><br>${esc(me.email||'')}<br>${esc(me.vehicle||'Rider')} · Alegria</p><p class="pr-note">Signed in with Supabase. Rider access is checked from your account roles.</p><button class="btn s blk" data-pr-show-appearance>${prIcon('sun')}Appearance</button><button class="btn d blk" style="margin-top:10px" data-pr-signout>${prIcon('logout')}Sign out</button>`);d.querySelector('[data-pr-signout]').onclick=()=>{d.close();signout.onclick();};d.querySelector('[data-pr-show-appearance]').onclick=()=>{d.close();prAppearance();};};
  shell.querySelector('.pr-mode-details').addEventListener('toggle',e=>{prModeOpen=e.target.open;});
 };
 
 /* PAPALITA RIDER PRESENTATION ADAPTER END */
-setInterval(() => { if (me && !document.querySelector('.ov') && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) draw(); }, 4000); draw();
+
+/* PAPALITA SUPABASE RIDER AUTH */
+/* Supabase Auth gate. Delivery storage and rider actions are deliberately unchanged. */
+let prAuthClient=null,prAuthGeneration=0,prAuthBusy=false,prSigningIn=false,prSigningOut=false,prAuthScheduled=false,prAuthCheckedAt=0,prAuthSubscription=null,prLoginEmail='',prSignOutFailed=false;
+function prGetAuthClient(){
+ if(prAuthClient?.auth)return prAuthClient;
+ if(window.PAPALITA_DB?.auth){prAuthClient=window.PAPALITA_DB;return prAuthClient;}
+ const config=window.FOODIE_CONFIG?.supabase;
+ if(!config?.url||!config?.anonKey)throw Error('Supabase is not configured. Check the public URL and publishable key in js/config.js.');
+ if(!window.supabase?.createClient)throw Error('The Supabase sign-in library could not load. Check your internet connection and refresh.');
+ prAuthClient=window.supabase.createClient(config.url,config.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ window.PAPALITA_DB=prAuthClient;return prAuthClient;
+}
+function prDropLegacyLogin(){try{sessionStorage.removeItem('foodie.rider');}catch(_){} }
+function prCloseAuthDialogs(){document.querySelectorAll('dialog.pr-dialog').forEach(dialog=>{if(dialog.open)dialog.close();dialog.remove();});}
+function prAuthMessage(error){
+ if(error?.code==='invalid_credentials'||/invalid login credentials/i.test(error?.message||''))return 'Incorrect email or password. Please try again.';
+ if(error?.code==='email_not_confirmed')return 'Please confirm your email address before signing in.';
+ return error?.message||'Could not sign in. Please try again.';
+}
+async function prAuthorizeRider(client,user){
+ if(!user?.id)throw Error('Your session could not be verified. Please sign in again.');
+ const result=await client.from('user_roles').select('user_id,role').eq('user_id',user.id);
+ if(result.error)throw Error('Unable to verify rider access: '+result.error.message+' Ask your administrator to check read access to your own user_roles row.');
+ const rider=(result.data||[]).some(row=>row.user_id===user.id&&String(row.role||'').trim().toLowerCase()==='rider');
+ if(!rider){const error=Error('This account has no rider access. Ask your Papalita administrator to assign the rider role.');error.code='RIDER_ROLE_REQUIRED';throw error;}
+ // Profiles provide display details only. A profile field cannot grant rider access.
+ let profile={};try{const q=await client.from('profiles').select('*').eq('id',user.id).maybeSingle();if(!q.error&&q.data)profile=q.data;}catch(_){}
+ return {id:user.id,name:String(profile.full_name||profile.name||String(user.email||'').split('@')[0]||'Rider'),phone:String(profile.phone||''),vehicle:String(profile.vehicle||profile.vehicle_type||'Delivery rider'),email:String(user.email||''),avatar_url:String(profile.avatar_url||''),auth:true};
+}
+async function prVerifiedIdentity(client){
+ const result=await client.auth.getUser();if(result.error)throw result.error;
+ return prAuthorizeRider(client,result.data?.user);
+}
+async function prRiderCredentials(email,password){
+ const client=prGetAuthClient(),result=await client.auth.signInWithPassword({email,password});
+ if(result.error)throw result.error;
+ if(!result.data?.user||!result.data?.session)throw Error('Sign-in did not return a valid session. Please try again.');
+ return prVerifiedIdentity(client);
+}
+function prAuthLoading(message='Checking your rider account…'){
+ document.title='Papalita Rider · Checking account';
+ $('#root').innerHTML=`<main class="pr-gate-main"><section class="panel pr-auth-loading" role="status"><div class="pr-gate-brand"><img class="pr-logo" src="images/papalita_mark_color.png" alt="Papalita"><div><strong>Papalita</strong><small>Rider portal</small></div></div><p>${esc(message)}</p></section></main>`;
+}
+function prRiderGate(message=''){
+ document.title='Papalita Rider · Sign in';
+ $('#root').innerHTML=`<main class="pr-gate-main"><form id="g" class="panel pr-auth-form"><div class="pr-gate-brand"><img class="pr-logo" src="images/papalita_mark_color.png" alt="Papalita"><div><strong>Papalita</strong><small>Rider portal</small></div></div><h1>Welcome back, rider.</h1><p class="mu" style="margin:7px 0 21px">Sign in to your Papalita rider account.</p><div class="field"><label for="rider-email">Email address</label><input class="in" id="rider-email" name="email" type="email" autocomplete="username" inputmode="email" value="${esc(prLoginEmail)}" required placeholder="you@example.com"></div><div class="field"><label for="rider-password">Password</label><div class="pr-password-wrap"><input class="in" id="rider-password" name="password" type="password" autocomplete="current-password" required><button type="button" class="pr-password-toggle" id="rider-password-toggle" aria-label="Show password" aria-pressed="false">Show</button></div></div><p class="err pr-auth-error" id="pe" role="alert">${esc(message)}</p><button class="btn p blk" id="rider-signin" type="submit">Sign in ${prIcon('arrow')}</button><p class="pr-auth-access">Your account needs the <b>rider</b> role. Contact your Papalita administrator if you need access.</p><details class="pr-auth-delivery-note"><summary>About delivery data</summary><p>Supabase verifies this login. Delivery jobs, status updates and earnings in this file still use browser storage and are not synced to live assignments.</p></details><a class="link" href="index.html">← Back to customer app</a></form></main>`;
+ const form=$('#g'),password=$('#rider-password'),toggle=$('#rider-password-toggle');
+ if(prSignOutFailed){const retry=document.createElement('button');retry.type='button';retry.className='btn s blk';retry.style.marginTop='10px';retry.textContent='Retry sign out';retry.onclick=()=>void prRiderSignOut();$('#rider-signin').after(retry);}
+ toggle.onclick=()=>{const shown=password.type==='password';password.type=shown?'text':'password';toggle.textContent=shown?'Hide':'Show';toggle.setAttribute('aria-label',shown?'Hide password':'Show password');toggle.setAttribute('aria-pressed',String(shown));};
+ form.onsubmit=event=>{event.preventDefault();void prRiderSubmit(form);};
+}
+async function prRiderSubmit(form){
+ if(prSigningIn||prSigningOut)return;
+ const email=form.querySelector('#rider-email').value.trim(),passwordInput=form.querySelector('#rider-password'),password=passwordInput.value,button=form.querySelector('#rider-signin'),error=form.querySelector('#pe');
+ if(!email||!password){error.textContent='Enter your email address and password.';return;}
+ prLoginEmail=email;prSigningIn=true;prAuthBusy=true;me=null;const generation=++prAuthGeneration;
+ error.textContent='';button.disabled=true;button.textContent='Signing in…';form.setAttribute('aria-busy','true');
+ try{const identity=await prRiderCredentials(email,password);if(generation!==prAuthGeneration)return;me=identity;tab='jobs';prSignOutFailed=false;prAuthCheckedAt=Date.now();prAuthBusy=false;draw();}
+ catch(e){if(generation===prAuthGeneration){me=null;error.textContent=prAuthMessage(e);}}
+ finally{passwordInput.value='';prSigningIn=false;if(generation===prAuthGeneration)prAuthBusy=false;if(form.isConnected){button.disabled=false;button.innerHTML='Sign in '+prIcon('arrow');form.removeAttribute('aria-busy');}}
+}
+function prLockRider(message=''){
+ ++prAuthGeneration;me=null;prAuthBusy=false;prDropLegacyLogin();prCloseAuthDialogs();gate(message);
+}
+async function prHydrateRider(){
+ if(prAuthBusy||prSigningOut||prSigningIn)return;
+ const previousId=me?.id,previousTab=tab,generation=++prAuthGeneration;prAuthBusy=true;me=null;prCloseAuthDialogs();prAuthLoading();
+ try{
+  const client=prGetAuthClient(),session=await client.auth.getSession();if(session.error)throw session.error;
+  if(generation!==prAuthGeneration)return;
+  if(!session.data?.session){gate();return;}
+  const identity=await prVerifiedIdentity(client);if(generation!==prAuthGeneration)return;
+  me=identity;tab=identity.id===previousId?previousTab:'jobs';prAuthCheckedAt=Date.now();prAuthBusy=false;draw();
+ }catch(error){if(generation===prAuthGeneration){me=null;gate(prAuthMessage(error));}}
+ finally{if(generation===prAuthGeneration)prAuthBusy=false;}
+}
+function prScheduleAuthCheck(){
+ if(prAuthScheduled||prAuthBusy||prSigningIn||prSigningOut||prSignOutFailed)return;
+ prAuthScheduled=true;setTimeout(()=>{prAuthScheduled=false;void prHydrateRider();},0);
+}
+async function prRiderSignOut(){
+ if(prSigningOut)return;
+ prSigningOut=true;prSignOutFailed=false;++prAuthGeneration;me=null;prAuthBusy=true;prCloseAuthDialogs();prDropLegacyLogin();prAuthLoading('Signing out…');
+ try{const result=await prGetAuthClient().auth.signOut({scope:'local'});if(result.error)throw result.error;gate();}
+ catch(error){prSignOutFailed=true;gate('Sign-out could not be completed: '+prAuthMessage(error)+' Please try again.');}
+ finally{me=null;prSigningOut=false;prAuthBusy=false;}
+}
+async function prRiderBoot(){
+ me=null;prDropLegacyLogin();prAuthLoading();
+ try{
+  const client=prGetAuthClient();
+  const listener=client.auth.onAuthStateChange((event,session)=>{
+   // Keep this callback synchronous; all network work is deferred outside it.
+   if(event==='SIGNED_OUT'){prLockRider();return;}
+   if(event==='SIGNED_IN'||event==='USER_UPDATED'||event==='TOKEN_REFRESHED'){
+    if(!prSigningIn&&(!me||me.id!==session?.user?.id||event==='USER_UPDATED'||Date.now()-prAuthCheckedAt>60000))prScheduleAuthCheck();
+   }
+  });prAuthSubscription=listener?.data?.subscription||null;
+  await prHydrateRider();
+ }catch(error){me=null;prAuthBusy=false;gate(prAuthMessage(error));}
+}
+
+setInterval(() => { if (me && !document.querySelector('.ov') && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) draw(); }, 4000); void prRiderBoot();
 })();
 </script></body></html>
