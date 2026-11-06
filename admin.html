@@ -581,55 +581,6 @@ async function bootAuth(){
   }
 }
 
-const store=()=>{
-  try{
-    return JSON.parse(localStorage.getItem('foodie.alegria.v1'))||{orders:[]};
-  }catch(e){
-    return {orders:[]};
-  }
-};
-
-const saveStore=s=>{
-  localStorage.setItem('foodie.alegria.v1',JSON.stringify(s));
-};
-
-const ov=()=>window.getOverrides();
-const setOv=o=>window.setOverrides(o);
-
-const STAGES=[
-  'Order received',
-  'Preparing',
-  'Rider assigned',
-  'Picking up',
-  'On the way',
-  'Delivered'
-];
-
-const T=[0,15,35,50,65,95];
-
-const stage=o=>{
-  if(o.status==='cancelled'||o.status==='refunded')return -1;
-
-  if(o.demo===false)return o.stage;
-
-  const e=(Date.now()-o.createdAt)/1000;
-  let s=0;
-
-  T.forEach((t,i)=>{
-    if(e>=t)s=i;
-  });
-
-  return s;
-};
-
-const mine=r=>sess.role==='platform'||String(r)===String(sess.rid);
-
-const SAMPLE=[...Array(14)].map((_,i)=>({
-  day:i,
-  rev:18000+Math.round(Math.abs(Math.sin(i*1.7))*14000),
-  n:55+Math.round(Math.abs(Math.cos(i*1.3))*40)
-}));
-
 const TABS=[
   ['overview','Overview'],
   ['orders','Orders'],
@@ -716,8 +667,6 @@ function draw(){
 }
 
 const R=id=>RS.find(r=>String(r.id)===String(id));
-const orders=()=>store().orders.filter(o=>mine(o.rid));
-const live=o=>o.status!=='cancelled'&&o.status!=='refunded';
 
 const H=(t,b='')=>$('#b').innerHTML=
   `<div class="row sp wrap" style="margin-bottom:16px">
@@ -752,98 +701,7 @@ const V={
       },15000);
     }catch(e){el.textContent='Unable to load store availability: '+e.message;}
   },
-  async finance(){
-    H('Finance & Payouts <span class="demo">TEST ONLY</span>');
-    const el=$('#c');
-    if(sess.role!=='platform'){el.textContent='Platform admin only.';return;}
-    el.innerHTML='<div class="panel">Loading settlement data from Supabase…</div>';
-    const db=getAuthClient();
-    const money=v=>'₱'+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
-    const short=id=>String(id||'').slice(0,8);
-    const run=async(name,args,message)=>{
-      if(!window.confirm(message+' This is a SIMULATION; no real money is transferred.'))return;
-      try{
-        const r=await db.rpc(name,args);
-        if(r.error)throw r.error;
-        toast('Test operation successful.');
-        V.finance();
-      }catch(e){toast('Failed: '+e.message);}
-    };
-    try{
-      const q=await db.rpc('papalita_test_finance_dashboard');
-      if(q.error)throw q.error;
-      const d=q.data||{};
-      const stores=d.stores||[],os=d.orders||[],payments=d.payments||[],earnings=d.earnings||[],
-        batches=d.batches||[],items=d.items||[];
-      const storeName=id=>stores.find(s=>s.id===id)?.name||short(id);
-      const eligible=earnings.filter(e=>e.status==='eligible');
-      const paid=items.filter(i=>i.status==='paid');
-      const pending=items.filter(i=>i.status!=='paid'&&i.status!=='cancelled');
-      const sum=(arr,key)=>arr.reduce((a,x)=>a+Number(x[key]||0),0);
-      const eligibleOrders=os.filter(o=>['completed','delivered'].includes(o.status));
-      const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-      el.innerHTML=`
-        <div class="note" style="margin-bottom:18px"><b>Simulation mode.</b> All actions use test-only Supabase RPCs. No GCash, Maya, bank transfer, or real payment verification happens here. The existing Overview/Orders tabs still use browser-local/sample data; use this tab for Supabase settlement testing.</div>
-        <div class="kpis">
-          <div class="kpi"><span class="mu">Allocated store earnings</span><b>${money(sum(eligible,'food_amount'))}</b></div>
-          <div class="kpi"><span class="mu">Allocated rider earnings</span><b>${money(sum(eligible,'delivery_amount'))}</b></div>
-          <div class="kpi"><span class="mu">Papalita service fees</span><b>${money(sum(eligible,'platform_amount'))}</b></div>
-          <div class="kpi"><span class="mu">Pending test payouts</span><b>${money(sum(pending,'amount'))}</b></div>
-        </div>
-        <div class="panel">
-          <h3>1. Simulate payment & allocate earnings</h3>
-          <p class="mu sm">Only completed/delivered orders with matching totals and no real payment transaction can be simulated. Allocation is one-time per order.</p>
-          <div class="tw"><table><thead><tr><th>Order</th><th>Store</th><th>Food / Rider / Fee</th><th>Order status</th><th>Test payment</th><th>Action</th></tr></thead>
-          <tbody>${eligibleOrders.map(o=>{
-            const tx=payments.find(p=>p.order_id===o.id&&p.method==='test');
-            const e=earnings.find(x=>x.order_id===o.id);
-            return `<tr><td title="${esc(o.id)}">${esc(short(o.id))}</td><td>${esc(storeName(o.store_id))}</td>
-              <td>${money(o.subtotal)} / ${money(o.delivery_fee)} / ${money(o.service_fee)}</td>
-              <td>${esc(o.status)}</td><td>${esc(tx?.status||'none')}</td>
-              <td>${e?'<span class="status open">Allocated</span>':tx?.status==='settled'
-                ?`<button class="btn p sm" data-allocate="${esc(o.id)}">Allocate</button>`
-                :`<button class="btn s sm" data-simulate="${esc(o.id)}">Simulate payment</button>`}</td></tr>`;
-          }).join('')||'<tr><td colspan="6">No completed orders found.</td></tr>'}</tbody></table></div>
-        </div>
-        <div class="panel">
-          <h3>2. Prepare store payout batch</h3>
-          <p class="mu sm">Cutoff: 30 minutes before closing. The selected date is the store business date (Philippine time). Past cutoff only.</p>
-          <div class="two">
-            <div class="field"><label>Approved store</label><select class="in" id="fin-store">${stores.map(s=>`<option value="${esc(s.id)}">${esc(s.name)} · ${s.is_24_hours?'24h':esc(s.close_time||'closing time unset')}</option>`).join('')}</select></div>
-            <div class="field"><label>Business date (Asia/Manila)</label><input class="in" type="date" id="fin-date" value="${esc(today)}"></div>
-          </div>
-          <button class="btn p" id="fin-prepare" ${stores.length?'':'disabled'}>Prepare test payout batch</button>
-        </div>
-        <div class="panel">
-          <h3>3. Test payout queue</h3>
-          <p class="mu sm">Marking paid records a <b>simulated</b> payout only. It does not send money.</p>
-          <div class="tw"><table><thead><tr><th>Recipient</th><th>Order</th><th>Batch date</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>
-          ${items.map(i=>{
-            const b=batches.find(x=>x.id===i.batch_id);
-            return `<tr><td>${i.recipient_type==='store'?esc(storeName(i.store_id)):'Rider '+esc(short(i.rider_id))}</td>
-            <td title="${esc(i.order_id)}">${esc(short(i.order_id))}</td><td>${esc(b?.payout_date||'—')}</td>
-            <td>${money(i.amount)}</td><td><span class="status ${i.status==='paid'?'open':'n'}">${esc(i.status)}</span></td>
-            <td>${i.status==='paid'?esc(i.transfer_reference||'Simulated paid')
-              :i.status==='cancelled'?'—':`<button class="btn s sm" data-fin-paid="${esc(i.id)}">Mark TEST paid</button>`}</td></tr>`;
-          }).join('')||'<tr><td colspan="6">No test payout items yet.</td></tr>'}</tbody></table></div>
-        </div>
-        <p class="mu sm">Showing up to 100 recent orders/payments/earnings/batches and 200 payout items. These are test records, not a reconciled financial statement.</p>`;
-      $$('[data-simulate]',el).forEach(b=>b.onclick=()=>run('papalita_simulate_order_payment',{p_order_id:b.dataset.simulate},'Simulate payment for order '+short(b.dataset.simulate)+'?'));
-      $$('[data-allocate]',el).forEach(b=>b.onclick=()=>run('papalita_allocate_test_earnings',{p_order_id:b.dataset.allocate},'Allocate earnings for order '+short(b.dataset.allocate)+'?'));
-      $('#fin-prepare').onclick=()=>{
-        const storeId=$('#fin-store').value,date=$('#fin-date').value;
-        if(!storeId||!date)return toast('Select store and business date.');
-        run('papalita_prepare_test_payout',{p_store_id:storeId,p_local_date:date},'Prepare payout batch for '+storeName(storeId)+' on '+date+'?');
-      };
-      $$('[data-fin-paid]',el).forEach(b=>b.onclick=()=>{
-        const ref=window.prompt('Enter a TEST reference (at least 4 characters). No money will be sent:');
-        if(ref===null)return;
-        if(ref.trim().length<4)return toast('Reference must have at least 4 characters.');
-        run('papalita_mark_test_payout_paid',{p_item_id:b.dataset.finPaid,p_reference:ref.trim()},'Mark this payout as TEST paid?');
-      });
-    }catch(e){el.innerHTML='<div class="panel"><h3>Finance module unavailable</h3><p class="err"></p><p class="mu sm">Run papalita_finance_dashboard_v3.sql after v1/v2, then sign in with an admin role.</p></div>';$('.err',el).textContent=e.message;}
-  },
-
+  async finance(){return paLiveFinance();},
   async inventory(){
     H('All products · Supabase');
     if(sess.role!=='platform'){$('#c').textContent='Admin access required';return;}
@@ -874,1239 +732,19 @@ const V={
       $('#add-admin-store').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,fd=new FormData(f),name=String(fd.get('name')||'').trim(),owner=String(fd.get('owner_id')||'').trim(),address=String(fd.get('address')||'').trim();if(!name)return;const row={name,address,status:'approved'};if(owner)row.owner_id=owner;const r=await db.from('stores').insert(row).select('id');if(r.error)return toast(r.error.message);toast('Store created');V.applications();};
     }catch(e){target.textContent='Could not load stores: '+e.message;}
   },
-  overview(){
-    H('Sales overview');
+  async overview(){return paLiveOverview();},
+  async orders(){return paLiveOrderView();},
+  async menu(){return paLiveMenu();},
+  async cats(){return paLiveCategories();},
+  async promos(){return paLivePromos();},
+  async users(){return paLiveUsers();},
+  async catering(){return paLiveCatering();},
+  async stores(){return paLiveStores();},
+  async cash(){return paLiveFinance('cash');},
+  async refunds(){return paLiveFinance('refunds');},
+  async fees(){return paLiveFees();},
+  async analytics(){return paLiveAnalytics();}
 
-    const os=orders().filter(live);
-    const rev=os.reduce((a,o)=>a+o.total,0);
-    const act=orders().filter(o=>{
-      const s=stage(o);
-      return s>=0&&s<5;
-    }).length;
-
-    const base=sess.role==='platform'?SAMPLE.reduce((a,d)=>a+d.rev,0):0;
-    const bn=sess.role==='platform'?SAMPLE.reduce((a,d)=>a+d.n,0):0;
-
-    $('#c').innerHTML=`
-      <div class="kpis">
-        <div class="kpi">
-          <span class="mu sm">Revenue (14 days)</span>
-          <b>${peso(rev+base)}</b>
-        </div>
-        <div class="kpi">
-          <span class="mu sm">Orders</span>
-          <b>${os.length+bn}</b>
-        </div>
-        <div class="kpi">
-          <span class="mu sm">Avg order value</span>
-          <b>${peso((rev+base)/Math.max(1,os.length+bn))}</b>
-        </div>
-        <div class="kpi">
-          <span class="mu sm">Active orders now</span>
-          <b>${act}</b>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3 style="margin-bottom:10px">Revenue, last 14 days</h3>
-        ${chart(SAMPLE.map(d=>sess.role==='platform'?d.rev:0))}
-        <p class="sm mu">
-          ${sess.role==='platform'
-            ?'Includes sample data for charting plus orders placed in this browser.'
-            :'Orders from your restaurant placed in this browser.'}
-        </p>
-      </div>`;
-  },
-
-  orders(){
-    H('Order management');
-
-    const l=orders();
-
-    $('#c').innerHTML=l.length?`
-      <div class="tw">
-        <table>
-          <thead>
-            <tr>
-              <th>Order</th><th>Restaurant</th><th>Customer</th>
-              <th>Total</th><th>Payment</th><th>Delivery status</th>
-              <th>Rider</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${l.map(o=>{
-              const s=stage(o),dead=!live(o);
-
-              return `<tr>
-                <td><b>${esc(o.id)}</b><br>
-                  <span class="sm mu">
-                    ${new Date(o.createdAt).toLocaleString('en-PH',{
-                      dateStyle:'short',timeStyle:'short'
-                    })}
-                  </span>
-                </td>
-
-                <td>${esc(R(o.rid)?.name||o.rid||'—')}</td>
-                <td>${esc(o.contact?.name||'')}</td>
-                <td>${peso(o.total)}</td>
-
-                <td>
-                  ${esc(o.pay?.method||'—')}<br>
-                  <span class="sm mu">${esc(o.pay?.status||'—')}</span>
-                </td>
-
-                <td>
-                  ${dead
-                    ?`<span class="status closed">${esc(o.status)}</span>`
-                    :`<select class="in s" data-st="${esc(o.id)}">
-                      ${STAGES.map((n,i)=>`<option value="${i}" ${i===s?'selected':''}>${n}</option>`).join('')}
-                    </select>`}
-                </td>
-
-                <td>
-                  ${dead?'—':`<select class="in s" data-rd="${esc(o.id)}">
-                    <option value="">Unassigned</option>
-                    ${(window.RIDERS||[]).map(r=>`
-                      <option value="${esc(r.id)}" ${o.rider&&o.rider.id===r.id?'selected':''}>
-                        ${esc(r.name)}
-                      </option>`).join('')}
-                  </select>`}
-                </td>
-
-                <td>
-                  ${dead?'':`<button class="btn d sm" data-cn="${esc(o.id)}">Cancel</button> `}
-                  ${!dead&&o.pay?.method!=='cod'&&o.pay?.status!=='refunded'
-                    ?`<button class="btn s sm" data-rf="${esc(o.id)}">Refund</button>`
-                    :''}
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>`:
-      '<div class="empty"><h3>No orders yet</h3><p>Place an order in the customer app and it will appear here.</p></div>';
-
-    const mut=(id,fn)=>{
-      const s=store();
-      const o=s.orders.find(x=>String(x.id)===String(id));
-
-      if(!o)return toast('Order not found.');
-
-      fn(o);
-      o.upd=Date.now();
-      saveStore(s);
-      draw();
-    };
-
-    $$('[data-st]').forEach(e=>e.onchange=()=>mut(e.dataset.st,o=>{
-      o.demo=false;
-      o.stage=+e.value;
-      toast('Status updated.');
-    }));
-
-    $$('[data-rd]').forEach(e=>e.onchange=()=>mut(e.dataset.rd,o=>{
-      const r=(window.RIDERS||[]).find(x=>String(x.id)===String(e.value));
-
-      o.demo=false;
-      o.stage=Math.max(o.stage||0,r?2:o.stage||0);
-
-      if(r){
-        o.rider={id:r.id,name:r.name,phone:r.phone,vehicle:r.vehicle};
-      }else{
-        delete o.rider;
-      }
-
-      toast(r?'Rider assigned.':'Rider unassigned.');
-    }));
-
-    $$('[data-cn]').forEach(b=>b.onclick=async()=>{
-      if(await confirmD('Cancel order '+b.dataset.cn+'?')){
-        mut(b.dataset.cn,o=>{
-          o.status='cancelled';
-          o.demo=false;
-          o.cancelReason='Cancelled by admin';
-
-          if(o.pay?.status==='demo_authorized'){
-            o.pay.status='refund_pending';
-          }
-
-          toast('Order cancelled.');
-        });
-      }
-    });
-
-    $$('[data-rf]').forEach(b=>b.onclick=async()=>{
-      if(await confirmD('Refund order '+b.dataset.rf+' (demo)? This marks the payment as refunded.')){
-        mut(b.dataset.rf,o=>{
-          o.status='refunded';
-          o.pay.status='refunded';
-          toast('Refund recorded (demo).');
-        });
-      }
-    });
-  },
-
-  menu(){
-    H('Menu & pricing');
-
-    const o=ov();
-    const rs=RS.filter(r=>mine(r.id));
-
-    $('#c').innerHTML=rs.map(r=>`
-      <h3 style="margin:18px 0 8px">${esc(r.name)}</h3>
-      <div class="tw" data-store-name="${esc(r.name)}">
-        <table>
-          <thead>
-            <tr><th>Photo</th><th>Item</th><th>Price (₱)</th><th>Photo URL / key</th><th>Available</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${(r.items||[]).map(i=>`
-              <tr data-i="${esc(i.id)}">
-                <td style="width:70px">
-                  <span class="ph" style="--ar:1;border-radius:12px;width:56px">
-                    ${window.photoUrl(i.img,160)?`<img src="${esc(window.photoUrl(i.img,160))}" alt="${esc(i.name)}">`:''}
-                  </span>
-                </td>
-                <td><b>${esc(i.name)}</b></td>
-                <td><input class="in s" type="number" min="1" max="99999" value="${i.price}" style="width:90px" data-f="price"></td>
-                <td>
-                  <input class="in s" value="${esc(String(i.img).startsWith('data:')?'(uploaded image)':i.img)}" data-f="img" style="min-width:150px">
-                  <label class="btn s sm" style="cursor:pointer">Upload
-                    <input type="file" accept="image/*" class="sr" data-up>
-                  </label>
-                </td>
-                <td><input type="checkbox" ${i.available?'checked':''} data-f="available" style="width:20px;height:20px;accent-color:var(--or)"></td>
-                <td><button class="btn p sm" data-save>Save</button></td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`).join('')+`
-      <div class="panel">
-        <h3 style="margin-bottom:10px">Add menu item</h3>
-        <form id="ni" class="two" novalidate>
-          <div class="field">
-            <label>Restaurant</label>
-            <select class="in" id="nr">
-              ${rs.map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('')}
-            </select>
-          </div>
-
-          <div class="field">
-            <label>Category</label>
-            <select class="in" id="nc">
-              ${CATS.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}
-            </select>
-          </div>
-
-          <div class="field">
-            <label>Name</label><input class="in" id="nn">
-            <p class="err" id="nne"></p>
-          </div>
-
-          <div class="field">
-            <label>Price (₱)</label><input class="in" id="np" type="number" min="1">
-            <p class="err" id="npe"></p>
-          </div>
-
-          <div class="field" style="grid-column:1/-1">
-            <label>Description</label><input class="in" id="nd">
-          </div>
-
-          <div class="field" style="grid-column:1/-1">
-            <label>Photo URL or key (e.g. burger)</label>
-            <input class="in" id="ng" placeholder="https://… or burger">
-          </div>
-
-          <button class="btn p">Add item</button>
-        </form>
-      </div>`;
-
-    $$('[data-save]').forEach(b => b.onclick = async () => {
-  const tr = b.closest('tr');
-  const localId = tr.dataset.i;
-  const price = Number($('[data-f=price]', tr).value);
-  const available = $('[data-f=available]', tr).checked;
-  const imageInput = $('[data-f=img]', tr).value.trim();
-
-  if (!Number.isFinite(price) || price <= 0) {
-    return toast('Enter a valid price above 0.');
-  }
-
-  const restaurant = rs.find(r =>
-    (r.items || []).some(i => String(i.id) === String(localId))
-  );
-
-  const localItem = restaurant?.items.find(
-    i => String(i.id) === String(localId)
-  );
-
-  if (!restaurant || !localItem) {
-    return toast('Product or store not found.');
-  }
-
-  const db = window.PAPALITA_DB;
-
-  if (!db) {
-    return toast('Supabase client is not initialized.');
-  }
-
-  const normalize = value => String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-
-  b.disabled = true;
-  b.textContent = 'Saving...';
-
-  try {
-    const storesResult = await db
-      .from('stores')
-      .select('id, name')
-      .eq('status', 'approved');
-
-    if (storesResult.error) throw storesResult.error;
-
-    const onlineStore = (storesResult.data || []).find(s =>
-      normalize(s.name) === normalize(restaurant.name)
-    );
-
-    if (!onlineStore) {
-      throw new Error(
-        'Store not found or its status is not approved in Supabase.'
-      );
-    }
-
-    const productsResult = await db
-      .from('products')
-      .select('id, name, price, stock, status, image_url')
-      .eq('store_id', onlineStore.id);
-
-    if (productsResult.error) throw productsResult.error;
-
-    const onlineProduct = (productsResult.data || []).find(p =>
-      normalize(p.name) === normalize(localItem.name)
-    );
-
-    if (!onlineProduct) {
-      throw new Error('Product not found in Supabase.');
-    }
-
-    const changes = {
-      price,
-      status: available ? 'active' : 'inactive',
-      updated_at: new Date().toISOString()
-    };
-
-    // Only save an image field when an actual URL was entered.
-    if (
-      /^https?:\/\//i.test(imageInput) &&
-      imageInput !== '(uploaded image)'
-    ) {
-      changes.image_url = imageInput;
-    }
-
-    const updateResult = await db
-      .from('products')
-      .update(changes)
-      .eq('id', onlineProduct.id)
-      .eq('store_id', onlineStore.id)
-      .select('id, name, price, stock, status, updated_at')
-      .maybeSingle();
-
-    if (updateResult.error) throw updateResult.error;
-
-    if (!updateResult.data) {
-      throw new Error(
-        'Walay updated row nga nauli. Susiha ang Supabase UPDATE ug SELECT RLS policies.'
-      );
-    }
-
-    // Update local display only after Supabase confirms the save.
-    localItem.price = Number(updateResult.data.price);
-    localItem.available =
-      updateResult.data.status === 'active' &&
-      Number(updateResult.data.stock) > 0;
-
-    if (changes.image_url) {
-      localItem.img = changes.image_url;
-    }
-
-    const overrides = ov();
-    overrides.items = overrides.items || {};
-    overrides.items[localId] = {
-      ...(overrides.items[localId] || {}),
-      price: localItem.price,
-      available: localItem.available
-    };
-
-    if (changes.image_url) {
-      overrides.items[localId].img = changes.image_url;
-    }
-
-    setOv(overrides);
-
-    toast(
-      `Saved to Supabase: ${updateResult.data.name} — ₱${Number(updateResult.data.price).toLocaleString('en-PH')}`
-    );
-
-  } catch (error) {
-    console.error('[Papalita] Product update failed:', error);
-    toast('Save failed: ' + (error.message || 'Unknown error'));
-  } finally {
-    b.disabled = false;
-    b.textContent = 'Save';
-  }
-});
-
-    
-$$('[data-up]').forEach(f => {
-  f.onchange = async () => {
-    const file = f.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast('Please select an image.');
-      f.value = '';
-      return;
-    }
-const row = f.closest('tr');
-const localId = row?.dataset.i;
-
-// Read the store name from the table containing this row.
-const storeName = row?.closest('[data-store-name]')?.dataset.storeName;
-
-const normalize = value => String(value ?? '')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase()
-  .replace(/[^a-z0-9]/g, '');
-
-// Match the correct restaurant by its displayed store name.
-const restaurant = RS.find(r =>
-  normalize(r.name) === normalize(storeName)
-);
-
-const localItem = restaurant?.items.find(
-  i => String(i.id) === String(localId)
-);
-
-
-    const itemName =
-      row?.querySelector('td:nth-child(2) b')?.textContent.trim()
-      || localItem?.name;
-
-    const restaurantName = restaurant?.name;
-
-    if (!itemName || !restaurantName) {
-      toast('Could not identify the product or store.');
-      return;
-    }
-
-    f.disabled = true;
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = async () => {
-      try {
-        const scale = Math.min(
-          1,
-          800 / Math.max(img.width, img.height)
-        );
-
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Could not process image.');
-
-        context.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const blob = await new Promise(resolve => {
-          canvas.toBlob(resolve, 'image/jpeg', 0.82);
-        });
-
-        if (!blob) throw new Error('Could not compress image.');
-
-        const db = window.PAPALITA_DB || getAuthClient();
-        if (!db) throw new Error('Supabase client is unavailable.');
-
-        // Find the matching Supabase store.
-        const storeResult = await db
-          .from('stores')
-          .select('id,name')
-          .eq('status', 'approved');
-
-        if (storeResult.error) throw storeResult.error;
-
-        const normalize = value =>
-          String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
-
-        const stores = (storeResult.data || []).filter(
-          s => normalize(s.name) === normalize(restaurantName)
-        );
-
-        if (stores.length !== 1) {
-          throw new Error(
-            'Could not uniquely match the store in Supabase.'
-          );
-        }
-
-        // Find the product using its store and name.
-        const productResult = await db
-  .from('products')
-  .select('id,name,image_url')
-  .eq('store_id', stores[0].id);
-
-if (productResult.error) throw productResult.error;
-
-const allProducts = productResult.data || [];
-
-// First, try matching the exact product name.
-let products = allProducts.filter(
-  p => normalize(p.name) === normalize(itemName)
-);
-
-// If names differ, try the existing local ID or image key.
-// Only use this fallback when it identifies one product.
-if (products.length !== 1) {
-  const aliases = [localId, localItem?.img]
-    .filter(v =>
-      typeof v === 'string' &&
-      v.trim() &&
-      !/^https?:\/\//i.test(v) &&
-      !/^data:/i.test(v)
-    )
-    .map(normalize);
-
-  const byImageKey = allProducts.filter(
-    p => aliases.includes(normalize(p.image_url))
-  );
-
-  if (byImageKey.length === 1) {
-    products = byImageKey;
-  }
-}
-
-if (products.length !== 1) {
-  console.error(
-    '[Papalita] Product matching failed.',
-    {
-      localId,
-      itemName,
-      restaurantName,
-      localImageKey: localItem?.img,
-      matchingProducts: products,
-      availableProducts: allProducts.map(p => ({
-        id: p.id,
-        name: p.name,
-        image_url: p.image_url
-      }))
-    }
-  );
-
-  throw new Error(
-    'Could not uniquely match this product. Check Console for product details.'
-  );
-}
-
-const product = products[0];
-
-        // Upload a uniquely named image to Storage.
-        const path =
-          `products/${product.id}/${Date.now()}.jpg`;
-
-        const storage = db.storage.from('product-images');
-
-        const uploadResult = await storage.upload(path, blob, {
-          contentType: 'image/jpeg',
-          cacheControl: '3600',
-          upsert: false
-        });
-
-        if (uploadResult.error) throw uploadResult.error;
-
-        const publicUrl = storage.getPublicUrl(path).data?.publicUrl;
-
-        if (!publicUrl) {
-          throw new Error('Could not generate the public image URL.');
-        }
-
-        // Save the public image URL to the products table.
-        const updateResult = await db
-          .from('products')
-          .update({
-            image_url: publicUrl,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', product.id)
-          .select('id')
-          .maybeSingle();
-
-        if (updateResult.error) throw updateResult.error;
-
-        if (!updateResult.data) {
-          throw new Error(
-            'Image uploaded, but the database row was not updated. Check UPDATE permissions.'
-          );
-        }
-
-        // Keep this browser's local catalogue in sync too.
-        const overrides = ov();
-        overrides.items = overrides.items || {};
-        overrides.items[localId] = overrides.items[localId] || {};
-        overrides.items[localId].img = publicUrl;
-        setOv(overrides);
-
-        URL.revokeObjectURL(objectUrl);
-
-        toast('Photo uploaded and saved to Supabase!');
-        draw();
-
-      } catch (error) {
-        console.error('[Papalita] Photo upload failed:', error);
-        toast(
-          'Photo upload failed: ' +
-          (error.message || 'Unknown error')
-        );
-        f.disabled = false;
-        f.value = '';
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      f.disabled = false;
-      f.value = '';
-      toast('Could not read image.');
-    };
-
-    img.src = objectUrl;
-  };
-});
-
-    $('#ni').onsubmit=e=>{
-      e.preventDefault();
-
-      const n=$('#nn').value.trim();
-      const p=+$('#np').value;
-
-      $('#nne').textContent=n.length<2?'Enter a name.':'';
-      $('#npe').textContent=p>0?'':'Enter a price above 0.';
-
-      if(n.length<2||!(p>0))return;
-
-      const o=ov();
-      o.extraItems=o.extraItems||[];
-
-      o.extraItems.push({
-        id:'x'+Date.now(),
-        rid:$('#nr').value,
-        name:n,
-        price:p,
-        cat:$('#nc').value,
-        img:$('#ng').value.trim()||CATS.find(c=>c.id===$('#nc').value)?.img||'',
-        desc:$('#nd').value.trim()||n,
-        sec:'New'
-      });
-
-      setOv(o);
-      toast('Item added.');
-      location.reload();
-    };
-  },
-
-  cats(){
-    H('Categories');
-
-    $('#c').innerHTML=`
-      <div class="tw">
-        <table>
-          <thead><tr><th>Photo</th><th>Name</th><th>Photo URL / key</th><th></th></tr></thead>
-          <tbody>
-            ${CATS.map(c=>`
-              <tr data-c="${esc(c.id)}">
-                <td>
-                  <span class="ph" style="--ar:1;width:48px;border-radius:50%">
-                    <img src="${esc(window.photoUrl(c.img,120))}" alt="${esc(c.name)}">
-                  </span>
-                </td>
-                <td><input class="in s" data-f="name" value="${esc(c.name)}"></td>
-                <td><input class="in s" data-f="img" value="${esc(c.img)}"></td>
-                <td><button class="btn p sm" data-save>Save</button></td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-
-    $$('[data-save]').forEach(b=>b.onclick=()=>{
-      const tr=b.closest('tr');
-      const n=$('[data-f=name]',tr).value.trim();
-
-      if(n.length<2)return toast('Enter a category name.');
-
-      const o=ov();
-      o.cats=o.cats||{};
-      o.cats[tr.dataset.c]={
-        name:n,
-        img:$('[data-f=img]',tr).value.trim()
-      };
-
-      setOv(o);
-      toast('Category saved.');
-    });
-  },
-
-  promos(){
-    H('Promo codes');
-
-    const P=window.PROMOS||[];
-
-    $('#c').innerHTML=`
-      <div class="tw">
-        <table>
-          <thead>
-            <tr><th>Code</th><th>Offer</th><th>Min order</th><th>Expires</th><th>Active</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${P.map(p=>`
-              <tr>
-                <td><b>${esc(p.code)}</b></td>
-                <td>${esc(p.title)}</td>
-                <td>${peso(p.min)}</td>
-                <td>${esc(p.exp)}</td>
-                <td><input type="checkbox" ${p.active!==false?'checked':''} data-tg="${esc(p.code)}" style="width:20px;height:20px;accent-color:var(--or)"></td>
-                <td><button class="btn d sm" data-del="${esc(p.code)}">Delete</button></td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="panel">
-        <h3 style="margin-bottom:10px">New promo</h3>
-        <form id="np" class="two" novalidate>
-          <div class="field">
-            <label>Code</label><input class="in" id="pc" maxlength="16">
-            <p class="err" id="pce"></p>
-          </div>
-
-          <div class="field">
-            <label>Type</label>
-            <select class="in" id="pt">
-              <option value="flat">Flat amount off</option>
-              <option value="percent">Percent off</option>
-              <option value="ship">Free delivery</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>Value (₱ or %)</label><input class="in" id="pv" type="number" min="0" value="50">
-          </div>
-
-          <div class="field">
-            <label>Max discount (₱)</label><input class="in" id="pm" type="number" min="0" value="100">
-          </div>
-
-          <div class="field">
-            <label>Minimum order (₱)</label><input class="in" id="pn" type="number" min="0" value="299">
-          </div>
-
-          <div class="field">
-            <label>Expires</label><input class="in" id="pd" type="date">
-            <p class="err" id="pde"></p>
-          </div>
-
-          <button class="btn p">Create promo</button>
-        </form>
-      </div>`;
-
-    const mut=f=>{
-      const o=ov();
-      o.promos=o.promos||[];
-      f(o);
-      setOv(o);
-      draw();
-    };
-
-    $$('[data-tg]').forEach(c=>c.onchange=()=>mut(o=>{
-      const p={
-        ...(P.find(x=>x.code===c.dataset.tg)||{}),
-        active:c.checked
-      };
-
-      o.promos=o.promos.filter(x=>x.code!==p.code);
-      o.promos.push(p);
-      toast('Promo updated.');
-    }));
-
-    $$('[data-del]').forEach(b=>b.onclick=async()=>{
-      if(await confirmD('Delete promo '+b.dataset.del+'?')){
-        mut(o=>{
-          o.promos=o.promos.filter(x=>x.code!==b.dataset.del);
-          o.removedPromos=[...(o.removedPromos||[]),b.dataset.del];
-          toast('Promo deleted.');
-        });
-      }
-    });
-
-    $('#np').onsubmit=e=>{
-      e.preventDefault();
-
-      const c=$('#pc').value.trim().toUpperCase();
-      const d=$('#pd').value;
-
-      $('#pce').textContent=
-        !/^[A-Z0-9]{3,16}$/.test(c)
-          ?'Use 3–16 letters or digits.'
-          :P.some(x=>x.code===c)
-            ?'Code already exists.'
-            :'';
-
-      $('#pde').textContent=d?'':'Choose an expiry date.';
-
-      if($('#pce').textContent||!d)return;
-
-      const t=$('#pt').value;
-      const v=+$('#pv').value;
-
-      mut(o=>{
-        o.promos.push({
-          code:c,
-          title:t==='ship'
-            ?'Free delivery'
-            :t==='percent'
-              ?v+'% off'
-              :'₱'+v+' off',
-          type:t,
-          value:v,
-          cap:+$('#pm').value,
-          min:+$('#pn').value,
-          exp:d,
-          rid:null,
-          desc:'Custom promotion.',
-          active:true
-        });
-
-        toast('Promo created.');
-      });
-    };
-  },
-
-  users(){
-    H('User management');
-
-    const o=ov();
-    o.users=o.users||{};
-
-    const U=[
-      ['Tommy Santos','tommy@example.com','customer'],
-      ['Ana Mendoza','ana@example.com','customer'],
-      ['Marco Reyes','marco@foodie.ph','rider'],
-      ['Jolly Manager','mgr@jollibee.example','restaurant_admin'],
-      ['Platform Owner','owner@foodie.ph','platform_admin']
-    ];
-
-    $('#c').innerHTML=`
-      <p class="note" style="margin-bottom:12px">
-        <span class="demo">DEMO</span> Sample users. In production this reads
-        <code>profiles</code> and updates roles through a protected admin function.
-      </p>
-
-      <div class="tw">
-        <table>
-          <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
-          <tbody>
-            ${U.map(([n,e,r])=>`
-              <tr>
-                <td><b>${n}</b></td>
-                <td>${e}</td>
-                <td>
-                  <select class="in s" data-u="${e}">
-                    ${['customer','restaurant_admin','rider','platform_admin']
-                      .map(x=>`<option ${(o.users[e]||r)===x?'selected':''}>${x}</option>`)
-                      .join('')}
-                  </select>
-                </td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>`;
-
-    $$('[data-u]').forEach(s=>s.onchange=()=>{
-      const o=ov();
-      o.users=o.users||{};
-      o.users[s.dataset.u]=s.value;
-      setOv(o);
-      toast('Role updated (demo).');
-    });
-  },
-
-  async catering(){
-    H('Catering requests');
-    $('#c').innerHTML='<div class="empty"><p>Loading catering requests from Supabase…</p></div>';
-    try {
-      const db=getAuthClient();
-      const {data:{user},error:authError}=await db.auth.getUser();
-      if(authError)throw authError;
-      if(!user)throw new Error('Please log in first.');
-      const {data:owned,error:storeError}=await db.from('stores').select('id,name').eq('owner_id',user.id);
-      if(storeError)throw storeError;
-      const ids=(owned||[]).map(x=>x.id);
-      if(!ids.length){$('#c').innerHTML='<div class="empty"><h3>No stores assigned</h3><p>Contact the platform administrator to assign a store to your account.</p></div>';return;}
-      const {data,error}=await db.from('catering_requests').select('*').in('store_id',ids).order('created_at',{ascending:false});
-      if(error)throw error;
-      const l=data||[],names=Object.fromEntries((owned||[]).map(x=>[x.id,x.name]));
-      $('#c').innerHTML=l.length?`<div class="tw"><table><thead><tr><th>Reference</th><th>Store</th><th>Customer</th><th>Event</th><th>Guests</th><th>Package</th><th>Status</th></tr></thead><tbody>
-        ${l.map(q=>`<tr><td><b>${esc(q.id.slice(0,8).toUpperCase())}</b></td><td>${esc(names[q.store_id]||'—')}</td><td>${esc(q.customer_name)}<br><span class="sm mu">${esc(q.customer_phone)}</span></td><td>${esc(q.event_type||'')}<br><span class="sm mu">${esc(q.event_date||'')} ${esc(q.event_time||'')}</span></td><td>${esc(q.guests||'')}</td><td>${esc(q.package||'')}</td><td><select class="in s" data-cs="${esc(q.id)}">${['pending','confirmed','cancelled'].map(x=>`<option value="${x}" ${q.status===x?'selected':''}>${x}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div>`:
-        '<div class="empty"><h3>No catering requests yet</h3><p>New customer requests will appear here.</p></div>';
-      $$('[data-cs]').forEach(el=>el.onchange=async()=>{
-        const previous=l.find(q=>q.id===el.dataset.cs)?.status;
-        el.disabled=true;
-        const {error}=await db.from('catering_requests').update({status:el.value}).eq('id',el.dataset.cs).select('id').single();
-        el.disabled=false;
-        if(error){el.value=previous;toast('Update failed: '+error.message);return;}
-        l.find(q=>q.id===el.dataset.cs).status=el.value;
-        toast('Catering status updated in Supabase.');
-      });
-    }catch(err){$('#c').innerHTML='<div class="empty"><h3>Unable to load catering</h3><p>'+esc(err.message||'Unknown error')+'</p></div>';}
-  },
-
-  stores(){
-    H('Store contacts');
-
-    const o=ov();
-    o.stores=o.stores||{};
-
-    $('#c').innerHTML=RS.filter(r=>mine(r.id)).map(r=>`
-      <div class="panel">
-        <h3>${esc(r.name)} ${r.placeholder?'<span class="demo">PLACEHOLDER</span>':''}</h3>
-
-        <div class="two" style="margin-top:10px">
-          <div class="field">
-            <label>Phone</label>
-            <input class="in" id="ph-${esc(r.id)}" value="${r.placeholder?'':esc(r.phone)}" placeholder="09XXXXXXXXX">
-            <p class="err" id="pe-${esc(r.id)}"></p>
-          </div>
-
-          <div class="field">
-            <label>Messenger link</label>
-            <input class="in" id="ms-${esc(r.id)}" value="${esc(r.messenger||'')}" placeholder="https://m.me/yourpage">
-          </div>
-        </div>
-
-        <button class="btn p sm" data-sv="${esc(r.id)}">Save contacts</button>
-      </div>`).join('');
-
-    $$('[data-sv]').forEach(b=>b.onclick=()=>{
-      const id=b.dataset.sv;
-      const ph=$('#ph-'+id).value.replace(/\s/g,'');
-      const ms=$('#ms-'+id).value.trim();
-
-      if(!/^(09|\+639)\d{9}$/.test(ph)){
-        return $('#pe-'+id).textContent='Use a PH mobile number like 09171234567.';
-      }
-
-      $('#pe-'+id).textContent='';
-
-      const o=ov();
-      o.stores=o.stores||{};
-      o.stores[id]={phone:ph,messenger:ms};
-
-      setOv(o);
-      toast('Contacts saved. Reload the customer app to see them.');
-    });
-  },
-
-  cash(){
-    H('Cash remittance');
-
-    const os=store().orders.filter(o=>
-      o.rider&&o.pay?.method==='cod'&&stage(o)===5&&mine(o.rid)
-    );
-
-    const by={};
-    os.forEach(o=>{
-      (by[o.rider.name]=by[o.rider.name]||[]).push(o);
-    });
-
-    const net=o=>o.total-(o.tip||0);
-
-    $('#c').innerHTML=os.length
-      ?Object.entries(by).map(([n,l])=>{
-        const out=l.filter(o=>!o.remitted);
-        const amt=out.reduce((x,o)=>x+net(o),0);
-
-        return `<div class="panel">
-          <div class="row sp wrap">
-            <h3>${esc(n)}</h3>
-            <span>
-              <b>${peso(amt)}</b>
-              <span class="mu sm">to remit</span>
-              ${out.length
-                ?`<button class="btn p sm" data-all="${esc(n)}">Mark all remitted</button>`
-                :'<span class="status open">All remitted</span>'}
-            </span>
-          </div>
-
-          <div class="tw" style="margin:10px 0 0">
-            <table>
-              <thead>
-                <tr><th>Order</th><th>Store</th><th>Cash to remit</th><th>Tip kept</th><th></th></tr>
-              </thead>
-              <tbody>
-                ${l.map(o=>`
-                  <tr>
-                    <td>${esc(o.id)}</td>
-                    <td>${esc(R(o.rid)?.name||o.rid||'—')}</td>
-                    <td>${peso(net(o))}</td>
-                    <td>${peso(o.tip||0)}</td>
-                    <td>
-                      ${o.remitted
-                        ?`<span class="status open">Remitted ${new Date(o.remitted.at).toLocaleDateString('en-PH')}</span>`
-                        :`<button class="btn s sm" data-rm="${esc(o.id)}">Mark remitted</button>`}
-                    </td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>`;
-      }).join('')
-      :'<div class="empty"><h3>No cash deliveries yet</h3><p>Cash-on-delivery orders completed by riders appear here.</p></div>';
-
-    const markOne=id=>{
-      const s=store();
-      const o=s.orders.find(x=>String(x.id)===String(id));
-
-      if(!o)return;
-
-      o.remitted={at:Date.now(),by:sess.email||'admin'};
-      o.upd=Date.now();
-
-      saveStore(s);
-      toast('Marked remitted.');
-      draw();
-    };
-
-    $$('[data-rm]').forEach(b=>b.onclick=()=>markOne(b.dataset.rm));
-
-    $$('[data-all]').forEach(b=>b.onclick=()=>{
-      const s=store();
-
-      s.orders.filter(o=>
-        o.rider&&
-        o.rider.name===b.dataset.all&&
-        o.pay?.method==='cod'&&
-        stage(o)===5&&
-        mine(o.rid)&&
-        !o.remitted
-      ).forEach(o=>{
-        o.remitted={at:Date.now(),by:sess.email||'admin'};
-        o.upd=Date.now();
-      });
-
-      saveStore(s);
-      toast('All marked remitted.');
-      draw();
-    });
-  },
-
-  refunds(){
-    H('Refund queue');
-
-    const s=store();
-    const pend=s.orders.filter(o=>mine(o.rid)&&o.pay?.status==='refund_pending');
-    const done=s.orders.filter(o=>
-      mine(o.rid)&&(o.pay?.status==='refunded'||o.pay?.status==='refund_rejected')
-    );
-
-    const row=(o,act)=>`
-      <tr>
-        <td><b>${esc(o.id)}</b></td>
-        <td>${esc(R(o.rid)?.name||o.rid||'—')}</td>
-        <td>${esc(o.contact?.name||'')}</td>
-        <td>${esc(o.pay?.method||'—')}</td>
-        <td>${peso(o.total)}</td>
-        <td class="sm">${esc(o.cancelReason||'Customer cancelled')}</td>
-        <td>
-          ${act
-            ?`<button class="btn p sm" data-ap="${esc(o.id)}">Approve</button>
-              <button class="btn d sm" data-rj="${esc(o.id)}">Reject</button>`
-            :`<span class="status ${o.pay.status==='refunded'?'open':'closed'}">${esc(o.pay.status.replace('_',' '))}</span>`}
-        </td>
-      </tr>`;
-
-    $('#c').innerHTML=`
-      <p class="note" style="margin-bottom:12px">
-        <span class="demo">DEMO</span>
-        Approving only records the refund. Real refunds are sent through your payment provider.
-      </p>
-
-      <h3 style="margin-bottom:8px">Pending (${pend.length})</h3>
-      ${pend.length
-        ?`<div class="tw"><table>
-          <thead><tr><th>Order</th><th>Store</th><th>Customer</th><th>Method</th><th>Amount</th><th>Reason</th><th></th></tr></thead>
-          <tbody>${pend.map(o=>row(o,1)).join('')}</tbody>
-        </table></div>`
-        :'<div class="empty"><h3>No pending refunds</h3></div>'}
-
-      <h3 style="margin:16px 0 8px">Processed</h3>
-      ${done.length
-        ?`<div class="tw"><table><tbody>${done.map(o=>row(o,0)).join('')}</tbody></table></div>`
-        :'<p class="mu">Nothing processed yet.</p>'}`;
-
-    const fin=(id,st,title,msg)=>{
-      const s=store();
-      const o=s.orders.find(x=>String(x.id)===String(id));
-
-      if(!o)return;
-
-      o.pay.status=st;
-
-      if(st==='refunded')o.status='refunded';
-
-      o.upd=Date.now();
-
-      if(window.OPS?.tell)window.OPS.tell(s,o,title,msg);
-
-      saveStore(s);
-      draw();
-    };
-
-    $$('[data-ap]').forEach(b=>b.onclick=()=>{
-      const o=store().orders.find(x=>String(x.id)===String(b.dataset.ap));
-
-      if(!o)return;
-
-      fin(
-        o.id,
-        'refunded',
-        'Refund approved',
-        peso(o.total)+' will be returned to your '+o.pay.method+' (demo).'
-      );
-
-      toast('Refund approved.');
-    });
-
-    $$('[data-rj]').forEach(b=>b.onclick=()=>{
-      const why=prompt('Reason for rejecting this refund:','Order was already prepared');
-
-      if(why===null)return;
-
-      fin(
-        b.dataset.rj,
-        'refund_rejected',
-        'Refund not approved',
-        why||'Please contact support.'
-      );
-
-      toast('Refund rejected.');
-    });
-  },
-
-  fees(){
-    H('Delivery fees by barangay');
-
-    $('#c').innerHTML=`
-      <p class="note" style="margin-bottom:12px">
-        Applies to every store in the customer app. Reload the customer app to see changes.
-      </p>
-
-      <div class="tw">
-        <table>
-          <thead>
-            <tr><th>Barangay</th><th>Fee (₱)</th><th>Extra minutes</th><th>Distance (km)</th><th></th></tr>
-          </thead>
-          <tbody>
-            ${(window.BRGYS||[]).map(b=>`
-              <tr data-b="${esc(b.n)}">
-                <td><b>${esc(b.n)}</b></td>
-                <td><input class="in s" type="number" min="0" max="500" step="1" value="${b.fee}" data-f="fee" style="width:90px" aria-label="${esc(b.n)} fee"></td>
-                <td><input class="in s" type="number" min="0" max="120" step="1" value="${b.eta}" data-f="eta" style="width:90px"></td>
-                <td><input class="in s" type="number" min="0" max="50" step="0.1" value="${b.km}" data-f="km" style="width:90px"></td>
-                <td><button class="btn p sm" data-sv>Save</button></td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-
-      <button class="btn d sm" id="rs">Reset all to defaults</button>`;
-
-    $$('[data-sv]').forEach(b=>b.onclick=()=>{
-      const tr=b.closest('tr');
-      const n=tr.dataset.b;
-      const v=f=>+$('[data-f='+f+']',tr).value;
-
-      const fee=v('fee'),eta=v('eta'),km=v('km');
-
-      if(!(fee>=0&&fee<=500)||!(eta>=0&&eta<=120)||!(km>=0&&km<=50)){
-        return toast('Check the numbers: fee 0–500, minutes 0–120, km 0–50.');
-      }
-
-      const o=ov();
-      o.brgys=o.brgys||{};
-      o.brgys[n]={fee:Math.round(fee),eta:Math.round(eta),km};
-
-      setOv(o);
-
-      Object.assign((window.BRGYS||[]).find(x=>x.n===n)||{},o.brgys[n]);
-
-      toast(n+' saved.');
-    });
-
-    $('#rs').onclick=async()=>{
-      if(!await confirmD('Reset all barangay fees to the defaults?'))return;
-
-      const o=ov();
-      delete o.brgys;
-      setOv(o);
-      location.reload();
-    };
-  },
-
-  analytics(){
-    H('Analytics');
-
-    const os=orders().filter(live);
-    const by={};
-
-    os.forEach(o=>by[o.rid]=(by[o.rid]||0)+o.total);
-
-    const dish={};
-    os.forEach(o=>(o.items||[]).forEach(l=>dish[l.name]=(dish[l.name]||0)+l.qty));
-
-    const top=Object.entries(dish).sort((a,b)=>b[1]-a[1]).slice(0,6);
-    const rv=Object.entries(by).sort((a,b)=>b[1]-a[1]);
-
-    $('#c').innerHTML=`
-      <div class="two">
-        <div class="panel">
-          <h3 style="margin-bottom:10px">Revenue by restaurant</h3>
-          ${rv.length
-            ?rv.map(([id,v])=>`
-              <div class="row sp" style="padding:6px 0">
-                <span>${esc(R(id)?.name||id)}</span><b>${peso(v)}</b>
-              </div>`).join('')
-            :'<p class="mu">No orders yet.</p>'}
-        </div>
-
-        <div class="panel">
-          <h3 style="margin-bottom:10px">Top dishes</h3>
-          ${top.length
-            ?top.map(([n,q])=>`
-              <div class="row sp" style="padding:6px 0">
-                <span>${esc(n)}</span><b>${q}</b>
-              </div>`).join('')
-            :'<p class="mu">No orders yet.</p>'}
-        </div>
-      </div>
-
-      <div class="panel" style="margin-top:14px">
-        <h3 style="margin-bottom:10px">Orders per day (sample)</h3>
-        ${chart(SAMPLE.map(d=>d.n*300))}
-      </div>`;
-  }
 };
 
 function chart(v){
@@ -2170,7 +808,7 @@ function paSetMobile(open){
 }
 function paNav(key){
  if(!paAllowed(key))return '';
- const n=key==='orders'?orders().filter(o=>live(o)&&stage(o)>=0&&stage(o)<5).length:0;
+ const n=key==='orders'?paLiveState.orders.filter(paIsActive).length:0;
  return `<button type="button" class="pa-nav" data-pa-nav="${key}" ${tab===key?'aria-current="page"':''}>${paIcon(paIconNames[key]||key)}<span>${esc(paLabels[key])}</span>${n?`<span class="pa-badge" aria-label="${n} active orders">${n}</span>`:''}</button>`;
 }
 function paGroup(name,label,keys){
@@ -2182,27 +820,6 @@ gate=function(message=''){
  document.body.classList.remove('pa-nav-open');paMobileOpen=false;paOldGate(message);
  $('#gate .note').textContent='Sign in with your authorized Papalita admin or store-manager account to continue.';
  $('#gate .field p').textContent='Use the password linked to your Papalita account.';
-};
-const paOldOverview=V.overview;
-V.overview=function(){
- paOldOverview();
- const root=$('#c'),heading=$('#b h1');heading.textContent='Dashboard';
- heading.insertAdjacentHTML('afterend','<p class="pa-page-description">A clear view of your Papalita community.</p>');
- heading.parentElement.style.display='block';
- root.insertAdjacentHTML('afterbegin',`<section class="pa-welcome" aria-label="Welcome"><div><div class="pa-welcome-overline">Good food, growing together</div><h2>Welcome back, ${sess.role==='platform'?'Admin':esc(R(sess.rid)?.name||'Manager')}.</h2><p>Your Papalita community, all in one place.</p><button class="btn" data-pa-nav="orders">${paIcon('arrow')}View orders</button></div><div class="pa-welcome-brand"><img src="${LOGO.mark}" alt="Papalita"><div><strong>Papalita</strong><small>Good Food, Good Mood.</small></div></div></section><p class="pa-data-label">${paIcon('report')}Existing ${sess.role==='platform'?'sample and ':''}browser-order summary</p>`);
- const chart=root.querySelector('.panel');
- const grid=document.createElement('div');grid.className='pa-overview-grid';chart.before(grid);grid.append(chart);
- const quick=document.createElement('section');quick.className='panel';quick.innerHTML=`<h2>Quick actions</h2>${[
- [sess.role==='platform'?'applications':'stores','Review stores',sess.role==='platform'?'Applications and approvals':'Store contact information','store'],
- ['catering','Catering requests','Review event inquiries','catering'],
- [sess.role==='platform'?'finance':'menu',sess.role==='platform'?'Finance & payouts':'Menu & pricing',sess.role==='platform'?'View your existing test settlement tools':'Manage your menu','wallet']
- ].map(([key,title,description,icon])=>`<button class="pa-quick" data-pa-nav="${key}">${paIcon(icon)}<span><strong>${title}</strong><small>${description}</small></span>${paIcon('right')}</button>`).join('')}`;grid.append(quick);
- const recent=orders().slice().sort((a,b)=>Number(b.createdAt)-Number(a.createdAt)).slice(0,5);
- root.insertAdjacentHTML('beforeend',`<section class="pa-table-panel pa-section"><div class="pa-panel-heading"><div><h2>Recent orders</h2><p>Your latest orders from this browser.</p></div><button class="btn s sm" data-pa-nav="orders">View all ${paIcon('right')}</button></div>${recent.length?`<div class="tw"><table><thead><tr><th>Order</th><th>Store</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${recent.map(o=>`<tr><td><b>${esc(o.id)}</b></td><td>${esc(R(o.rid)?.name||o.rid||'—')}</td><td>${peso(o.total)}</td><td><span class="status ${live(o)?'open':'closed'}">${esc(live(o)?(STAGES[stage(o)]||o.status||'New'):o.status)}</span></td><td><button class="btn s sm" data-pa-order="${esc(o.id)}">View order</button></td></tr>`).join('')}</tbody></table></div><div class="pa-table-foot">Showing ${recent.length} of ${orders().length} orders</div>`:'<div class="empty"><h3>No orders yet</h3><p>Orders placed in this browser will appear here.</p></div>'}</section>`);
- if(sess.role==='platform'){
-  root.insertAdjacentHTML('beforeend','<section class="pa-table-panel pa-section" id="pa-applications"><div class="pa-panel-heading"><div><h2>Store applications</h2><p>Review businesses joining Papalita.</p></div><button class="btn s sm" data-pa-nav="applications">View all</button></div><div class="empty" role="status"><p>Loading store applications…</p></div></section>');
-  paLoadApplications($('#pa-applications'),sess.userId);
- }
 };
 async function paLoadApplications(target,userId){
  try{
@@ -2244,7 +861,7 @@ $('#root').addEventListener('click',async event=>{
  if(control.hasAttribute('data-pa-nav')){event.preventDefault();paNavigate(control.dataset.paNav);}
  else if(control.hasAttribute('data-pa-menu'))paSetMobile(true);
  else if(control.hasAttribute('data-pa-close'))paSetMobile(false);
- else if(control.hasAttribute('data-pa-help'))paDialog('Your Papalita workspace','<p>Everything you need to manage Papalita, in one place.</p><ul><li><b>Orders</b> — review orders, status and rider assignments.</li><li><b>Store management</b> — approvals, availability and contacts.</li><li><b>More tools</b> — categories, promos, remittance, refunds and fees.</li><li><b>Appearance</b> — choose your theme and accent color.</li></ul>');
+ else if(control.hasAttribute('data-pa-help'))paDialog('Your Papalita workspace','<p>Everything you need to manage Papalita, in one place.</p><ul><li><b>Orders</b> — review saved orders and delivery status.</li><li><b>Store management</b> — approvals, availability and contacts.</li><li><b>More tools</b> — categories, promos, remittance, refunds and fees.</li><li><b>Appearance</b> — choose your theme and accent color.</li></ul>');
  else if(control.hasAttribute('data-pa-account'))paDialog('Your account',`<p><b>${esc(sess.role==='platform'?'Platform administrator':'Store manager')}</b><br>${esc(sess.email||'')}</p><button class="btn s" data-pa-out>${paIcon('logout')}Sign out</button>`);
  else if(control.hasAttribute('data-pa-out')){
   try{await getAuthClient().auth.signOut();}catch(e){console.error(e);}
@@ -2274,6 +891,162 @@ window.addEventListener('resize',()=>{if(innerWidth>700&&paMobileOpen)paSetMobil
 if(paAllowed(location.hash.slice(1)))tab=location.hash.slice(1);
 
 /* PAPALITA ADMIN PRESENTATION ADAPTER END */
+
+/* PAPALITA LIVE DATA LAYER */
+/* Production data layer. No sample rows, browser-order fallbacks, or simulated payments. */
+const paLiveState={orders:[],stores:[]};
+const paMoney=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const paAmount=o=>Number(o.total_amount??o.total??0);
+const paStatus=o=>String(o.status||'pending');
+const paIsActive=o=>!['completed','delivered','cancelled','refunded'].includes(paStatus(o));
+const paToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const paDate=value=>value?new Date(value).toLocaleString('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'}):'—';
+const paStoreName=id=>paLiveState.stores.find(s=>s.id===id)?.name||String(id||'—').slice(0,8);
+async function paRows(query){const r=await query;if(r.error)throw r.error;return Array.isArray(r.data)?r.data:r.data?[r.data]:[];}
+async function paSaved(query){const rows=await paRows(query);if(rows.length!==1)throw Error('No record was saved. Your database permissions may have blocked the change. Refresh and try again.');return rows[0];}
+async function paStores(){let q=getAuthClient().from('stores').select('*').order('created_at',{ascending:false});if(sess.role!=='platform')q=q.eq('owner_id',sess.userId);return paRows(q);}
+async function paLiveOrders(){
+ const stores=await paStores();paLiveState.stores=stores;
+ let q=getAuthClient().from('orders').select('*').order('created_at',{ascending:false}).limit(500);
+ if(sess.role!=='platform'){if(!stores.length)return [];q=q.in('store_id',stores.map(s=>s.id));}
+ const rows=await paRows(q);paLiveState.orders=rows;paUpdateOrderBadge();return rows;
+}
+function paUpdateOrderBadge(){const el=$('.pa-sidebar [data-pa-nav="orders"]');if(!el)return;el.querySelector('.pa-badge')?.remove();const count=paLiveState.orders.filter(paIsActive).length;if(count)el.insertAdjacentHTML('beforeend',`<span class="pa-badge" aria-label="${count} active orders">${count}</span>`);}
+function paLoading(title,description='Loading saved records…'){
+ H(title);const target=$('#c');target.innerHTML=`<div class="empty" role="status"><p>${esc(description)}</p></div>`;return target;
+}
+function paFailure(target,error,{setup=false,retry=''}={}){
+ if(!target.isConnected)return;
+  target.innerHTML=`<div class="empty" role="alert"><h3>${setup?'Database setup required':'Unable to load records'}</h3><p>${esc(error?.message||'Please check your connection and permissions.')}</p>${setup?'<p style="margin-top:12px">Run the included <b>papalita_admin_live_setup.sql</b> in your Supabase SQL Editor, then refresh.</p>':''}${retry?`<button class="btn s sm" style="margin-top:16px" data-pa-nav="${retry}">Try again</button>`:''}</div>`;
+}
+function paTable(headers,rows,empty){return rows.length?`<div class="tw"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:`<div class="empty"><h3>${empty}</h3><p>Only saved database records appear here.</p></div>`;}
+function paPill(status){return `<span class="status ${['cancelled','refunded','archived','rejected'].includes(status)?'closed':['pending','inactive'].includes(status)?'n':'open'}">${esc(String(status||'—').replaceAll('_',' '))}</span>`;}
+function paViewReady(){paPolish();}
+const paNeedsSetup=error=>['42P01','PGRST204','PGRST205'].includes(error?.code)||/schema cache|does not exist/i.test(error?.message||'');
+function paConfirm(title,message,button='Remove promo'){
+ return new Promise(resolve=>{
+  const d=document.createElement('dialog');d.className='pa-dialog';d.setAttribute('aria-labelledby','pa-confirm-title');
+  d.innerHTML=`<div class="pa-dialog-head"><h2 id="pa-confirm-title">${esc(title)}</h2></div><div class="pa-dialog-body"><p>${esc(message)}</p><div class="row" style="justify-content:flex-end;margin-top:20px"><button class="btn s" data-cancel>Cancel</button><button class="btn d" data-confirm>${esc(button)}</button></div></div>`;
+  $('#root').append(d);let confirmed=false;
+  d.querySelector('[data-cancel]').onclick=()=>d.close();d.querySelector('[data-confirm]').onclick=()=>{confirmed=true;d.close();};
+  d.addEventListener('close',()=>{d.remove();resolve(confirmed);},{once:true});d.showModal();d.querySelector('[data-cancel]').focus();
+ });
+}
+const paPromoRepo={
+ table:'papalita_promo_codes',
+ list(){return paRows(getAuthClient().from(this.table).select('*').order('created_at',{ascending:false}));},
+ create(payload){return paSaved(getAuthClient().from(this.table).insert(payload).select('*'));},
+ update(id,payload){return paSaved(getAuthClient().from(this.table).update({...payload,updated_at:new Date().toISOString()}).eq('id',id).select('*'));}
+};
+function paPromoPayload(values){
+ const code=String(values.code||'').trim().toUpperCase(),type=values.type;
+ if(!/^[A-Z0-9]{3,16}$/.test(code))throw Error('Use 3–16 letters or numbers for the code.');
+ if(!['flat','percent','ship'].includes(type))throw Error('Choose a valid promo type.');
+ const value=type==='ship'?0:Number(values.value),cap=values.cap===''||values.cap===null?null:Number(values.cap),min=Number(values.min_order);
+ if(!Number.isFinite(value)||value<0||(type!=='ship'&&value<=0)||(type==='percent'&&value>100))throw Error(type==='percent'?'Percentage must be between 1 and 100.':'Enter a valid discount value.');
+ if(cap!==null&&(!Number.isFinite(cap)||cap<=0))throw Error('Maximum discount must be greater than zero, or leave it blank.');
+ if(!Number.isFinite(min)||min<0)throw Error('Minimum order must be zero or more.');
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(values.expires)||values.expires<paToday())throw Error('Choose today or a future expiry date.');
+ const expires_at=new Date(values.expires+'T23:59:59+08:00');if(!Number.isFinite(+expires_at)||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(expires_at)!==values.expires)throw Error('Enter a valid expiry date.');
+ return {code,type,value,cap:type==='ship'?null:cap,min_order:min,expires_at:expires_at.toISOString(),status:'active',title:type==='ship'?'Free delivery':type==='percent'?value+'% off':paMoney(value)+' off'};
+}
+let paPromoFilter='current';
+async function paLivePromos(){
+ const target=paLoading('Promo codes');if(sess.role!=='platform')return paFailure(target,Error('Admin access required.'));
+ try{
+  const all=await paPromoRepo.list();if(!target.isConnected)return;
+  const rows=all.filter(p=>paPromoFilter==='archived'?p.status==='archived':p.status!=='archived');
+  target.innerHTML=`<div class="row sp wrap" style="margin-bottom:16px"><p class="mu sm">Promos saved to your database. Removed codes can be restored from Archived.</p><div class="row"><button class="btn ${paPromoFilter==='current'?'p':'s'} sm" id="pa-promos-current">Current</button><button class="btn ${paPromoFilter==='archived'?'p':'s'} sm" id="pa-promos-archived">Archived</button></div></div><p class="err" id="pa-promo-error" role="alert"></p>${paTable(['Code','Offer','Minimum order','Expires (PH)','Status','Actions'],rows.map(p=>`<tr><td><b>${esc(p.code)}</b></td><td>${esc(p.title)}${p.cap?`<br><small class="mu">Up to ${paMoney(p.cap)}</small>`:''}</td><td>${paMoney(p.min_order)}</td><td>${paDate(p.expires_at)}</td><td>${paPill(p.status==='active'&&+new Date(p.expires_at)<Date.now()?'expired':p.status)}</td><td><div class="row">${p.status==='archived'?`<button class="btn s sm" data-promo-restore="${esc(p.id)}">Restore inactive</button>`:`<button class="btn s sm" data-promo-toggle="${esc(p.id)}">${p.status==='active'?'Deactivate':'Activate'}</button><button class="btn d sm" data-promo-delete="${esc(p.id)}" aria-label="Delete promo ${esc(p.code)}">Delete</button>`}</div></td></tr>`),paPromoFilter==='archived'?'No archived promos':'No promo codes yet')}${paPromoFilter==='current'?`<section class="panel"><h3>Create promo</h3><form id="pa-promo-form"><div class="two"><div class="field"><label for="pc">Code</label><input class="in" id="pc" name="code" maxlength="16" required autocomplete="off" autocapitalize="characters" pattern="[A-Za-z0-9]{3,16}" placeholder="Enter your promo code"></div><div class="field"><label for="pt">Type</label><select class="in" id="pt" name="type"><option value="flat">Flat amount off</option><option value="percent">Percent off</option><option value="ship">Free delivery</option></select></div><div class="field"><label for="pv">Discount value (₱ or %)</label><input class="in" id="pv" name="value" type="number" min="0.01" step="0.01" required></div><div class="field"><label for="pm">Maximum discount (₱, optional)</label><input class="in" id="pm" name="cap" type="number" min="0.01" step="0.01"></div><div class="field"><label for="pn">Minimum order (₱)</label><input class="in" id="pn" name="min_order" type="number" min="0" step="0.01" value="0" required></div><div class="field"><label for="pd">Expiry date (Philippine time)</label><input class="in" id="pd" name="expires" type="date" min="${paToday()}" required></div></div><p class="err" id="pa-promo-form-error" role="alert"></p><button class="btn p" type="submit">Create promo</button></form></section>`:''}`;
+  $('#pa-promos-current').onclick=()=>{paPromoFilter='current';V.promos();};$('#pa-promos-archived').onclick=()=>{paPromoFilter='archived';V.promos();};
+  const change=async(control,id,status)=>{
+   const row=all.find(p=>p.id===id);if(!row)return;
+   if(status==='archived'&&!await paConfirm('Delete '+row.code+'?','This removes the code from active offers. Previous orders stay unchanged. You can restore the code from Archived.'))return;
+   control.disabled=true;$('#pa-promo-error').textContent='';
+   try{await paPromoRepo.update(id,{status});toast(status==='archived'?'Promo removed. You can restore it from Archived.':'Promo saved to the database.');await V.promos();}
+   catch(error){if(target.isConnected)$('#pa-promo-error').textContent='Could not save: '+error.message;control.disabled=false;}
+  };
+  $$('[data-promo-delete]',target).forEach(b=>b.onclick=()=>change(b,b.dataset.promoDelete,'archived'));
+  $$('[data-promo-toggle]',target).forEach(b=>b.onclick=()=>change(b,b.dataset.promoToggle,all.find(p=>p.id===b.dataset.promoToggle).status==='active'?'inactive':'active'));
+  $$('[data-promo-restore]',target).forEach(b=>b.onclick=()=>change(b,b.dataset.promoRestore,'inactive'));
+  const form=$('#pa-promo-form');if(form){
+   $('#pt').onchange=()=>{const ship=$('#pt').value==='ship';$('#pv').disabled=ship;$('#pv').required=!ship;$('#pm').disabled=ship;};
+   form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('button[type=submit]'),error=$('#pa-promo-form-error');error.textContent='';
+    try{const payload=paPromoPayload(Object.fromEntries(new FormData(form)));button.disabled=true;await paPromoRepo.create(payload);toast('Promo created in the database.');await V.promos();}
+    catch(e){error.textContent=e.code==='23505'?'This promo code already exists. Check Current and Archived.':e.message;button.disabled=false;}
+   };
+  }paViewReady();
+ }catch(error){paFailure(target,error,{setup:paNeedsSetup(error),retry:'promos'});}
+}
+function paLiveChart(rows){
+ const days=Array.from({length:14},(_,i)=>new Date(Date.now()-(13-i)*86400000).toLocaleDateString('en-CA',{timeZone:'Asia/Manila'}));
+ const values=days.map(day=>rows.filter(o=>['completed','delivered'].includes(paStatus(o))&&new Date(o.created_at).toLocaleDateString('en-CA',{timeZone:'Asia/Manila'})===day).reduce((n,o)=>n+paAmount(o),0));
+ return `<div class="row sp"><span class="mu sm">Completed order sales · last 14 days</span><b>${paMoney(values.reduce((a,b)=>a+b,0))}</b></div>${chart(values)}<div class="row sp mu sm"><span>${esc(days[0])}</span><span>${esc(days.at(-1))}</span></div>`;
+}
+async function paLiveOverview(){
+ const target=paLoading('Dashboard');try{
+  const rows=await paLiveOrders();if(!target.isConnected)return;
+  const cutoff=Date.now()-14*86400000,recent=rows.filter(o=>+new Date(o.created_at)>=cutoff),complete=recent.filter(o=>['completed','delivered'].includes(paStatus(o))),sales=complete.reduce((n,o)=>n+paAmount(o),0),pending=paLiveState.stores.filter(s=>s.status==='pending');
+  target.innerHTML=`<section class="pa-welcome"><div><div class="pa-welcome-overline">Good food, growing together</div><h2>Welcome back, ${sess.role==='platform'?'Admin':'Manager'}.</h2><p>Your Papalita community, all in one place.</p><button class="btn" data-pa-nav="orders">${paIcon('arrow')}View orders</button></div><div class="pa-welcome-brand"><img src="${LOGO.mark}" alt="Papalita"><div><strong>Papalita</strong><small>Good Food, Good Mood.</small></div></div></section><div class="kpis">${[['Completed sales · 14 days',paMoney(sales)],['Orders · 14 days',recent.length],['Average completed order',paMoney(complete.length?sales/complete.length:0)],['Active orders',rows.filter(paIsActive).length]].map(([label,value])=>`<div class="kpi"><span class="mu">${label}</span><b>${value}</b></div>`).join('')}</div><div class="pa-overview-grid"><section class="panel"><h3>Sales overview</h3>${paLiveChart(rows)}</section><section class="panel"><h2>Quick actions</h2>${[[sess.role==='platform'?'applications':'stores','Review stores',sess.role==='platform'?pending.length+' pending applications':'Store information','store'],['catering','Catering requests','Review event inquiries','catering'],[sess.role==='platform'?'finance':'menu',sess.role==='platform'?'Finance & payouts':'Menu & pricing',sess.role==='platform'?'Actual order payment summary':'Saved product pricing','wallet']].map(([key,title,description,icon])=>`<button class="pa-quick" data-pa-nav="${key}">${paIcon(icon)}<span><strong>${title}</strong><small>${esc(description)}</small></span>${paIcon('right')}</button>`).join('')}</section></div><section class="pa-section"><div class="pa-panel-heading"><div><h2>Recent orders</h2><p>Saved orders visible to your account.</p></div><button class="btn s sm" data-pa-nav="orders">View all</button></div>${paTable(['Order','Store','Amount','Status','Action'],rows.slice(0,5).map(o=>`<tr><td>#${esc(o.id.slice(0,8))}</td><td>${esc(paStoreName(o.store_id))}</td><td>${paMoney(paAmount(o))}</td><td>${paPill(o.status)}</td><td><button class="btn s sm" data-pa-live-order="${esc(o.id)}">View order</button></td></tr>`),'No orders yet')}</section><p class="mu sm">Showing up to 500 recent database orders. Totals use the loaded records.</p>`;
+  if(sess.role==='platform'){const section=document.createElement('section');section.className='pa-table-panel pa-section';section.innerHTML='<div class="pa-panel-heading"><div><h2>Store applications</h2><p>Businesses joining Papalita.</p></div><button class="btn s sm" data-pa-nav="applications">View all</button></div><div class="empty"><p>Loading…</p></div>';target.append(section);await paLoadApplications(section,sess.userId);}
+  paBindOrderViews(target,rows);paViewReady();
+ }catch(error){paFailure(target,error,{retry:'overview'});}
+}
+async function paShowOrder(order){
+ const items=await paRows(getAuthClient().from('order_items').select('*').eq('order_id',order.id));
+ paDialog('Order #'+esc(order.id.slice(0,8)),`<p>${esc(order.customer_name||'Customer')}<br>${esc(order.contact_number||'')}<br>${esc(order.delivery_address||order.fulfillment_type||'')}</p>${paPill(order.status)}<p>${paDate(order.created_at)}</p>${items.map(i=>`<div class="row sp" style="padding:10px 0;border-bottom:1px solid var(--pa-line)"><span>${Number(i.quantity||i.qty||1)} × ${esc(i.product_name||i.name||'Product')}</span><b>${paMoney(i.line_total??Number(i.quantity||1)*Number(i.unit_price||0))}</b></div>`).join('')||'<p>No saved line items.</p>'}<div class="row sp" style="margin-top:20px;font-size:17px"><b>Total</b><b>${paMoney(paAmount(order))}</b></div><p>Payment: ${esc(order.payment_method||'—')} · ${esc(order.payment_status||'—')}</p>`);
+}
+function paBindOrderViews(target,rows){$$('[data-pa-live-order]',target).forEach(b=>b.onclick=async()=>{b.disabled=true;try{await paShowOrder(rows.find(o=>o.id===b.dataset.paLiveOrder));}catch(e){toast('Could not open order: '+e.message);}finally{b.disabled=false;}});}
+async function paLiveOrderView(){
+ const target=paLoading('Orders');try{const rows=await paLiveOrders();if(!target.isConnected)return;
+ target.innerHTML=`<div class="row sp wrap" style="margin-bottom:15px"><p class="mu sm">Saved orders, with existing database permissions enforced.</p><button class="btn s sm" data-pa-nav="orders">Refresh</button></div><p class="err" id="pa-order-error" role="alert"></p>${paTable(['Order','Store','Customer','Total','Payment','Status','Action'],rows.map(o=>`<tr><td><b>#${esc(o.id.slice(0,8))}</b><br><small class="mu">${paDate(o.created_at)}</small></td><td>${esc(paStoreName(o.store_id))}</td><td>${esc(o.customer_name||'Customer')}</td><td>${paMoney(paAmount(o))}</td><td>${esc(o.payment_method||'—')}<br>${esc(o.payment_status||'—')}</td><td><select class="in s" data-pa-status="${esc(o.id)}" aria-label="Status of order ${esc(o.id.slice(0,8))}">${[...new Set([o.status,'pending','confirmed','preparing','ready','out_for_delivery','completed','cancelled'])].filter(Boolean).map(s=>`<option value="${esc(s)}" ${s===o.status?'selected':''}>${esc(s.replaceAll('_',' '))}</option>`).join('')}</select></td><td><button class="btn s sm" data-pa-live-order="${esc(o.id)}">View order</button></td></tr>`),'No orders yet')}<p class="mu sm">Showing up to 500 recent orders. Payment status is read from saved records; changing delivery status does not collect or refund money.</p>`;
+ $$('[data-pa-status]',target).forEach(control=>control.onchange=async()=>{const row=rows.find(o=>o.id===control.dataset.paStatus),previous=row.status,next=control.value;
+  if(!await paConfirm('Update order status?','Change order #'+row.id.slice(0,8)+' to '+next.replaceAll('_',' ')+'?','Save status')){control.value=previous;return;}
+  control.disabled=true;try{const saved=await paSaved(getAuthClient().from('orders').update({status:next,updated_at:new Date().toISOString()}).eq('id',row.id).select('*'));row.status=saved.status;paUpdateOrderBadge();toast('Order status saved.');}catch(e){control.value=previous;$('#pa-order-error').textContent=e.message;}finally{control.disabled=false;}
+ });paBindOrderViews(target,rows);paViewReady();
+ }catch(error){paFailure(target,error,{retry:'orders'});}
+}
+async function paLiveMenu(){
+ const target=paLoading('Menu & Pricing');try{const stores=await paStores();paLiveState.stores=stores;let q=getAuthClient().from('products').select('*').order('created_at',{ascending:false});if(sess.role!=='platform'){if(!stores.length){target.innerHTML='<div class="empty"><h3>No stores assigned</h3><p>Your account has no owned store records.</p></div>';return;}q=q.in('store_id',stores.map(s=>s.id));}const rows=await paRows(q);if(!target.isConnected)return;
+ target.innerHTML=`<p class="mu sm">Prices and stock are saved directly to your existing products table.</p><p class="err" id="pa-menu-error" role="alert"></p>${paTable(['Product','Store','Price (₱)','Stock','Status','Action'],rows.map(p=>`<tr data-pa-product="${esc(p.id)}"><td><b>${esc(p.name)}</b><br><small class="mu">${esc(p.category||'Uncategorized')}</small></td><td>${esc(paStoreName(p.store_id))}</td><td><input class="in s" aria-label="Price of ${esc(p.name)}" type="number" min="0.01" step="0.01" value="${Number(p.price)}" data-price style="width:105px"></td><td><input class="in s" aria-label="Stock of ${esc(p.name)}" type="number" min="0" step="1" value="${Number(p.stock||0)}" data-stock style="width:80px"></td><td>${paPill(p.status)}</td><td><button class="btn p sm" data-pa-save-price="${esc(p.id)}">Save</button></td></tr>`),'No products yet')}`;
+ $$('[data-pa-save-price]',target).forEach(b=>b.onclick=async()=>{const row=b.closest('tr'),price=Number(row.querySelector('[data-price]').value),stock=Number(row.querySelector('[data-stock]').value);if(!Number.isFinite(price)||price<=0||!Number.isInteger(stock)||stock<0)return toast('Enter a valid price and whole-number stock.');b.disabled=true;try{await paSaved(getAuthClient().from('products').update({price,stock,updated_at:new Date().toISOString()}).eq('id',b.dataset.paSavePrice).select('*'));toast('Price and stock saved.');}catch(e){$('#pa-menu-error').textContent=e.message;}finally{b.disabled=false;}});paViewReady();
+ }catch(error){paFailure(target,error,{retry:'menu'});}
+}
+async function paLiveCategories(){
+ const target=paLoading('Categories');try{const rows=await paRows(getAuthClient().from('products').select('id,category'));if(!target.isConnected)return;const groups=new Map();rows.forEach(p=>groups.set(p.category||'Uncategorized',(groups.get(p.category||'Uncategorized')||0)+1));target.innerHTML='<p class="mu sm">Categories used by saved products. Edit a product to change its category.</p>'+paTable(['Category','Products'],[...groups].map(([name,count])=>`<tr><td>${esc(name)}</td><td>${count}</td></tr>`),'No product categories yet');paViewReady();}catch(error){paFailure(target,error,{retry:'cats'});}
+}
+async function paLiveUsers(){
+ const target=paLoading('Users');try{const [profiles,roles]=await Promise.all([paRows(getAuthClient().from('profiles').select('*')),paRows(getAuthClient().from('user_roles').select('*'))]);if(!target.isConnected)return;
+ const ids=[...new Set([...profiles.map(p=>p.id||p.user_id),...roles.map(r=>r.user_id)].filter(Boolean))];target.innerHTML='<p class="note">Accounts visible to your authorized session. Role changes require a protected administrator function; this page does not grant access.</p>'+paTable(['Name','Contact','Roles','Account ID'],ids.map(id=>{const p=profiles.find(p=>(p.id||p.user_id)===id)||{};return `<tr><td>${esc(p.full_name||p.name||'—')}</td><td>${esc(p.phone||p.email||'—')}</td><td>${esc(roles.filter(r=>r.user_id===id).map(r=>r.role).join(', ')||'—')}</td><td><small>${esc(id)}</small></td></tr>`;}),'No accounts visible');paViewReady();}catch(error){paFailure(target,error,{retry:'users'});}
+}
+async function paLiveCatering(){
+ const target=paLoading('Catering requests');try{const stores=await paStores();paLiveState.stores=stores;let q=getAuthClient().from('catering_requests').select('*').order('created_at',{ascending:false});if(sess.role!=='platform'){if(!stores.length){target.innerHTML='<div class="empty"><h3>No stores assigned</h3></div>';return;}q=q.in('store_id',stores.map(s=>s.id));}const rows=await paRows(q);if(!target.isConnected)return;
+ target.innerHTML=`<p class="err" id="pa-catering-error" role="alert"></p>${paTable(['Reference','Store','Customer','Event','Guests','Package','Status'],rows.map(q=>`<tr><td>#${esc(q.id.slice(0,8))}</td><td>${esc(paStoreName(q.store_id))}</td><td>${esc(q.customer_name)}<br>${esc(q.customer_phone||'')}</td><td>${esc(q.event_type||'')}<br>${esc(q.event_date||'')} ${esc(q.event_time||'')}</td><td>${esc(q.guests||'')}</td><td>${esc(q.package||'')}</td><td><select class="in s" data-pa-catering="${esc(q.id)}" aria-label="Status of catering request ${esc(q.id.slice(0,8))}">${['pending','confirmed','cancelled'].map(s=>`<option ${q.status===s?'selected':''}>${s}</option>`).join('')}</select></td></tr>`),'No catering requests yet')}`;
+ $$('[data-pa-catering]',target).forEach(el=>el.onchange=async()=>{const row=rows.find(q=>q.id===el.dataset.paCatering),previous=row.status;el.disabled=true;try{const saved=await paSaved(getAuthClient().from('catering_requests').update({status:el.value}).eq('id',row.id).select('*'));row.status=saved.status;toast('Catering status saved.');}catch(e){el.value=previous;$('#pa-catering-error').textContent=e.message;}finally{el.disabled=false;}});paViewReady();
+ }catch(error){paFailure(target,error,{retry:'catering'});}
+}
+async function paLiveStores(){
+ const target=paLoading('Store contacts');try{const rows=await paStores();if(!target.isConnected)return;target.innerHTML=paTable(['Store','Description','Address','Contact','Status'],rows.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.description||'—')}</td><td>${esc(s.address||'—')}</td><td>${esc(s.phone||s.mobile||'—')}</td><td>${paPill(s.status)}</td></tr>`),'No stores visible');paViewReady();}catch(error){paFailure(target,error,{retry:'stores'});}
+}
+async function paLiveFinance(kind='finance'){
+ const target=paLoading(kind==='cash'?'Cash remittance':kind==='refunds'?'Refund queue':'Finance & Payouts');try{let rows=await paLiveOrders();if(!target.isConnected)return;
+ if(kind==='cash')rows=rows.filter(o=>['cod','cash','cash_on_delivery'].includes(String(o.payment_method||'').toLowerCase()));
+ if(kind==='refunds')rows=rows.filter(o=>['refund_pending','refund_requested','refunded','partially_refunded'].includes(o.payment_status)||['requested','pending','processing','completed'].includes(o.refund_status));
+ const paid=rows.filter(o=>['paid','settled','completed'].includes(o.payment_status)),total=paid.reduce((n,o)=>n+paAmount(o),0);
+ target.innerHTML=`<p class="note">${kind==='refunds'?'Refund statuses below come from saved order records. Processing a real refund requires your connected payment provider.':kind==='cash'?'Cash orders and their saved payment statuses. Remittance confirmation requires an existing verified remittance service.':'Actual order payment records. Bank, wallet payouts and settlement actions require a connected payment provider.'} No payment status is simulated or marked paid by this page.</p><div class="kpis"><div class="kpi"><span class="mu">Visible orders</span><b>${rows.length}</b></div><div class="kpi"><span class="mu">Recorded paid amount</span><b>${paMoney(total)}</b></div></div>${paTable(['Order','Store','Total','Payment method','Payment status','Order status'],rows.map(o=>`<tr><td>#${esc(o.id.slice(0,8))}</td><td>${esc(paStoreName(o.store_id))}</td><td>${paMoney(paAmount(o))}</td><td>${esc(o.payment_method||'—')}</td><td>${paPill(o.payment_status||'unknown')}</td><td>${paPill(o.status)}</td></tr>`),kind==='refunds'?'No saved refund requests':'No payment records yet')}`;paViewReady();
+ }catch(error){paFailure(target,error,{retry:kind});}
+}
+async function paLiveFees(){
+ const target=paLoading('Delivery fees');try{const rows=await paRows(getAuthClient().from('papalita_delivery_fees').select('*').order('barangay'));if(!target.isConnected)return;
+ target.innerHTML=`<p class="mu sm">Saved delivery-zone fees. Customer checkout must use this same table before these fees affect orders.</p><p class="err" id="pa-fees-error" role="alert"></p>${paTable(['Barangay','Fee (₱)','Extra minutes','Distance (km)','Action'],rows.map(r=>`<tr data-zone="${esc(r.barangay)}"><td>${esc(r.barangay)}</td><td><input class="in s" aria-label="${esc(r.barangay)} fee" data-fee type="number" min="0" step="0.01" value="${Number(r.fee)}" style="width:90px"></td><td><input class="in s" aria-label="${esc(r.barangay)} extra minutes" data-minutes type="number" min="0" value="${Number(r.extra_minutes)}" style="width:80px"></td><td><input class="in s" aria-label="${esc(r.barangay)} distance" data-km type="number" min="0" step="0.1" value="${Number(r.distance_km)}" style="width:80px"></td><td><button class="btn p sm" data-save-zone>Save</button></td></tr>`),'No delivery fees saved')}<section class="panel"><h3>Add delivery zone</h3><form id="pa-zone-form" class="two"><div class="field"><label for="pa-zone-name">Barangay</label><select class="in" id="pa-zone-name" name="barangay">${['Alipao','Anahaw','Budlingin','Camp Eduard','Ferlda','Gamuton','Julio Ouano','Ombong','Poblacion','Pongtud','San Juan','San Pedro'].filter(n=>!rows.some(r=>r.barangay===n)).map(n=>`<option>${n}</option>`).join('')}</select></div><div class="field"><label for="pa-zone-fee">Delivery fee (₱)</label><input class="in" id="pa-zone-fee" name="fee" type="number" min="0" step="0.01" required></div><div class="field"><label for="pa-zone-minutes">Extra minutes</label><input class="in" id="pa-zone-minutes" name="extra_minutes" type="number" min="0" step="1" required></div><div class="field"><label for="pa-zone-km">Distance (km)</label><input class="in" id="pa-zone-km" name="distance_km" type="number" min="0" step="0.1" required></div><button class="btn p" ${rows.length>=12?'disabled':''}>Save delivery zone</button></form></section>`;
+ const valid=p=>Number.isFinite(p.fee)&&p.fee>=0&&p.fee<=500&&Number.isInteger(p.extra_minutes)&&p.extra_minutes>=0&&p.extra_minutes<=120&&Number.isFinite(p.distance_km)&&p.distance_km>=0&&p.distance_km<=50;
+ $$('[data-save-zone]',target).forEach(b=>b.onclick=async()=>{const row=b.closest('tr'),p={fee:Number(row.querySelector('[data-fee]').value),extra_minutes:Number(row.querySelector('[data-minutes]').value),distance_km:Number(row.querySelector('[data-km]').value)};if(!valid(p))return toast('Check the fee, whole-number minutes and distance.');b.disabled=true;try{await paSaved(getAuthClient().from('papalita_delivery_fees').update(p).eq('barangay',row.dataset.zone).select('*'));toast('Delivery fee saved.');}catch(e){$('#pa-fees-error').textContent=e.message;}finally{b.disabled=false;}});
+ $('#pa-zone-form').onsubmit=async event=>{event.preventDefault();const form=event.currentTarget,p=Object.fromEntries(new FormData(form));['fee','extra_minutes','distance_km'].forEach(k=>p[k]=Number(p[k]));if(!valid(p))return toast('Check the fee, minutes and distance.');const b=form.querySelector('button');b.disabled=true;try{await paSaved(getAuthClient().from('papalita_delivery_fees').insert(p).select('*'));toast('Delivery zone saved.');V.fees();}catch(e){$('#pa-fees-error').textContent=e.message;b.disabled=false;}};paViewReady();
+ }catch(error){paFailure(target,error,{setup:paNeedsSetup(error),retry:'fees'});}
+}
+async function paLiveAnalytics(){
+ const target=paLoading('Reports');try{const rows=await paLiveOrders();if(!target.isConnected)return;const completed=rows.filter(o=>['completed','delivered'].includes(paStatus(o))),by=new Map();completed.forEach(o=>by.set(o.store_id,(by.get(o.store_id)||0)+paAmount(o)));target.innerHTML=`<section class="panel"><h3>Completed sales · last 14 days</h3>${paLiveChart(rows)}</section>${paTable(['Store','Completed sales'],[...by].sort((a,b)=>b[1]-a[1]).map(([id,value])=>`<tr><td>${esc(paStoreName(id))}</td><td>${paMoney(value)}</td></tr>`),'No completed sales yet')}<p class="mu sm">Reports use up to 500 recent database orders. No sample figures are included.</p>`;paViewReady();}catch(error){paFailure(target,error,{retry:'analytics'});}
+}
+
 bootAuth();
 })();
 </script>
