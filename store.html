@@ -1357,6 +1357,7 @@ function client(){
   if(!c?.url||!c?.anonKey||!window.supabase?.createClient)throw Error('Supabase configuration/client missing. Check js/config.js and internet.');
   return window.PAPALITA_DB=window.supabase.createClient(c.url,c.anonKey);
 }
+const { $, $$, esc, peso, toast, printHTML } = OPS;
 function registerForm(){location.assign('https://papalitaoriginal.netlify.app/apply/?role=store');}
 function pendingMessage(message){$('#root').innerHTML=`<main><div class="panel" style="max-width:550px;margin:10vh auto"><img class="form-mark" src="${LOGO.mark}" alt="Papalita"><h1>Store application</h1><p>${esc(message)}</p><button class="btn p blk" id="loginBack">Go to sign in</button></div></main>`;$('#loginBack').onclick=()=>gate();}
 function gate(message=''){
