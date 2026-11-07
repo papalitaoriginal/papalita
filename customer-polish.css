@@ -42,8 +42,8 @@ main{max-width:1320px;padding-inline:20px}
 .pp-food-slide .ph img{object-fit:cover}
 .pp-food-caption{position:absolute;inset:auto 0 0;padding:45px 17px 16px;background:linear-gradient(transparent,#102b20cc);color:#fff}
 .pp-food-caption b{display:block;font-size:15px;line-height:1.4}.pp-food-caption small{display:block;font-size:10px;color:#e4ecdf;margin-top:4px}
-.pp-food-controls{position:absolute;right:12px;top:12px;z-index:3;display:flex;align-items:center;gap:3px;padding:1px 4px;background:#fffffff2;border:1px solid #ffffffaa;border-radius:20px}
-.pp-food-controls button{display:grid;place-items:center;width:32px;height:32px;border-radius:50%}
+.pp-food-controls{position:absolute;right:12px;top:12px;z-index:3;display:flex;align-items:center;max-width:calc(100% - 24px);overflow-x:auto;scrollbar-width:none;gap:3px;padding:1px 4px;background:#fffffff2;border:1px solid #ffffffaa;border-radius:20px}
+.pp-food-controls button{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%}
 .pp-food-controls button::after{content:'';height:6px;width:6px;background:#aebcae;border-radius:50%}
 .pp-food-controls button[aria-pressed=true]::after{background:var(--or);width:16px;border-radius:6px}
 .pp-float-note{position:absolute;left:-22px;bottom:27px;z-index:2;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e4eadf;border-radius:12px;padding:12px 15px;box-shadow:0 10px 24px #102b2010;animation:pp-float 5s ease-in-out infinite;pointer-events:none}
