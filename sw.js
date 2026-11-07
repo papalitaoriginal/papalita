@@ -1,7 +1,8 @@
 /* Only public static files are cached. Supabase requests always use the network. */
-const CACHE = 'papalita-customer-ui-20261107-order-placed-v4';
+importScripts('./js/order-status.js?v=20261107-customer-v5');
+const CACHE = 'papalita-customer-ui-20261107-customer-v5';
 const ASSETS = ['./index.html','./customer-polish.css','./manifest.webmanifest',
- './js/notifications.js','./js/app.js','./js/config.js','./js/supabase.js','./js/customer-data.js',
+ './js/notifications.js','./js/order-status.js','./js/app.js','./js/config.js','./js/supabase.js','./js/customer-data.js',
  './js/customer-motion.js','./js/customer-install.js','./js/customer-legal.js',
  './images/papalita_mark_color.png','./images/papalita_full_white.png',
  './images/papalita-icon-192-v2.png','./images/papalita-icon-512-v2.png'];
@@ -38,8 +39,13 @@ self.addEventListener('push', event => {
       ? './'+data.url.replace(/^\.\//,'') : './#/orders';
   const routeOrder=safeUrl.match(/^\.\/#\/track\/([0-9a-f-]{36})(?:\?|$)/i)?.[1];
   const notificationOrderId=orderId||routeOrder;
+  const title = String(data.title || 'Papalita');
+  const body = String(data.body || 'You have an order update.');
+  const [heading, message] = notificationOrderId || data.type === 'order'
+    ? self.PapalitaOrderStatus.message(title, body, data)
+    : [title, body];
   const options = {
-    body: String(data.body || 'You have an order update.'),
+    body: message,
     icon: './images/papalita-icon-192-v2.png',
     badge: './images/papalita-icon-192-v2.png',
     // Foreground and background updates share one phone card per actual order.
@@ -47,7 +53,7 @@ self.addEventListener('push', event => {
     renotify:!!notificationOrderId,
     data:{url:safeUrl,order_id:notificationOrderId||null}
   };
-  event.waitUntil(self.registration.showNotification(String(data.title || 'Papalita'), options));
+  event.waitUntil(self.registration.showNotification(heading, options));
 });
 self.addEventListener('notificationclick', event => {
   event.notification.close();
