@@ -266,6 +266,7 @@ html[data-pa-theme=dark]{--pa-bg:#121a15;--pa-surface:#1c271f;--pa-soft:#253128;
 <script src="js/images.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ops.js"></script><script src="js/product-options.js"></script>
+<script src="js/partner-admin.js"></script>
 
 <script>
 (()=>{'use strict';
@@ -623,6 +624,7 @@ const TABS=[
   ['refunds','Refund queue',1],
   ['fees','Delivery fees',1],
   ['stores','Store contacts'],
+  ['partner-applications','Partner applications',1],
   ['applications','Store approvals',1],
   ['availability','Store availability',1],
   ['inventory','All products (Supabase)',1],
@@ -642,6 +644,7 @@ const ICONS={
   refunds:'↩️',
   fees:'🛵',
   stores:'📞',
+  'partner-applications':'📋',
   applications:'🏪',
   availability:'🚨',
   inventory:'🍔',
@@ -812,8 +815,8 @@ const paIcons={
  cash:'<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M5 9h1M18 15h1"/>',refund:'<path d="M3 9h10a7 7 0 1 1-6 11M3 9l5-5M3 9l5 5"/>'
 };
 const paIcon=n=>`<svg class="pa-icon" viewBox="0 0 24 24" aria-hidden="true">${paIcons[n]||paIcons.menu}</svg>`;
-const paLabels={overview:'Dashboard',orders:'Orders',inventory:'Products',menu:'Menu & Pricing',catering:'Catering requests',finance:'Finance & Payouts',analytics:'Reports',applications:'Store approvals',availability:'Store availability',stores:'Store contacts',users:'Users',cats:'Categories',promos:'Promo codes',cash:'Cash remittance',refunds:'Refund queue',fees:'Delivery fees',appearance:'Appearance'};
-const paIconNames={overview:'dashboard',inventory:'products',finance:'wallet',analytics:'report',applications:'store',availability:'store',stores:'store',cats:'products',promos:'tag',cash:'cash',refunds:'refund',fees:'settings'};
+const paLabels={overview:'Dashboard',orders:'Orders',inventory:'Products',menu:'Menu & Pricing',catering:'Catering requests',finance:'Finance & Payouts',analytics:'Reports','partner-applications':'Partner Applications',applications:'Store approvals',availability:'Store availability',stores:'Store contacts',users:'Users',cats:'Categories',promos:'Promo codes',cash:'Cash remittance',refunds:'Refund queue',fees:'Delivery fees',appearance:'Appearance'};
+const paIconNames={overview:'dashboard',inventory:'products',finance:'wallet',analytics:'report','partner-applications':'store',applications:'store',availability:'store',stores:'store',cats:'products',promos:'tag',cash:'cash',refunds:'refund',fees:'settings'};
 let paPrefs={mode:'light',accent:'green'};
 try{paPrefs={...paPrefs,...JSON.parse(localStorage.getItem('papalita.admin.appearance.v1')||'{}')};}catch(_){}
 let paMobileOpen=false;
@@ -873,7 +876,7 @@ draw=function(){
  if(!paAllowed(tab))tab='overview';
  const name=sess.role==='platform'?'Platform admin':(R(sess.rid)?.name||'Store manager');
  const label=paLabels[tab]||'Dashboard';document.title=`Papalita Admin · ${label}`;
- $('#root').innerHTML=`<div class="pa-shell"><div class="pa-menu-shade" data-pa-close></div><aside class="pa-sidebar" id="pa-navigation" aria-label="Main navigation"><button class="pa-icon-button pa-menu-close" data-pa-close aria-label="Close navigation">${paIcon('close')}</button><a class="pa-brand" href="#overview" data-pa-nav="overview"><img class="pa-mark" src="${LOGO.mark}" alt=""><span><strong>Papalita</strong><small>ADMIN PORTAL</small></span></a><div class="pa-workspace-label">${paIcon('store')}<span>${esc(sess.role==='platform'?'Platform workspace':'Store workspace')}</span></div><p class="pa-label">Workspace</p><nav>${['overview','orders','inventory','menu','catering','finance','analytics'].map(paNav).join('')}</nav>${paGroup('management','Store management',['applications','availability','stores','users'])}${paGroup('tools','More tools',['cats','promos','cash','refunds','fees'])}<div class="pa-sidebar-bottom">${paNav('appearance')}<a class="pa-nav" href="index.html">${paIcon('arrow')}Customer app</a><div class="pa-owner"><span class="pa-avatar">${esc(name.slice(0,1))}</span><div><strong>${esc(name)}</strong><small title="${esc(sess.email||'')}">${esc(sess.email||'Authorized account')}</small></div><button class="pa-icon-button pa-signout" data-pa-out aria-label="Sign out">${paIcon('logout')}</button></div></div></aside><div class="pa-main"><header class="pa-topbar"><div class="pa-breadcrumb"><button class="pa-icon-button pa-menu-toggle" id="pa-nav-toggle" data-pa-menu aria-label="Open navigation" aria-controls="pa-navigation" aria-expanded="false">${paIcon('hamburger')}</button><span>Workspace</span>${paIcon('right')}<strong>${esc(label)}</strong></div><div class="pa-top-actions"><span class="pa-date">${new Date().toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'})}</span><button class="pa-icon-button" data-pa-help aria-label="Help and support">${paIcon('help')}</button><button class="pa-icon-button pa-avatar" data-pa-account aria-label="Your account">${esc(name.slice(0,1))}</button></div></header><div class="pa-workspace"><main id="b"></main><footer class="pa-footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span>Admin workspace</span></footer></div></div></div>`;
+ $('#root').innerHTML=`<div class="pa-shell"><div class="pa-menu-shade" data-pa-close></div><aside class="pa-sidebar" id="pa-navigation" aria-label="Main navigation"><button class="pa-icon-button pa-menu-close" data-pa-close aria-label="Close navigation">${paIcon('close')}</button><a class="pa-brand" href="#overview" data-pa-nav="overview"><img class="pa-mark" src="${LOGO.mark}" alt=""><span><strong>Papalita</strong><small>ADMIN PORTAL</small></span></a><div class="pa-workspace-label">${paIcon('store')}<span>${esc(sess.role==='platform'?'Platform workspace':'Store workspace')}</span></div><p class="pa-label">Workspace</p><nav>${['overview','orders','inventory','menu','catering','finance','analytics'].map(paNav).join('')}</nav>${paGroup('management','Store management',['partner-applications','applications','availability','stores','users'])}${paGroup('tools','More tools',['cats','promos','cash','refunds','fees'])}<div class="pa-sidebar-bottom">${paNav('appearance')}<a class="pa-nav" href="index.html">${paIcon('arrow')}Customer app</a><div class="pa-owner"><span class="pa-avatar">${esc(name.slice(0,1))}</span><div><strong>${esc(name)}</strong><small title="${esc(sess.email||'')}">${esc(sess.email||'Authorized account')}</small></div><button class="pa-icon-button pa-signout" data-pa-out aria-label="Sign out">${paIcon('logout')}</button></div></div></aside><div class="pa-main"><header class="pa-topbar"><div class="pa-breadcrumb"><button class="pa-icon-button pa-menu-toggle" id="pa-nav-toggle" data-pa-menu aria-label="Open navigation" aria-controls="pa-navigation" aria-expanded="false">${paIcon('hamburger')}</button><span>Workspace</span>${paIcon('right')}<strong>${esc(label)}</strong></div><div class="pa-top-actions"><span class="pa-date">${new Date().toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'})}</span><button class="pa-icon-button" data-pa-help aria-label="Help and support">${paIcon('help')}</button><button class="pa-icon-button pa-avatar" data-pa-account aria-label="Your account">${esc(name.slice(0,1))}</button></div></header><div class="pa-workspace"><main id="b"></main><footer class="pa-footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span>Admin workspace</span></footer></div></div></div>`;
  $$('[data-pa-group]').forEach(el=>el.addEventListener('toggle',()=>{paGroups[el.dataset.paGroup]=el.open;}));
  const render=tab==='appearance'?paAppearance:(V[tab]||V.overview);
  const result=render();paPolish();
@@ -1194,6 +1197,11 @@ function paRenderReports(target,orders,stores,selection){
 async function paLiveReportView(){
  const target=paLoading('Reports');try{const rows=await paLiveOrders();if(!target.isConnected)return;const selection=paReportSelection||paReportPreset('14');paRenderReports(target,rows,paLiveState.stores,selection);}catch(error){paFailure(target,error,{retry:'analytics'});}
 }
+
+V['partner-applications']=()=>window.PapalitaPartnerAdmin.open({
+  db:getAuthClient(), target:paLoading('Partner Applications'), esc, toast,
+  confirm:paConfirm, active:()=>tab==='partner-applications'&&sess?.role==='platform'
+});
 
 bootAuth();
 })();
