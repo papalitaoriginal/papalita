@@ -1,7 +1,7 @@
 /* Only public static files are cached. Supabase requests always use the network. */
-const CACHE = 'papalita-customer-ui-20261107-notifications-v2';
+const CACHE = 'papalita-customer-ui-20261107-order-placed-v4';
 const ASSETS = ['./index.html','./customer-polish.css','./manifest.webmanifest',
- './js/notifications.js','./js/app.js','./js/config.js','./js/supabase.js','./js/images.js','./js/data.js',
+ './js/notifications.js','./js/app.js','./js/config.js','./js/supabase.js','./js/customer-data.js',
  './js/customer-motion.js','./js/customer-install.js','./js/customer-legal.js',
  './images/papalita_mark_color.png','./images/papalita_full_white.png',
  './images/papalita-icon-192-v2.png','./images/papalita-icon-512-v2.png'];
@@ -36,12 +36,16 @@ self.addEventListener('push', event => {
   const safeUrl = orderId ? './#/track/' + orderId :
     typeof data.url === 'string' && /^(?:\.\/)?#\/[a-z0-9/?=&_-]*$/i.test(data.url)
       ? './'+data.url.replace(/^\.\//,'') : './#/orders';
+  const routeOrder=safeUrl.match(/^\.\/#\/track\/([0-9a-f-]{36})(?:\?|$)/i)?.[1];
+  const notificationOrderId=orderId||routeOrder;
   const options = {
     body: String(data.body || 'You have an order update.'),
     icon: './images/papalita-icon-192-v2.png',
     badge: './images/papalita-icon-192-v2.png',
-    tag: String(data.tag || orderId || 'papalita-update'),
-    data: {url: safeUrl}
+    // Foreground and background updates share one phone card per actual order.
+    tag:notificationOrderId?'papalita-order:'+notificationOrderId:String(data.tag||'papalita-update'),
+    renotify:!!notificationOrderId,
+    data:{url:safeUrl,order_id:notificationOrderId||null}
   };
   event.waitUntil(self.registration.showNotification(String(data.title || 'Papalita'), options));
 });
