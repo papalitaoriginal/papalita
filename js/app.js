@@ -1,23 +1,17 @@
-/* Papalita PWA install prompt: capture before asynchronous catalogue/auth startup. */
-window.PAPALITA_INSTALL_PROMPT = window.PAPALITA_INSTALL_PROMPT || null;
-window.addEventListener('beforeinstallprompt', event => {
-  event.preventDefault();
-  window.PAPALITA_INSTALL_PROMPT = event;
-  window.dispatchEvent(new Event('papalita-install-ready'));
-});
-window.addEventListener('appinstalled', () => {
-  window.PAPALITA_INSTALL_PROMPT = null;
-});
 /* Foodie web app (PWA). Vanilla ES modules-free build so it runs from any static host.
    Layers: utils -> store -> domain (cart/pricing/orders) -> services (gateway/api) -> UI screens -> router. */
 // Papalita startup fix - 2026-10-26
 (async () => {
 'use strict';
 const C = window.FOODIE_CONFIG, RS = window.RESTAURANTS, CATS = window.CATEGORIES;
+let catalogueError = '';
+
 // Load the online catalogue before rendering the customer menu.
 try {
-  if (typeof window.loadPapalitaProducts === 'function') {
+  if (typeof window.loadPapalitaProducts !== 'function') throw Error('Supabase catalogue is not configured.');
+  {
     const serverStores = await window.loadPapalitaProducts();
+    if (!Array.isArray(serverStores)) throw Error('The store catalogue could not be read.');
 
     const normalize = value =>
       String(value ?? '')
@@ -78,6 +72,8 @@ try {
       target.cover = online.cover || online.logo_url || '';
       target.logo_url = online.logo_url || '';
       target.placeholder = false;
+      target.rating = null; target.reviews = ''; target.reviewsList = []; target.promo = null; target.feature = null; target.stay = false;
+      target.verifiedHours = !!(online.open_time && online.close_time);
     };
 
     // Include newly approved Supabase stores not present in the old local sample catalogue.
@@ -93,7 +89,7 @@ try {
         RS.push({
           id: String(onlineStore.id), name: onlineStore.name,
           kind: businessLabel(onlineStore.business_type), cat: items[0]?.cat || 'rice',
-          rating: 5, reviews: 'New', eta: [25, 40], min: 0,
+          rating: null, reviews: '', eta: [25, 40], min: 0,
           hours: [hour(onlineStore.open_time, '08:00'), hour(onlineStore.close_time, '21:00')], dx: 0, dy: 0,
           cover: onlineStore.cover || onlineStore.logo_url || '', addr: onlineStore.address || 'Alegria, Surigao del Norte',
           phone: onlineStore.phone || '', messenger: '', placeholder: false, catering: canCater(onlineStore),
@@ -155,14 +151,19 @@ synced++;
     );
   }
 } catch (error) {
+  RS.splice(0); catalogueError = 'Stores could not load. Check your connection and refresh to try again.';
   console.error(
     '[Papalita] Customer catalogue sync failed:',
     error
   );
 }
+// Only actual menu categories. Keep product-specific category names from Supabase.
+const suppliedCategories = new Map(CATS.map(c => [String(c.id), c]));
+const categoryIds = [...new Set(RS.flatMap(r => r.items || []).map(i => String(i.cat || 'other')))];
+CATS.splice(0, CATS.length, ...categoryIds.map(id => ({id, name:suppliedCategories.get(id)?.name || id.replace(/[_-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), img:suppliedCategories.get(id)?.img || ''})));
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const peso = n => '₱' + Math.round(n).toLocaleString('en-PH');
+const peso = n => '₱' + (Number(n) || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
 const delay = ms => new Promise(r => setTimeout(r, ms));
 const uid = p => p + Math.random().toString(36).slice(2, 8);
 const ICONS = {
@@ -229,7 +230,7 @@ const isOpen = r => { if (r.closed) return false; const o = toMin(r.hours[0]), c
 const hoursText = r => r.hours[0] === '00:00' && r.hours[1] === '24:00' ? 'Open 24 hours' : `${fmtT(r.hours[0])} – ${fmtT(r.hours[1])}`;
 const dist = r => Math.hypot(r.dx, r.dy) + brg().km;
 const defSel = item => { const s = {}; (item.opts||[]).forEach(g => { if (g.req && g.ch?.length) s[g.id] = [g.ch[0].n]; }); return s; };
-const unitPrice = (item, sel) => item.price + (item.opts||[]).reduce((a, g) => a + (sel[g.id] || []).reduce((b, n) => b + ((g.ch.find(c => c.n === n) || {}).p || 0), 0), 0);
+const unitPrice = (item, sel) => Number(item.price) + (item.opts||[]).reduce((a, g) => a + (sel[g.id] || []).reduce((b, n) => b + Number((g.ch.find(c => c.n === n) || {}).p || 0), 0), 0);
 const selText = l => Object.values(l.sel || {}).flat().join(', ');
 const validPromo = (p, sub, rid) => { if (!p || p.active === false) return 'This code is no longer active.'; if (p.exp && new Date(p.exp + 'T23:59:59+08:00') < new Date()) return 'This code has expired.'; if (p.rid && p.rid !== rid) return `Only valid for ${R(p.rid)?.name || "another store"} orders.`; if (sub < p.min) return `Add ${peso(p.min - sub)} more to use ${p.code}.`; return ''; };
 function calc(cart = S.cart, code = S.promo) {
@@ -283,7 +284,7 @@ function mergeStore() { let st; try { st = JSON.parse(localStorage.getItem(KEY))
   (st.notes || []).forEach(n => { if (!S.notes.find(x => x.id === n.id)) { S.notes.push(n); ch = true; } }); S.notes.sort((a, b) => b.at - a.at);
   if (ch) { save(); updateChrome(); if (/^\/(orders|order\/|notifications|catering)/.test(curPath()) && !sheetEl && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName)) render(); } return ch; }
 window.addEventListener('storage', e => { if (e.key === KEY) mergeStore(); });
-setInterval(() => { mergeStore(); let ch = false; S.orders.filter(o => o.demo !== false).forEach(o => { const s = stageOf(o); if (s >= 0 && (o.notified ?? -1) < s) { o.notified = s; if (s > 0) notify('order', `${STEPS[s][0]} · ${o.id}`, STEPS[s][1], o.uid || 'demo'); ch = true; } }); if (ch) { save(); updateChrome(); } }, 2000);
+// Legacy timed order progression is disabled. Existing live tracking reads Supabase.
 
 /* ---------- services ---------- */
 const Gateway = { async pay(order, method) {            // payment adapter: demo now, server endpoint in production
@@ -304,19 +305,20 @@ function confirmDlg(msg, okLabel = 'Confirm', danger) { return new Promise(res =
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); if (e.key === 'Tab' && sheetEl) { const f = $$('button,input,select,textarea,a[href]', sheetEl).filter(x => !x.disabled); if (!f.length) return; const a = f[0], z = f[f.length - 1]; if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } } });
 const pageHead = (t, back = true, right = '') => `<div class="pg-h">${back ? `<button class="ib" data-a="back" aria-label="Go back">${ic('back')}</button>` : ''}<h1 class="grow">${esc(t)}</h1>${right}</div>`;
 const emptyState = (icn, t, b, btn, a) => `<div class="empty"><div class="big">${ic(icn, 38)}</div><h3>${esc(t)}</h3><p>${esc(b)}</p>${btn ? `<button class="btn p" data-a="${a}">${esc(btn)}</button>` : ''}</div>`;
-const stars = (r, rv) => `<span class="rt">${ic('star', 15, 'star')}${r}${rv ? ` <span class="mu" style="font-weight:500">(${rv})</span>` : ''}</span>`;
+const stars = (r, rv) => r == null || !Number.isFinite(Number(r)) ? '' : `<span class="rt">${ic('star', 15, 'star')}${r}${rv ? ` <span class="mu" style="font-weight:500">(${rv})</span>` : ''}</span>`;
 const initial = () => esc((S.user.name || 'U').trim()[0].toUpperCase());
 const avatar = () => `<span class="avatar">${S.user.photo ? `<img src="${esc(S.user.photo)}" alt="">` : initial()}</span>`;
 const hrt = (kind, id) => { const on = S.fav[kind].includes(id); return `<button class="ib w hrt" data-a="fav" data-k="${kind}" data-id="${id}" aria-pressed="${on}" aria-label="${on ? 'Remove from' : 'Add to'} favorites">${ic('heart', 20, on ? 'on' : '')}</button>`; };
-function dishCard(x) { const { item: i, rest: r } = x, on = i.available && isOpen(r);
-  return `<article class="card" tabindex="0" role="link" data-a="item" data-id="${i.id}" aria-label="${esc(i.name)} from ${esc(r.name)}">
-  ${i.best ? `<span class="tag">${ic('flame', 13)}Bestseller</span>` : ''}${hrt('items', i.id)}${photo(i.img, `${i.name} from ${r.name}`)}
-  <div class="bd"><div class="nm"><span>${esc(i.name)}</span>${ic('chev', 18, 'mu')}</div><div class="meta">${esc(r.name)} • ${esc(r.kind)}</div>
-  <div class="row g sm">${stars(i.r || r.rating, i.rv || r.reviews)}</div>
-  <div class="ft"><span class="row g sm mu">${ic('clock', 15)}${etaOf(r)[0]}–${etaOf(r)[1]} min</span><span class="pr">${peso(i.price)}</span><button class="add" data-a="quick" data-id="${i.id}" ${on ? '' : 'disabled'} aria-label="Quick add ${esc(i.name)} to cart">${ic('plus', 20)}</button></div></div></article>`; }
-function restCard(r) { const op = isOpen(r), tag = r.promo ? (r.promo === 'FREEDEL' ? 'FREE DELIVERY' : 'USE ' + r.promo) : '';
-  return `<article class="card big" tabindex="0" role="link" data-a="rest" data-id="${r.id}" aria-label="${esc(r.name)}">${hrt('rests', r.id)}<span class="rpill">${ic('star', 15, 'star')}${r.rating} <span class="mu" style="font-weight:500">(${r.reviews})</span></span>${tag ? `<span class="ftag">${tag}</span>` : ''}${photo(r.cover, r.name + ' food')}
-  <div class="bd"><h3>${esc(r.name)}</h3><div class="meta2"><span class="gt">${ic('clock', 17)}${etaOf(r)[0]}–${etaOf(r)[1]} min</span><i></i><span>${esc(r.kind)}</span><i></i><span>${op ? peso(feeOf(r)) + ' delivery' : 'Closed'}</span></div></div></article>`; }
+function dishCard({item:i,rest:r}) {
+  const available = i.available && isOpen(r);
+  return `<article class="card" data-reveal tabindex="0" role="link" data-a="item" data-id="${esc(i.id)}" aria-label="${esc(i.name)} from ${esc(r.name)}">
+    ${hrt('items',i.id)}${photo(i.img, `${i.name} from ${r.name}`)}<div class="bd"><div class="nm"><span>${esc(i.name)}</span></div><div class="meta">${esc(r.name)}</div>
+    <div class="ft"><span class="pr">${peso(i.price)}</span><button class="add" data-a="quick" data-id="${esc(i.id)}" ${available?'':'disabled'} aria-label="Add ${esc(i.name)} to cart">${ic('plus',19)}</button></div>${available?'':`<span class="pp-stock">${!i.available?'Sold out':'Store closed'}</span>`}</div></article>`;
+}
+function restCard(r) {
+  const op = isOpen(r);
+  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}">${hrt('rests',r.id)}<span class="pp-store-state ${op?'':'pp-store-closed'}">${op?'Open':'Closed'}</span>${photo(r.cover, `${r.name} store photo`)}<div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div></div></article>`;
+}
 
 /* ---------- router ---------- */
 let timers = [], first = true;
@@ -329,27 +331,27 @@ function render() {
   timers.forEach(clearInterval); timers = []; closeSheet();
   const [path, qs] = (location.hash.slice(1) || '/').split('?'), params = new URLSearchParams(qs || '');
   const main = $('#view');
-  if (!S.user.in) { document.body.classList.add('authing'); main.innerHTML = authScreen(); afterAuth(); window.scrollTo(0, 0); updateChrome(); return; }
+  if (!S.user.in) { document.body.classList.add('authing'); main.innerHTML = authLayout(); window.PapalitaMotion?.refresh(main); afterAuth(); window.scrollTo(0, 0); updateChrome(); return; }
   document.body.classList.remove('authing');
   let m, fn; for (const [re, f] of ROUTES) if ((m = path.match(re))) { fn = f; break; }
   if (!fn) { fn = 'notFound'; m = []; }
-  const run = () => { try { const out = V[fn](m[1] ? decodeURIComponent(m[1]) : null, params); main.innerHTML = out.html; out.after && out.after(); main.focus({ preventScroll: true }); window.scrollTo(0, out.keep ? scrollY : 0); }
+  const run = () => { try { const out = V[fn](m[1] ? decodeURIComponent(m[1]) : null, params); main.innerHTML = out.html; out.after && out.after(); window.PapalitaMotion?.refresh(main); main.focus({ preventScroll: true }); window.scrollTo(0, out.keep ? scrollY : 0); }
     catch (e) { console.error(e); main.innerHTML = `<div class="view">${emptyState('help', 'Something went wrong', 'We could not load this screen. Please try again.', 'Try again', 'reload')}</div>`; } updateChrome(); };
   first = false; run();
 }
 V.notFound = () => ({ html: `<div class="view">${emptyState('map', 'Page not found', 'That screen does not exist.', 'Go home', 'home')}</div>` });
-const NAVS = [['home', 'Home', '/'], ['heart', 'Favorites', '/favorites'], ['cart', 'Cart', '/cart'], ['usercircle', 'Profile', '/profile']];
+const NAVS = [['home', 'Home', '/'], ['search', 'Search', '/discover'], ['orders', 'Orders', '/orders'], ['usercircle', 'Profile', '/profile']];
 const DNAV = [['Home', '/'], ['Browse', '/discover'], ['Catering', '/catering'], ['Orders', '/orders'], ['Nearby', '/nearby'], ['Favorites', '/favorites']];
 const curPath = () => (location.hash.slice(1) || '/').split('?')[0];
-const activeNav = () => { const p = curPath(); return /^\/favorites/.test(p) ? '/favorites' : /^\/(cart|checkout)/.test(p) ? '/cart' : /^\/(profile|addresses|payments|notifications|support|promos|orders|order\/|track|confirmation|nearby)/.test(p) ? '/profile' : '/'; };
+const activeNav = () => { const p=curPath(); return /^\/(discover|restaurant|categories)/.test(p)?'/discover':/^\/(orders|order\/|track|confirmation)/.test(p)?'/orders':/^\/(profile|addresses|payments|notifications|support|promos|favorites)/.test(p)?'/profile':'/'; };
 const deskNav = () => { const p = curPath(); return p === '/' ? '/' : /^\/catering/.test(p) ? '/catering' : /^\/(discover|restaurant|categories)/.test(p) ? '/discover' : /^\/(orders|order\/|track|confirmation)/.test(p) ? '/orders' : /^\/nearby/.test(p) ? '/nearby' : /^\/favorites/.test(p) ? '/favorites' : ''; };
 function chrome() {
   $('#chrome').innerHTML = `<header class="topbar"><a class="logo" href="#/" aria-label="Papalita home"><i><img src="images/papalita_mark_color.png" alt="" style="width:34px;height:34px;object-fit:contain"></i>Papalita</a>
   <nav aria-label="Main">${DNAV.map(([l, p]) => `<a href="#${p}" data-d="${p}">${l}</a>`).join('')}</nav>
   <button class="locpill" data-a="loc" style="margin:0">${ic('pin', 15)}<span data-loc></span>${ic('chevd', 14)}</button>
   <a class="ib" href="#/notifications" aria-label="Notifications">${ic('bell')}<span class="badge" data-un hidden></span></a>
-  <a class="ib" href="#/cart" aria-label="Cart">${ic('cart')}<span class="badge" data-cc hidden></span></a><a href="#/profile" aria-label="Profile">${avatar()}</a></header>
-  <nav class="bnav" aria-label="Main">${NAVS.map(([i, l, p]) => `<a href="#${p}" data-p="${p}">${i === 'cart' ? `<span class="icw">${ic(i, 26)}<span class="badge" data-cc hidden></span></span>` : ic(i, 26)}<span>${l}</span></a>`).join('')}</nav>`;
+  <a class="ib pp-desktop-cart" href="#/cart" aria-label="Cart">${ic('cart')}<span class="badge" data-cc hidden></span></a><a href="#/profile" aria-label="Profile">${avatar()}</a></header>
+  <a class="pp-cart-anchor" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a><nav class="bnav" aria-label="Main">${NAVS.map(([i, l, p]) => `<a href="#${p}" data-p="${p}">${i === 'cart' ? `<span class="icw">${ic(i, 26)}<span class="badge" data-cc hidden></span></span>` : ic(i, 26)}<span>${l}</span></a>`).join('')}</nav>`;
 }
 const defAddr = () => S.addrs.find(a => a.def) || S.addrs[0];
 let holdCart = false;
@@ -379,6 +381,7 @@ const fillCurated = () => {
     b.classList.toggle('on', b.dataset.id === HC);
     b.setAttribute('aria-pressed', String(b.dataset.id === HC));
   });
+  window.PapalitaMotion?.refresh($('#view'));
 };
 
 const popularDishes = () => ALL()
@@ -398,46 +401,31 @@ const fillPopular = () => {
     b.classList.toggle('on', b.dataset.id === PD);
     b.setAttribute('aria-pressed', String(b.dataset.id === PD));
   });
+  window.PapalitaMotion?.refresh($('#view'));
 };
 
-V.home = () => { const a = defAddr(), act = myOrders().find(isCurrent), again = myOrders().filter(o =>
-  stageOf(o) === 5 &&
-  !(S.dismissedAgain || []).some(id => String(id) === String(o.id))
-).slice(0, 4)
-  return { html: `<section class="view"><div class="row sp"><button class="loc" data-a="loc" aria-label="Change barangay"><span class="lab">Location</span><span class="locv">${esc(S.loc.label)}${ic('chevd', 20)}</span></button><a class="pbtn" href="#/profile" aria-label="Profile">${S.user.photo ? `<img src="${esc(S.user.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ic('usercircle', 25)}${unread() ? '<i class="dot"></i>' : ''}</a></div>
-  <p class="sm mu" style="margin-top:6px">Delivering within ${esc(C.municipality)}</p><div class="search" id="hs"><div class="sbox">${ic('search', 22)}<input id="q" type="search" placeholder="Dishes, restaurants or cuisines..." autocomplete="off" aria-label="Search dishes, restaurants or cuisines" aria-controls="sg"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x', 18)}</button><button class="ib w" data-a="filters" aria-label="Open filters">${ic('sliders', 20)}</button></div><div id="sg"></div></div>
-  <div class="cats chips2" role="group" aria-label="Categories">${CATS.map(c => `<button class="chipc" data-a="hcat" data-id="${c.id}" aria-pressed="false">${photo(c.img, '', { ar: '1', w: 120 })}${c.name}</button>`).join('')}</div>
-  ${act ? `<a class="mint row" href="#/track/${act.id}" style="margin-top:18px">${ic('bike', 24, 'gc')}<span class="grow"><b>Track your order</b><br><span class="sm mu">${esc(R(act.rid).name)} · ${STEPS[stageOf(act)][0]}</span></span>${ic('chev', 18, 'mu')}</a>` : ''}
-  ${!PAPALITA_INSTALLED ? `<div class="mint row" style="margin-top:12px">${ic('send', 24, 'gc')}<span class="grow"><b>Install Papalita</b><br><span class="sm mu">Add it to your home screen for faster ordering</span></span><button class="btn p sm" data-a="install">Install</button><button class="ib" data-a="noinstall" aria-label="Dismiss">${ic('x', 16)}</button></div>` : ''}
-  ${again.length ? `<div class="sec"><div class="sec-h"><h2>Order again</h2></div><div class="again-row">${again.map(o => `<div class="again"><span class="againph">${photo(o.items[0].img, o.items[0].name, { ar: '1', w: 200 })}</span><div class="grow"><b>${esc(R(o.rid).name)}</b><p class="sm mu">${o.items.reduce((a, l) => a + l.qty, 0)} items · ${peso(o.total)}</p><button class="addp" style="margin:6px 0 0" data-a="reorder" data-id="${o.id}">Reorder</button></div></div>`).join('')}</div></div>` : ''}
-  <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all</button></div><div class="store-swipe" id="cur" aria-label="Swipe to browse stores"></div></div>
-  ${RS.some(r => r.catering) ? `<a class="mint row home-promo-card" href="#/catering" style="margin-top:14px">${ic('box', 24, 'gc')}<span class="grow"><b>Catering for fiestas and events</b><br><span class="sm mu">Trays and buffets for 10–50 guests</span></span>${ic('chev', 18, 'mu')}</a>` : ''}
-  <a class="mint row home-promo-card" href="#/promos" style="margin-top:9px">${ic('ticket', 24, 'gc')}<span class="grow"><b>Free delivery over ₱399</b><br><span class="sm mu">Use code FREEDEL at checkout</span></span>${ic('chev', 18, 'mu')}</a>
-  <div class="sec"><div class="sec-h"><h2>Popular dishes</h2><button class="link gl" data-a="qa" data-id="order">See all</button></div><div class="chips popular-chips" role="group" aria-label="Filter popular dishes"><button class="chip" data-a="pcat" data-id="all" aria-pressed="true">All food</button>${CATS.filter(c => c.id !== 'all' && c.id !== 'catering').map(c => `<button class="chip" data-a="pcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="popular-grid" id="popular-dishes"></div></div></section>`, 
-after: () => {
-  fillCurated();
-  fillPopular();
-
-  $$('.again').forEach(card => {
-    if (card.querySelector('[data-a="hideagain"]')) return;
-
-    const reorder = card.querySelector('[data-a="reorder"]');
-    if (!reorder) return;
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ib';
-    btn.dataset.a = 'hideagain';
-    btn.dataset.id = reorder.dataset.id;
-    btn.setAttribute('aria-label', 'Remove from Order Again');
-    btn.title = 'Hide this card';
-    btn.style.cssText = 'flex:none;align-self:flex-start;margin-left:8px';
-    btn.innerHTML = ic('x', 16);
-
-    card.appendChild(btn);
-  });
-}
-}; };
+const foodVisual = (auth=false) => {
+  const choices = ALL().filter(x=>x.item.available && /^https?:/i.test(String(x.item.img || ''))).slice(0,3);
+  if (!choices.length) return `<div class="pp-hero-logo"><img src="images/papalita_mark_color.png" alt="Papalita"></div>`;
+  return `<div class="pp-food-slides" data-food-slideshow aria-label="Food from the Papalita menu">${choices.map(({item,rest},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(item.img,`${item.name} from ${rest.name}`,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(item.name)}</b><small>${esc(rest.name)}</small></div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Food photos">${choices.map(({item},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(item.name)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
+};
+const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita · Good Food, Good Mood.</span><nav aria-label="Footer"><button type="button" data-a="about-papalita">About</button><a href="#/support">Contact</a><button type="button" data-papalita-legal>Terms & Privacy</button><button type="button" data-motion-toggle aria-pressed="false">Pause animations</button></nav></footer>`;
+V.home = () => {
+  const act = myOrders().find(isCurrent);
+  return {html:`<section class="view pp-customer-home">
+    <header class="pp-home-header"><a href="#/" class="pp-mini-brand" aria-label="Papalita home"><img src="images/papalita_mark_color.png" alt="">Papalita</a><button class="loc" data-a="loc" aria-label="Change delivery location"><span class="lab">Deliver to</span><span class="locv">${esc(S.loc.label)}${ic('chevd',14)}</span></button><a class="pp-home-cart" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a></header>
+    ${catalogueError?`<div class="pp-catalog-error" role="alert">${esc(catalogueError)} <button class="link gl" data-a="retry-catalogue">Refresh</button></div>`:''}
+    <div class="pp-hero"><div class="pp-hero-copy"><span class="pp-kicker">Made for your everyday</span><h1>Your local favorites,<br><em>delivered.</em></h1><p>Find your next coffee, comfort meal, or something worth sharing in Alegria.</p><button class="btn p" data-a="qa" data-id="rests">Explore stores ${ic('arrow',17)}</button></div><div class="pp-hero-visual">${foodVisual()}<div class="pp-float-note">${ic('store',23)}<span><b>From around the neighborhood</b><small>Alegria, Surigao del Norte</small></span></div></div></div>
+    <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
+    ${CATS.length?`<div class="pp-categories" role="group" aria-label="Menu categories"><button class="chipc on" data-a="hcat" data-id="all" aria-pressed="true">${ic('grid',16)}All food</button>${CATS.map(c=>`<button class="chipc" data-a="hcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div>`:''}
+    ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic('bike',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(STEPS[stageOf(act)]?.[0] || act.status)}</span></span>${ic('chev',18)}</a>`:''}
+    <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Stores carousel"></div></div>
+    <div class="sec"><div class="sec-h"><h2>On the menu</h2><button class="link gl" data-a="qa" data-id="order">See all ${ic('arrow',16)}</button></div><div class="chips popular-chips" role="group" aria-label="Filter menu"><button class="chip on" data-a="pcat" data-id="all" aria-pressed="true">All food</button>${CATS.map(c=>`<button class="chip" data-a="pcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="popular-grid" id="popular-dishes"></div></div>
+    ${RS.some(r=>r.catering)?`<a class="mint row home-promo-card" href="#/catering">${ic('box',24)}<span class="grow"><b>Bring everyone to the table.</b><br><span class="sm mu">Ask participating stores about catering.</span></span>${ic('arrow',19)}</a>`:''}
+    ${!PAPALITA_INSTALLED && window.PapalitaInstall?.canOffer()?`<div class="mint row pp-install-card">${ic('send',22)}<span class="grow"><b>A little closer, every day.</b><br><span class="sm mu">Add Papalita to your home screen.</span></span><button class="btn p sm" data-a="install">Install</button><button class="ib" data-a="noinstall" aria-label="Dismiss install card">${ic('x',17)}</button></div>`:''}
+    ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();}};
+};
+function authLayout(){return `<div class="pp-auth-layout"><aside class="pp-auth-pitch" aria-label="About Papalita"><div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><span><b>Papalita</b><small>GOOD FOOD, GOOD MOOD.</small></span></div><div><span class="pp-kicker">Alegria, Surigao del Norte</span><h2>A good mood<br>is <em>on the menu.</em></h2><p>Cafés, comfort food, and local favorites. Find your next delicious moment with Papalita.</p></div><div class="pp-auth-photo">${foodVisual(true)}</div><button type="button" data-motion-toggle aria-pressed="false" class="link gl">Pause animations</button></aside><div class="pp-auth-form">${authScreen()}</div></div>`;}
 
 function suggestions(q) {
   q = q.trim().toLowerCase(); if (!q) return ''; const has = s => s.toLowerCase().includes(q), out = [];
@@ -454,10 +442,8 @@ V.discover = (_, p) => { if (p.get('reset')) F = { ...F, q: '', cat: 'all', pric
   <div class="chips" style="margin-top:14px" role="tablist">${[['dishes', 'Dishes'], ['rests', 'Restaurants']].map(([k, l]) => `<button class="chip ${F.tab === k ? 'on' : ''}" role="tab" aria-selected="${F.tab === k}" data-a="ftab" data-v="${k}">${l}</button>`).join('')}</div><div id="dfilters"></div><div id="results" aria-live="polite"></div></section>`, after: fillDiscover }; };
 const chipRow = (k, opts) => `<div class="chips">${opts.map(([v, l]) => `<button class="chip ${F[k] === v ? 'on' : ''}" data-a="flt" data-k="${k}" data-v="${v}">${l}</button>`).join('')}</div>`;
 function fillDiscover() {
-  $('#dfilters').innerHTML = `<div class="chips" style="margin:14px 0 4px"><button class="chip ${F.cat === 'all' ? 'on' : ''}" data-a="flt" data-k="cat" data-v="all">All</button>${CATS.map(c => `<button class="chip ${F.cat === c.id ? 'on' : ''}" data-a="flt" data-k="cat" data-v="${c.id}">${c.name}</button>`).join('')}</div>` +
-   (F.open ? `<div class="panel" style="margin-top:12px"><div class="field"><label>Price</label>${chipRow('price', [[0, 'Any'], [150, 'Under ₱150'], [300, 'Under ₱300']])}</div><div class="field"><label>Rating</label>${chipRow('rating', [[0, 'Any'], [4, '4.0+'], [4.5, '4.5+']])}</div><div class="field"><label>Delivery time</label>${chipRow('eta', [[0, 'Any'], [40, 'Within 40 min'], [60, 'Within 60 min']])}</div>
-   <div class="field"><label>Promotions</label><div class="chips"><button class="chip ${F.promo ? 'on' : ''}" data-a="fpromo" aria-pressed="${F.promo}">${ic('percent', 16)}Has promo</button></div></div><div class="field" style="margin:0"><label for="sort">Sort by</label><select id="sort" class="in" data-sort><option value="popular">Most popular</option><option value="rating">Highest rated</option><option value="price">Lowest price</option><option value="eta">Fastest delivery</option></select></div></div>` : '');
-  const s = $('#sort'); if (s) s.value = F.sort; fillResults();
+  $('#dfilters').innerHTML = `<div class="chips" style="margin:14px 0 4px"><button class="chip ${F.cat==='all'?'on':''}" data-a="flt" data-k="cat" data-v="all">All</button>${CATS.map(c=>`<button class="chip ${F.cat===c.id?'on':''}" data-a="flt" data-k="cat" data-v="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>${F.open?`<div class="panel" style="margin-top:12px"><div class="field"><label>Item price</label>${chipRow('price',[[0,'Any'],[150,'Under ₱150'],[300,'Under ₱300']])}</div><div class="field" style="margin:0"><label for="sort">Sort by</label><select id="sort" class="in" data-sort><option value="popular">Menu order</option><option value="price">Lowest price</option></select></div></div>`:''}`;
+  const s=$('#sort');if(s)s.value=F.sort;fillResults();
 }
 function fillResults() {
   const terms = F.q.toLowerCase().split(/\s+/).filter(Boolean), cn = id => (CATS.find(c => c.id === id) || {}).name || '';
@@ -472,22 +458,22 @@ function fillResults() {
     a.sort((x, y) => F.sort === 'rating' ? y.rating - x.rating : F.sort === 'price' ? Math.min(...x.items.map(i => i.price)) - Math.min(...y.items.map(i => i.price)) : F.sort === 'eta' ? etaOf(x)[0] - etaOf(y)[0] : parseFloat(y.reviews) - parseFloat(x.reviews));
     n = a.length; html = a.map(restCard).join('');
   }
-  $('#results').innerHTML = n ? `<p class="mu sm" style="margin:12px 0">${n} ${F.tab === 'dishes' ? 'dish' : 'restaurant'}${n > 1 ? (F.tab === 'dishes' ? 'es' : 's') : ''} found</p><div class="grid">${html}</div>` : emptyState('search', 'No matches', 'Try a different word or remove a filter.', 'Clear filters', 'fclear');
+  $('#results').innerHTML = n ? `<p class="mu sm" style="margin:12px 0">${n} ${F.tab === 'dishes' ? 'dish' : 'restaurant'}${n > 1 ? (F.tab === 'dishes' ? 'es' : 's') : ''} found</p><div class="grid ${F.tab === 'rests' ? 'restaurant-results-grid' : ''}">${html}</div>` : emptyState('search', 'No matches', 'Try a different word or remove a filter.', 'Clear filters', 'fclear');
 }
 
 /* ---------- restaurant ---------- */
 V.restaurant = id => { const r = R(id); if (!r) return V.notFound(); const op = isOpen(r), secs = [...new Set(r.items.map(i => i.sec))];
   return { html: `<section class="view"><div class="cover">${photo(r.cover, r.name + ' cover photo', { w: 1200, eager: 1 })}<div class="cov-sh"></div><div class="cov-b"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><span class="row">${hrt('rests', r.id)}<button class="ib w" data-a="share" data-id="${r.id}" aria-label="Share restaurant">${ic('share')}</button></span></div></div>
-  <div class="fcard"><div class="row sp"><h1 style="font-size:28px">${esc(r.name)}</h1><span class="opill">${ic('star', 15, 'star')}${r.rating}</span></div><p class="mu" style="margin-top:6px">${esc(r.kind)} • ${esc(r.addr)}${op ? '' : ' • <b style="color:var(--er)">Closed, opens ' + fmtT(r.hours[0]) + '</b>'}</p>
-  <div class="stats"><div>${ic('clock', 18, 'gc')}${etaOf(r)[0]}–${etaOf(r)[1]} min</div><div><i class="gdot"></i>${peso(feeOf(r))} delivery</div><div>${ic('pin', 18, 'gc')}${dist(r).toFixed(1)} km</div></div></div>
+  <div class="fcard"><div class="row sp"><h1 style="font-size:28px">${esc(r.name)}</h1><span class="status ${op?'open':'closed'}">${op?'Open':'Closed'}</span></div><p class="mu" style="margin-top:6px">${esc(r.kind)} • ${esc(r.addr)}${op ? '' : ' • <b style="color:var(--er)">Closed, opens ' + fmtT(r.hours[0]) + '</b>'}</p>
+  <div class="stats"><div>${ic('store',18,'gc')}Menu & availability</div><div>${ic('pin',18,'gc')}Alegria</div></div></div></div>
   <p class="sm mu" style="margin:12px 6px 0">${r.busy ? `<span class="status closed">Busy · +${r.busy} min</span> ` : ''}Min order ${peso(r.min)}${r.promo ? ` · <button class="link gl" style="padding:0" data-a="usepromo" data-id="${r.promo}">Code ${r.promo}</button>` : ''}</p>
   ${r.feature ? `<button class="mint row" data-a="jump" data-id="s-${esc(r.feature.sec)}" style="width:100%;text-align:left;margin-top:14px">${photo(r.feature.img, r.feature.title, { ar: '1', w: 200 }).replace('class="ph', 'style="width:64px;border-radius:16px;flex:none" class="ph')}<span class="grow"><b style="font-size:17px">${esc(r.feature.title)}</b><br><span class="sm mu">${esc(r.feature.sub)}</span></span>${ic('chev', 18, 'mu')}</button>` : ''}
   ${r.catering ? `<div class="mint row" style="margin-top:12px">${ic('box', 26, 'gc')}<span class="grow"><b>Catering for 10–50 guests</b><br><span class="sm mu">Trays, bulalo and lechon sets, full buffet</span></span><button class="btn p sm" data-a="cater" data-id="${r.id}">Request</button></div>` : ''}
   <div class="chips solid" style="margin-top:12px;position:sticky;top:var(--st);background:var(--bg);z-index:5;padding:10px 0">${secs.map((s, k) => `<button class="chip ${k ? '' : 'on'}" data-a="jump" data-id="s-${esc(s)}">${esc(s)}</button>`).join('')}${r.catering ? '<button class="chip" data-a="jump" data-id="s-catering">Catering</button>' : ''}${r.stay ? '<button class="chip" data-a="jump" data-id="s-stay">Stay &amp; Events</button>' : ''}</div>
-  ${secs.map((s, k) => `<div id="s-${esc(s)}" style="margin-top:18px"><div class="sec-h" style="margin-bottom:4px"><h2>${k ? esc(s) : 'Popular Items'}</h2>${k ? '' : '<span class="gl lab2">Top rated</span>'}</div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:0 28px">${r.items.filter(i => i.sec === s).map(i => `<div class="mi" tabindex="0" role="button" data-a="item" data-id="${i.id}" aria-label="${esc(i.name)} ${peso(i.price)}">${photo(i.img, i.name, { ar: '1', w: 300 })}<div class="bd"><div class="row sp" style="align-items:flex-start"><h3 style="font-size:18px">${esc(i.name)}</h3><span class="mu">${peso(i.price)}</span></div><p class="mu sm" style="margin:6px 0 10px">${esc(i.desc)}</p>${i.available ? `<button class="addp" data-a="quick" data-id="${i.id}" ${op ? '' : 'disabled'} aria-label="Quick add ${esc(i.name)}">${ic('plus', 16)}Add</button>` : '<span class="status closed">Sold out</span>'}</div></div>`).join('')}</div></div>`).join('')}
+  ${secs.map((s, k) => `<div id="s-${esc(s)}" style="margin-top:18px"><div class="sec-h" style="margin-bottom:4px"><h2>${esc(s)}</h2></div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:0 28px">${r.items.filter(i => i.sec === s).map(i => `<div class="mi" tabindex="0" role="button" data-a="item" data-id="${i.id}" aria-label="${esc(i.name)} ${peso(i.price)}">${photo(i.img, i.name, { ar: '1', w: 300 })}<div class="bd"><div class="row sp" style="align-items:flex-start"><h3 style="font-size:18px">${esc(i.name)}</h3><span class="mu">${peso(i.price)}</span></div><p class="mu sm" style="margin:6px 0 10px">${esc(i.desc)}</p>${i.available ? `<button class="addp" data-a="quick" data-id="${i.id}" ${op ? '' : 'disabled'} aria-label="Quick add ${esc(i.name)}">${ic('plus', 16)}Add</button>` : '<span class="status closed">Sold out</span>'}</div></div>`).join('')}</div></div>`).join('')}
   ${r.catering ? cateringSection(r) : ''}${r.stay ? staySection(r) : ''}
   <div class="sec"><h2 style="margin-bottom:10px">Contact</h2><div class="panel">${contactBtns(r)}</div></div>
-  <div class="sec"><h2 style="margin-bottom:10px">Opening hours</h2><div class="panel"><div class="row sp"><span>Monday – Sunday</span><b>${hoursText(r)}</b></div>${r.placeholder ? '<p class="sm mu" style="margin-top:8px"><span class="demo">PLACEHOLDER</span> Hours are samples until the store confirms them.</p>' : ''}</div></div>
+  <div class="sec"><h2 style="margin-bottom:10px">Opening hours</h2><div class="panel"><div class="row sp"><span>Store hours</span><b>${r.verifiedHours?hoursText(r):'Ask the store'}</b></div>${r.placeholder ? '<p class="sm mu" style="margin-top:8px"><span class="demo">PLACEHOLDER</span> Hours are samples until the store confirms them.</p>' : ''}</div></div>
   <div class="sec"><h2 style="margin-bottom:10px">Reviews</h2>${[...communityReviews(r.id), ...r.reviewsList].map(v => `<div class="panel"><div class="row sp"><b>${esc(v.who)}</b>${stars(v.r)}</div><p class="mu" style="margin-top:6px">${esc(v.t)}</p></div>`).join('')}</div></section>` }; };
 
 /* Match instructions to the actual product; seller-configured option groups remain unchanged. */
@@ -505,7 +491,7 @@ function instructionPlaceholder(item, rest) {
 /* ---------- item sheet ---------- */
 function openItem(id, editKey) {
   const { item, rest } = ITEM(id), ed = editKey && S.cart.lines.find(l => l.key === editKey), st = { sel: ed ? JSON.parse(JSON.stringify(ed.sel)) : defSel(item), qty: ed ? ed.qty : 1, note: ed ? ed.note : '' };
-  const el = openSheet(`<div style="margin-top:0">${photo(item.img, `${item.name} from ${rest.name}`, { ar: '16/10', w: 900, eager: 1 })}</div><div class="pd"><div class="row sp"><h2 style="font-size:24px">${esc(item.name)}</h2><b style="font-size:20px">${peso(item.price)}</b></div><p class="mu" style="margin:6px 0 10px">${esc(item.desc)}</p><div class="row g sm">${stars(item.r || rest.rating, item.rv || rest.reviews)}<span class="mu">· ${esc(rest.name)} · ${etaOf(rest)[0]}–${etaOf(rest)[1]} min</span></div></div>
+  const el = openSheet(`<div style="margin-top:0">${photo(item.img, `${item.name} from ${rest.name}`, { ar: '16/10', w: 900, eager: 1 })}</div><div class="pd"><div class="row sp"><h2 style="font-size:24px">${esc(item.name)}</h2><b style="font-size:20px">${peso(item.price)}</b></div><p class="mu" style="margin:6px 0 10px">${esc(item.desc)}</p><div class="row g sm"><span class="mu">${esc(rest.name)}</span></div></div>
   <form class="pd" style="padding-top:0" novalidate>${item.opts.map(g => `<fieldset style="border:0;padding:0;margin:14px 0 0"><legend style="font-weight:800;margin-bottom:8px">${esc(g.label)} ${g.req ? '<span class="status n">Required</span>' : '<span class="mu sm">Optional</span>'}</legend>${g.ch.map(c => `<label class="opt"><input type="${g.type === 'radio' ? 'radio' : 'checkbox'}" name="${esc(g.id)}" value="${esc(c.n)}" ${(st.sel[g.id] || []).includes(c.n) ? 'checked' : ''}><span class="grow">${esc(c.n)}</span><span class="mu">${c.p ? '+' + peso(c.p) : 'Free'}</span></label>`).join('')}</fieldset>`).join('')}
   <div class="field" style="margin-top:16px"><label for="note">Special instructions</label><textarea class="in" id="note" maxlength="200" placeholder="${esc(instructionPlaceholder(item, rest))}">${esc(st.note)}</textarea></div></form>
   <div class="sticky-foot row"><div class="qty" role="group" aria-label="Quantity"><button data-sa="dec" aria-label="Decrease quantity">${ic('minus', 18)}</button><b data-qty aria-live="polite">${st.qty}</b><button data-sa="inc" aria-label="Increase quantity">${ic('plus', 18)}</button></div><button class="btn p grow" data-sa="add" ${item.available ? '' : 'disabled'}><span data-tot></span></button></div>`, { label: item.name });
@@ -519,27 +505,27 @@ function openItem(id, editKey) {
 
 /* ---------- cart ---------- */
 const sumHTML = c => `<div class="sum"><div class="r"><span>Subtotal</span><span>${peso(c.sub)}</span></div><div class="r"><span>Delivery fee</span><span>${c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="ok">Free</b>` : peso(c.fee)}</span></div>
-  ${c.disc && c.promo.type !== 'ship' ? `<div class="r ok"><span>Promo ${esc(c.promo.code)}</span><span>−${peso(c.disc)}</span></div>` : ''}${c.tip ? `<div class="r"><span>Rider tip</span><span>${peso(c.tip)}</span></div>` : ''}<div class="r tot"><span>Total</span><span>${peso(c.total)}</span></div><p class="mu sm" style="margin-top:6px">Includes ${peso(c.vat)} VAT (12%).</p></div>`;
+  ${c.disc && c.promo.type !== 'ship' ? `<div class="r ok"><span>Promo ${esc(c.promo.code)}</span><span>−${peso(c.disc)}</span></div>` : ''}${c.tip ? `<div class="r"><span>Rider tip</span><span>${peso(c.tip)}</span></div>` : ''}<div class="r tot"><span>Total</span><span>${peso(c.total)}</span></div><p class="mu sm" style="margin-top:6px">Check tax details with the store.</p></div>`;
 const promoBox = c => `<div class="panel"><h3 style="margin-bottom:10px">Promo code</h3>${S.promo ? `<div class="row sp"><span class="chip on">${ic('percent', 16)}${esc(S.promo)}</span><button class="btn s sm" data-a="rmpromo">Remove</button></div>${c.perr ? `<p class="err" style="margin-top:8px">${esc(c.perr)}</p>` : `<p class="ok sm" style="margin-top:8px">Saved ${peso(c.disc)} with this code.</p>`}` :
   `<div class="row"><input class="in" id="pc" placeholder="Enter code" autocapitalize="characters" aria-label="Promo code" maxlength="20"><button class="btn p sm" data-a="applypromo">Apply</button></div><p class="err" id="pcerr"></p><div class="chips" style="margin-top:8px">${window.PROMOS.filter(p => p.active !== false).slice(0, 3).map(p => `<button class="chip" data-a="usepromo" data-id="${p.code}">${p.code}</button>`).join('')}</div>`}</div>`;
 V.cartView = () => { const c = calc();
   if (!S.cart.lines.length) return { html: `<section class="view">${pageHead('Your cart')}${emptyState('cart', 'Your cart is empty', 'Add something delicious and it will show up here.', 'Browse food', 'browse')}</section>` };
   const a = S.addrs.find(x => x.id === CK.addr) || defAddr(); if (a) CK.addr = a.id; const r = c.r, arr = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' }).format(new Date(Date.now() + etaOf(r)[1] * 6e4));
   const pl = payLabel(), tip = CK.tip || 0; const fee = c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="gl">Free</b>` : peso(c.fee);
-  return { html: `<section class="view" style="max-width:640px;margin:0 auto"><div class="rv-h"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><h1>ORDER REVIEW</h1><span style="width:44px"></span></div>
+  return { html: `<section class="view pp-cart-view" style="max-width:640px;margin:0 auto"><div class="rv-h"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><h1>ORDER REVIEW</h1><span style="width:44px"></span></div>
   <div class="rv-lab"><span>Order type</span></div><div class="chips"><button class="chip ${CK.fulfillment === 'delivery' ? 'on' : ''}" data-a="fulfillment" data-v="delivery">Delivery</button><button class="chip ${CK.fulfillment === 'pickup' ? 'on' : ''}" data-a="fulfillment" data-v="pickup">Pickup at store</button></div><div class="rv-lab"><span>${CK.fulfillment === 'pickup' ? 'Pickup locations' : 'Delivery address'}</span>${CK.fulfillment === 'pickup' ? '' : '<button data-a="addrpick">EDIT</button>'}</div>
   ${CK.fulfillment === 'pickup' ? `<div class="panel">${c.groups.map(g => `<p><b>${esc(g.rest?.name || 'Store')}</b><br>${esc(g.rest?.addr || 'Contact the store for pickup location')}</p>`).join('')}</div>` : `<div class="row" style="gap:14px"><span class="pbtn" style="width:56px;height:56px;background:#fff;color:var(--ink);box-shadow:var(--sh)">${ic('pin', 22)}</span><div class="grow">${a ? `<b style="font-size:20px">${esc(a.label)}</b> ${a.def ? '<span class="status n" style="letter-spacing:.06em">PRIMARY</span>' : ''}<p class="mu">${esc(a.line)} • ${esc(a.city)}${a.landmark ? '<br>Landmark: ' + esc(a.landmark) : ''}</p>` : `<b>No address yet</b><p class="mu">Add where we should deliver.</p>`}</div></div>`}
   <div class="field" style="margin-top:14px"><label for="cp">Contact number</label><input class="in" id="cp" inputmode="tel" value="${esc(S.user.phone || '')}" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" id="cpe"></p></div>
-  <div class="mint row" style="margin-top:6px">${ic('clock', 26)}<div><span class="lab">Estimated time</span><div style="font-size:18px"><b>${etaOf(r)[0]}–${etaOf(r)[1]} minutes</b> · Arriving by ${arr}</div></div></div>
+  <div class="mint row" style="margin-top:6px">${ic('clock',22)}<p class="sm">The store confirms preparation and delivery timing after accepting your order.</p></div>
   <div class="rv-lab"><span>Your selection · ${c.groups.length} store(s)</span><button data-a="browse">ADD ITEMS</button></div>
-  ${c.groups.map(g => `<h3 style="margin:16px 0 6px;color:var(--gc,#087F32)">${esc(g.rest?.name || 'Store')} · ${peso(g.sub)}</h3>${g.lines.map(l => `<div class="row" style="gap:16px;align-items:flex-start;padding:8px 0">${photo(l.img, l.name, { ar: '1', w: 240 }).replace('class="ph', 'style="width:100px;border-radius:18px;flex:none" class="ph')}<div class="grow"><div class="row sp" style="align-items:flex-start"><h3 style="font-size:19px">${esc(l.name)}</h3><b style="font-size:19px">${peso(l.unit * l.qty)}</b></div><p class="mu sm">${esc(selText(l)) || 'Standard'}${l.note ? ' · “' + esc(l.note) + '”' : ''}</p>
+  ${c.groups.map(g => `<h3 style="margin:16px 0 6px;color:var(--gc,#087F32)">${esc(g.rest?.name || 'Store')} · ${peso(g.sub)}</h3>${g.lines.map(l => `<div class="row pp-cart-line" style="gap:16px;align-items:flex-start;padding:8px 0">${photo(l.img, l.name, { ar: '1', w: 240 }).replace('class="ph', 'style="width:100px;border-radius:18px;flex:none" class="ph')}<div class="grow"><div class="row sp" style="align-items:flex-start"><h3 style="font-size:19px">${esc(l.name)}</h3><b style="font-size:19px">${peso(l.unit * l.qty)}</b></div><p class="mu sm">${esc(selText(l)) || 'Standard'}${l.note ? ' · “' + esc(l.note) + '”' : ''}</p>
   <div class="row sp" style="margin-top:10px"><div class="qty mintq"><button data-a="qty" data-k="${l.key}" data-d="-1" aria-label="Decrease ${esc(l.name)}">${ic('minus', 16)}</button><b>${l.qty}</b><button data-a="qty" data-k="${l.key}" data-d="1" aria-label="Increase ${esc(l.name)}">${ic('plus', 16)}</button></div><span><button class="rm" data-a="editline" data-k="${l.key}" data-id="${l.itemId}" style="color:var(--mu)">EDIT</button> <button class="rm" data-a="rmline" data-k="${l.key}" aria-label="Remove ${esc(l.name)}">REMOVE</button></span></div></div></div>`).join('')}`).join('')}
   <div class="rv-lab"><span>Payment method</span><button data-a="paypick">CHANGE</button></div>
   <div class="mint row" style="gap:14px"><span class="paybadge">${ic('card', 22)}</span><div class="grow"><b style="font-size:18px">${esc(pl[0])}</b><div class="lab" style="font-size:12px">${esc(pl[1])}</div></div><span class="tick">${ic('check', 16)}</span></div>
   <div class="field" style="margin-top:14px"><label for="di">Instructions (optional)</label><textarea class="in" id="di" maxlength="200" placeholder="Gate color, landmarks, leave at lobby…"></textarea></div>
-  ${CK.fulfillment === 'pickup' ? '' : `<div class="rv-lab" style="margin-top:24px"><span>Tip your rider</span><span class="sm mu" style="letter-spacing:0;text-transform:none;font-weight:600">100% goes to the rider</span></div><div class="chips">${[0, 20, 30, 50, 100].map(v => `<button class="chip ${tip === v ? 'on' : ''}" data-a="tip" data-v="${v}" aria-pressed="${tip === v}">${v ? peso(v) : 'No tip'}</button>`).join('')}</div>`}
+  ${CK.fulfillment === 'pickup' ? '' : `<div class="rv-lab" style="margin-top:24px"><span>Tip your rider</span><span class="sm mu" style="letter-spacing:0;text-transform:none;font-weight:600">Optional</span></div><div class="chips">${[0, 20, 30, 50, 100].map(v => `<button class="chip ${tip === v ? 'on' : ''}" data-a="tip" data-v="${v}" aria-pressed="${tip === v}">${v ? peso(v) : 'No tip'}</button>`).join('')}</div>`}
   <div style="margin-top:14px">${promoBox(c)}</div>
-  <div class="sum" style="margin-top:18px;font-size:18px"><div class="r mu"><span>Order Subtotal</span><b style="color:var(--ink)">${peso(c.sub)}</b></div><div class="r mu"><span>${CK.fulfillment === 'pickup' ? 'Pickup Fee' : 'Delivery Fee'}</span><b style="color:var(--ink)">${fee}</b></div>${c.disc && c.promo.type !== 'ship' ? `<div class="r gl"><span>Promo ${esc(c.promo.code)}</span><b>−${peso(c.disc)}</b></div>` : ''}${tip ? `<div class="r mu"><span>Rider tip</span><b style="color:var(--ink)">${peso(tip)}</b></div>` : ''}<p class="sm mu">Includes ${peso(c.vat)} VAT (12%).</p></div>
+  <div class="sum" style="margin-top:18px;font-size:18px"><div class="r mu"><span>Order Subtotal</span><b style="color:var(--ink)">${peso(c.sub)}</b></div><div class="r mu"><span>${CK.fulfillment === 'pickup' ? 'Pickup Fee' : 'Delivery fee estimate'}</span><b style="color:var(--ink)">${fee}</b></div>${c.disc && c.promo.type !== 'ship' ? `<div class="r gl"><span>Promo ${esc(c.promo.code)}</span><b>−${peso(c.disc)}</b></div>` : ''}${tip ? `<div class="r mu"><span>Rider tip</span><b style="color:var(--ink)">${peso(tip)}</b></div>` : ''}<p class="sm mu">Check tax details with the store.</p></div>
   ${!c.minOk ? `<p class="err" style="margin:10px 0">Some stores have not reached their minimum order amount.</p>` : ''}
   <button class="pbar" id="place" data-a="place" ${c.minOk ? '' : 'disabled'}><span>Place Order</span><i></i><b>${peso(c.total + tip)}</b></button>
   <p class="mu sm" style="text-align:center;margin-top:12px;letter-spacing:.04em">TAPPING PLACE ORDER CONFIRMS YOUR ACCEPTANCE OF TERMS</p><p style="text-align:center;margin-top:8px"><span class="sm mu">Orders are submitted securely to Papalita. Cash payment only.</span></p></section>` }; };
@@ -627,11 +613,11 @@ function receiptHTML(o, anim) { const r = R(o.rid), pr = o.promo && window.PROMO
   <div class="rno"><span>ORDER NO.</span><b>${esc(o.id)}</b></div><div class="dash"></div>
   ${o.items.map(l => L(`${l.qty} x ${esc(l.name).toUpperCase()}`, peso(l.unit * l.qty)) + (selText(l) ? `<div class="sub" style="--i:${n++}">${esc(selText(l))}</div>` : '')).join('')}<div class="dash"></div>
   ${L('SUBTOTAL', peso(o.sub))}${L('DELIVERY FEE', o.disc && pr && pr.type === 'ship' ? 'FREE' : peso(o.fee))}${o.disc && pr && pr.type !== 'ship' ? L('PROMO ' + esc(pr.code), '-' + peso(o.disc), 'g') : ''}${o.tip ? L('RIDER TIP', peso(o.tip)) : ''}
-  <div class="ln tot" style="--i:${n++}"><span>TOTAL</span><i></i><span>${peso(o.total)}</span></div><div class="sub" style="--i:${n++}">Includes ${peso((o.total - (o.tip || 0)) * 12 / 112)} VAT (12%)</div><div class="dash"></div>
+  <div class="ln tot" style="--i:${n++}"><span>TOTAL</span><i></i><span>${peso(o.total)}</span></div><div class="sub" style="--i:${n++}">Order summary · ask the store for a tax invoice</div><div class="dash"></div>
   ${L('PAYMENT', esc(PAYNAME[o.pay.method]).toUpperCase())}<div class="ln" style="--i:${n++}"><span>DELIVER TO</span></div><div class="sub" style="--i:${n++};color:#222">${esc(o.addr)}</div>${o.note ? `<div class="sub" style="--i:${n++}">Note: ${esc(o.note)}</div>` : ''}<div class="dash"></div>
   <div class="rbar" style="--i:${n++}">${barcode(o.id)}<span>${esc(o.id)}</span></div><p class="thx" style="--i:${n++}">SALAMAT, ALEGRIA!<br><small>Thank you for ordering local.</small></p><div class="stamp">${stamp}</div></div></div>`; }
 V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r = R(o.rid);
-  return { html: `<section class="view" style="max-width:520px;margin:0 auto;text-align:center"><div class="okh"><span class="okc">${ic('check', 40)}</span><h1>Order placed!</h1><p class="mu">Estimated arrival in ${etaOf(r)[0]}–${etaOf(r)[1]} minutes</p></div><div class="slot" aria-hidden="true"></div>${receiptHTML(o, true)}
+  return { html: `<section class="view" style="max-width:520px;margin:0 auto;text-align:center"><div class="okh"><span class="okc">${ic('check', 40)}</span><h1>Order placed!</h1><p class="mu">The store will review your order.</p></div><div class="slot" aria-hidden="true"></div>${receiptHTML(o, true)}
   <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic('bike', 18)}Track order</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
 /* ---------- ratings ---------- */
 const rateCard = o => o.review ? `<div class="panel"><h3>Your review</h3><div class="row g" style="margin:6px 0">${[1, 2, 3, 4, 5].map(n => ic('star', 20, n <= o.review.store ? 'star' : 'mu')).join('')}</div>${o.review.comment ? `<p class="mu sm">“${esc(o.review.comment)}”</p>` : ''}</div>` : `<div class="panel" style="background:var(--or-s);border:0"><b style="font-size:17px">How was your order?</b><p class="sm mu" style="margin:4px 0 10px">Rate ${esc(R(o.rid).name)}${o.rider ? ' and your rider' : ''}.</p><button class="btn p blk" data-a="rate" data-id="${o.id}">Rate order</button></div>`;
@@ -643,8 +629,8 @@ function rateSheet(oid) { const o = ORD(oid), r = R(o.rid), st = { store: 0, rid
   el.addEventListener('click', e => { const b = e.target.closest('.sbtn'), t = e.target.closest('[data-tg]'); if (b) { const k = b.dataset.sr, n = +b.dataset.n; st[k] = n; $$(`[data-sr=${k}]`, el).forEach(x => { const on = +x.dataset.n <= n; x.classList.toggle('on', on); x.setAttribute('aria-checked', +x.dataset.n === n); }); $('#re', el).textContent = ''; } if (t) { const i = st.tags.indexOf(t.dataset.tg); i >= 0 ? st.tags.splice(i, 1) : st.tags.push(t.dataset.tg); t.classList.toggle('on', i < 0); t.setAttribute('aria-pressed', i < 0); } });
   $('form', el).onsubmit = e => { e.preventDefault(); if (!st.store) return ($('#re', el).textContent = 'Please rate the restaurant (1 to 5 stars).'); o.review = { store: st.store, rider: o.rider ? st.rider : 0, tags: st.tags, comment: $('#rc', el).value.trim(), at: Date.now() }; o.upd = Date.now(); save(); closeSheet(); toast('Thanks for your review!'); render(); }; }
 /* ---------- motion: fly to cart ---------- */
-const calmMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function cartTarget() { for (const el of [$('.bnav [data-p="/cart"] .icw'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
+const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function cartTarget() { for (const el of [$('.pp-home-cart'), $('.pp-cart-anchor'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
 function pulseCart() { holdCart = false; updateChrome(true); const t = cartTarget(); if (t) { t.el.classList.remove('cshake'); void t.el.offsetWidth; t.el.classList.add('cshake'); } }
 function flyTo(fx) { if (!fx || !document.body.animate || calmMotion()) return pulseCart(); const t = cartTarget(); if (!t || !fx.rect || !fx.rect.width) return pulseCart();
   const size = 58, x0 = fx.rect.left + fx.rect.width / 2 - size / 2, y0 = fx.rect.top + fx.rect.height / 2 - size / 2, x1 = t.r.left + t.r.width / 2 - size / 2, y1 = t.r.top + t.r.height / 2 - size / 2, dx = x1 - x0, dy = y1 - y0;
@@ -750,7 +736,7 @@ V.promos = () => ({ html: `<section class="view" style="max-width:760px;margin:0
 const row = (i, t, s, a, extra = '') => `<button class="li" data-a="${a}"><span class="ic">${ic(i, 20)}</span><span class="grow"><b>${t}</b>${s ? `<br><span class="sm mu">${s}</span>` : ''}</span>${extra}${ic('chev', 18, 'mu')}</button>`;
 V.profile = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Profile', false)}<div class="panel row">${avatar()}<div class="grow"><h2>${esc(S.user.name)}</h2><p class="mu sm">${esc(S.user.email)}${S.user.phone ? ' · ' + esc(S.user.phone) : ''}</p></div><button class="btn s sm" data-a="go" data-id="/profile/edit">Edit</button></div>
   <div class="panel" style="padding:4px 16px">${row('pin', 'Saved addresses', S.addrs.length + ' saved', 'go2', '').replace('data-a="go2"', 'data-a="go" data-id="/addresses"')}${[['orders', 'My orders', myOrders().filter(isCurrent).length + ' active', '/orders'], ['box', 'Catering requests', myCater().length + ' sent', '/orders?t=catering'], ['nav', 'Nearby restaurants', 'List and map', '/nearby'], ['card', 'Payment methods', S.pay.length + ' saved', '/payments'], ['heart', 'Favorites', S.fav.items.length + S.fav.rests.length + ' saved', '/favorites'], ['ticket', 'Promotions', 'Discounts and codes', '/promos'], ['bell', 'Notifications', unread() ? unread() + ' unread' : 'All caught up', '/notifications'], ['help', 'Support', 'FAQs and contact', '/support']].map(([i, t, s, p]) => row(i, t, s, 'go').replace('data-a="go"', `data-a="go" data-id="${p}"`)).join('')}</div>
-  <div class="panel" style="padding:4px 16px"><button class="li" data-a="mode"><span class="ic">${ic('bike', 20)}</span><span class="grow"><b>Order updates: ${isLive() ? 'Live (store and rider)' : 'Demo (automatic)'}</b><br><span class="sm mu">Tap to switch. Live mode lets the store and rider apps update your orders.</span></span>${ic('chev', 18, 'mu')}</button>${S.user.id !== 'demo' ? `<button class="li" data-a="pwchange"><span class="ic">${ic('shield', 20)}</span><span class="grow"><b>Change password</b></span>${ic('chev', 18, 'mu')}</button><button class="li" data-a="delacct" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('trash', 20)}</span><b>Delete account</b></button>` : '<p class="sm mu" style="padding:12px 4px">You are using the demo account.</p>'}<button class="li" data-a="logout" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('logout', 20)}</span><b>Log out</b></button></div></section>` });
+  <div class="panel" style="padding:4px 16px"><div class="li"><span class="ic">${ic('bike',20)}</span><span class="grow"><b>Order updates</b><br><span class="sm mu">Open an order to check its recorded status.</span></span></div>${S.user.id !== 'demo' ? `<button class="li" data-a="pwchange"><span class="ic">${ic('shield', 20)}</span><span class="grow"><b>Change password</b></span>${ic('chev', 18, 'mu')}</button><button class="li" data-a="delacct" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('trash', 20)}</span><b>Delete account</b></button>` : '<p class="sm mu" style="padding:12px 4px">You are using the demo account.</p>'}<button class="li" data-a="logout" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('logout', 20)}</span><b>Log out</b></button></div></section>` });
 V.editProfile = () => ({ html: `<section class="view" style="max-width:560px;margin:0 auto">${pageHead('Edit profile')}<form id="pf" class="panel" novalidate><div class="row" style="margin-bottom:16px">${avatar()}<label class="btn s sm" style="cursor:pointer">Change photo<input type="file" id="pimg" accept="image/*" class="sr"></label></div><div class="field"><label for="pn">Name</label><input class="in" id="pn" value="${esc(S.user.name)}"><p class="err" data-e="pn"></p></div><div class="field"><label for="pe">Email</label><input class="in" id="pe" type="email" value="${esc(S.user.email)}"><p class="err" data-e="pe"></p></div><div class="field"><label for="pp">Mobile number</label><input class="in" id="pp" value="${esc(S.user.phone || '')}"><p class="err" data-e="pp"></p></div><button class="btn p blk">Save changes</button></form></section>` });
 V.addresses = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Saved addresses', true, `<button class="btn p sm" data-a="addrform">${ic('plus', 16)}Add</button>`)}${S.addrs.length ? S.addrs.map(a => `<div class="panel"><div class="row sp"><div><h3>${esc(a.label)} ${a.def ? '<span class="status open">Default</span>' : ''}</h3><p class="mu sm">${esc(a.line)}, ${esc(a.city)}</p></div></div><div class="row" style="margin-top:10px"><button class="btn s sm" data-a="addrform" data-id="${a.id}">Edit</button>${a.def ? '' : `<button class="btn s sm" data-a="addrdef" data-id="${a.id}">Make default</button>`}<button class="btn d sm" data-a="addrdel" data-id="${a.id}">Delete</button></div></div>`).join('') : emptyState('pin', 'No saved addresses', 'Add one for faster checkout.', 'Add address', 'addrform')}</section>` });
 function addrForm(id) { const a = S.addrs.find(x => x.id === id) || { label: '', line: '', city: '' };
@@ -799,11 +785,11 @@ function adoptUser(acc) { S.users = S.users || {}; const b = S.users[acc.id] || 
 function enterApp(acc, remember, isNew) { if (S.user.id !== acc.id) { stashUser(); adoptUser(acc); } S.user.in = true; setSession(acc.id, remember); if (isNew) notify('account', 'Welcome to Papalita', 'Add your address at checkout and order from local stores.'); save(); AU.view = 'login'; AU.fails = 0; location.hash = '#/'; render(); }
 function restoreSession() { S.user.id = S.user.id || 'demo'; S.users = S.users || {}; S.recent = S.recent || []; S.user.in = false; const ses = getSession(); if (!ses) return; const acc = ses.id === 'demo' ? DEMO : accounts().find(a => a.id === ses.id); if (!acc) return clearSession(); if (S.user.id !== acc.id) { stashUser(); adoptUser(acc); } S.user.in = true; }
 const own = x => (x.uid || 'demo') === S.user.id;
-const myOrders = () => S.orders.filter(own), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
+const myOrders = () => S.orders.filter(o=>own(o) && o.demo === false), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
 let AU = { view: 'login', fails: 0, lock: 0, otp: null, reg: null, pending: null, slide: 0, prefill: '', busy: false };
 const SLIDES = [{ img: 'bulalo', t: 'Local favorites, delivered', d: 'Order from Kent and Kaye Bulaloan, Dona Conchita Lakeview Resort and more across Alegria.' }, { img: 'ramen', t: 'Track your rider', d: 'Follow your order from the kitchen to your door, barangay by barangay.' }, { img: 'tray', t: 'Catering for every event', d: 'Birthdays, fiestas and weddings: request trays or a full buffet in minutes.' }];
-const authHead = () => `<div class="auth-top"><span class="auth-logo papalita-logo-motion"><img src="images/papalita_mark_color.png" alt="Papalita official logo"></span><div><b>PAPALITA</b><span>Good Food Closer to You</span></div></div>`;
+const authHead = () => `<div class="auth-top"><span class="auth-logo papalita-logo-motion"><img src="images/papalita_mark_color.png" alt="Papalita official logo"></span><div><b>PAPALITA</b><span>Good Food, Good Mood.</span></div></div>`;
 const pwField = (id, label, auto, extra = '') => `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${auto}">${`<button type="button" class="pwt" data-a="pwtoggle" data-id="${id}" aria-label="Show password">${ic('eye', 20)}</button>`}</div>${extra}<p class="err" data-e="${id}"></p></div>`;
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
 function authScreen() {
@@ -1049,31 +1035,9 @@ hideagain: b => {
   nopen: b => { const n = S.notes.find(x => x.id === b.dataset.id); n.read = true; save(); updateChrome(); const m = n.t.match(/FD-\d+/); if (n.type === 'order' && m && ORD(m[0])) go('/track/' + m[0]); else if (n.type === 'promo') go('/promos'); else render(); },
   logout: () => confirmDlg('Log out of Papalita?', 'Log out').then(async ok => { if (ok) { await authDB().auth.signOut(); S.user.in = false; clearSession(); save(); AU.view = 'login'; render(); } }),
   clrrecent: () => { S.recent = []; save(); const g = $('#sg'); g && (g.innerHTML = ''); },
-  install: async () => {
-    if (PAPALITA_INSTALLED || window.matchMedia('(display-mode: standalone)').matches) {
-      toast('Papalita is already installed on this device.');
-      return;
-    }
-    const promptEvent = window.PAPALITA_INSTALL_PROMPT;
-    if (promptEvent) {
-      // Chrome requires prompt() directly in the user's click handler.
-      window.PAPALITA_INSTALL_PROMPT = null;
-      try {
-        await promptEvent.prompt();
-        const choice = await promptEvent.userChoice;
-        if (choice?.outcome === 'accepted') toast('Installing Papalita…');
-        else toast('Installation cancelled. You can try again from Chrome menu.');
-      } catch (error) {
-        console.warn('[Papalita] Native install prompt failed:', error);
-        toast('Chrome could not show the install prompt. Try Chrome menu > Install app.');
-      }
-      return;
-    }
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    alert(ios
-      ? 'On iPhone: open Papalita in Safari, tap Share, then Add to Home Screen.'
-      : 'Chrome has not made a direct installation prompt available yet. Open this page in Chrome, check the three-dot menu > Install app, and make sure Papalita is not already installed.');
-  }, noinstall: b => { b.closest('.mint')?.remove(); }
+  install: () => window.PapalitaInstall?.open(), noinstall: () => window.PapalitaInstall?.dismiss(),
+  'retry-catalogue': () => location.reload(),
+  'about-papalita': () => openSheet(`<div class="pd" style="padding-top:40px"><h2>Papalita</h2><p class="mu" style="margin-top:12px;line-height:1.8">Good Food, Good Mood. Discover participating local food businesses in Alegria, Surigao del Norte. Menu items and availability come from the stores on Papalita.</p></div>`, {label:'About Papalita'})
 };
 
 document.addEventListener('click', function (e) {
