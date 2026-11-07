@@ -124,6 +124,9 @@ const hoursText = r => r.hours[0] === '00:00' && r.hours[1] === '24:00' ? 'Open 
 const defSel = item => { const s = {}; (item.opts||[]).forEach(g => { if (g.req && g.ch?.length) s[g.id] = [g.ch[0].n]; }); return s; };
 const unitPrice = (item, sel) => Number(item.price) + (item.opts||[]).reduce((a, g) => a + (sel[g.id] || []).reduce((b, n) => b + Number((g.ch.find(c => c.n === n) || {}).p || 0), 0), 0);
 const selText = l => Object.values(l.sel || {}).flat().join(', ');
+const activeVouchers = (now = Date.now()) => window.PROMOS.filter(p => p.active !== false && Date.parse(p.expires_at) > now)
+  .sort((a,b) => Date.parse(a.expires_at) - Date.parse(b.expires_at) || a.code.localeCompare(b.code));
+const promoMatchesStore = (promo, rid) => !promo?.rid || String(promo.rid) === String(rid);
 const validPromo = (p, sub, rid) => { if (!p || p.active === false) return 'This code is no longer active.'; if(p.expires_at&&Date.parse(p.expires_at)<=Date.now()) return 'This code has expired.'; if (p.rid && p.rid !== rid) return `Only valid for ${R(p.rid)?.name || "another store"} orders.`; if (sub < p.min) return `Add ${peso(p.min - sub)} more to use ${p.code}.`; return ''; };
 function calc(cart = S.cart, code = S.promo) {
   const groups = cartGroups(cart);
@@ -133,14 +136,22 @@ function calc(cart = S.cart, code = S.promo) {
   const fee=pickup?0:groups.reduce((n,g)=>n+(Number(feeOf(g.rest))||0),0);
   const p = code && window.PROMOS.find(x => x.code === code);
   // Store-specific codes apply only to the matching store, never another store.
-  const eligible = p && p.rid ? groups.filter(g => String(g.rid) === String(p.rid)) : groups;
+  const eligible = groups.filter(g => promoMatchesStore(p, g.rid));
   const eligibleSub = eligible.reduce((n, g) => n + g.sub, 0);
   const eligibleFee = pickup ? 0 : eligible.reduce((n, g) => n + (g.rest ? feeOf(g.rest) : 0), 0);
-  const perr=code&&!p?'This promotion is no longer available.':p ? (!eligible.length ? 'This voucher is not valid for the stores in your cart.' : validPromo(p, eligibleSub, p.rid || eligible[0].rid)) : '';
+  let perr = code && !p ? 'This promotion is no longer available.' : '';
+  if (p) {
+    perr = eligible.length ? validPromo(p, eligibleSub, p.rid || eligible[0].rid) : 'This voucher is not valid for the stores in your cart.';
+    if (!perr && p.type === 'ship') {
+      if (pickup) perr = 'This voucher is for delivery orders only.';
+      else if (!feeKnown) perr = 'Delivery charges are unavailable for this barangay.';
+      else if (eligibleFee === 0) perr = 'There is no delivery fee to discount.';
+    }
+  }
   let disc = 0;
-  if (p && !perr) disc = p.type === 'flat' ? Math.min(p.value, eligibleSub) : p.type === 'percent' ? Math.min(Math.round(eligibleSub * p.value / 100), p.cap ?? Infinity) : eligibleFee;
+  if (p && !perr) disc = p.type === 'flat' ? Math.min(p.value, eligibleSub) : p.type === 'percent' ? Math.min(Math.round(eligibleSub * p.value / 100), p.cap ?? Infinity, eligibleSub) : eligibleFee;
   const total = Math.max(0, sub + fee - disc);
-  return { r: groups[0]?.rest, groups, sub, fee, feeKnown, disc, perr, promo: p, total,
+  return { r: groups[0]?.rest, groups, sub, fee, feeKnown, disc, perr, promo: p, eligibleSub, total,
     minOk: pickup || groups.every(g => g.rest && g.sub >= (g.rest.min || 0)), pickup };
 }
 
@@ -201,6 +212,7 @@ const ROUTES = [[/^\/?$/, 'home'], [/^\/discover$/, 'discover'], [/^\/restaurant
 const V = {};
 function render() {
   timers.forEach(clearInterval); timers = []; closeSheet();
+  if(!S.user.in || AU.view==='reset') window.PapalitaLiveMap?.close();
   const [path, qs] = (location.hash.slice(1) || '/').split('?'), params = new URLSearchParams(qs || '');
   const main = $('#view');
   if (!S.user.in || AU.view==='reset') { document.body.classList.add('authing'); main.innerHTML = authLayout(); window.PapalitaMotion?.refresh(main); afterAuth(); window.scrollTo(0, 0); updateChrome(); return; }
@@ -289,45 +301,66 @@ const foodVisual = () => {
   if (!choices.length) return `<div class="pp-hero-logo"><img src="images/papalita_mark_color.png" alt="Papalita"></div>`;
   return `<div class="pp-food-slides" data-food-slideshow aria-label="Food from the Papalita menu">${choices.map(({item,rest},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(item.img,`${item.name} from ${rest.name}`,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(item.name)}</b><small>${esc(rest.name)}</small></div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Food photos">${choices.map(({item},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(item.name)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
 };
-const voucherMoney = n => '₱' + n.toLocaleString('en-PH', {maximumFractionDigits:2});
-function updateHomeVoucher(slot){
-  const now=Date.now();
-  const promo=window.PROMOS.filter(p=>p.active&&Date.parse(p.expires_at)>now)
-    .sort((a,b)=>Date.parse(a.expires_at)-Date.parse(b.expires_at)||a.code.localeCompare(b.code))[0];
-  if(!promo){
-    if(!slot.hidden)slot.innerHTML='';
-    slot.hidden=true;
-    return;
-  }
-  const title=promo.type==='ship'?'Free delivery':promo.type==='percent'?`${promo.value}% off your order`:`${voucherMoney(promo.value)} off your order`;
+const voucherMoney = n => Number.isInteger(n) ? '₱' + n.toLocaleString('en-PH') : peso(n);
+const voucherTitle = promo => promo.type==='ship'?'Free delivery':promo.type==='percent'?`${promo.value}% off your order`:`${voucherMoney(promo.value)} off your order`;
+function voucherTerms(promo){
   const terms=[promo.min>0?`Min. order ${voucherMoney(promo.min)}`:'No minimum order'];
   if(promo.type==='percent'&&promo.cap!==null)terms.push(`Up to ${voucherMoney(promo.cap)} off`);
-  const details=terms.join(' · ');
-  const key=JSON.stringify([promo.code,title,details,promo.expires_at]);
-  if(slot.hidden||slot.dataset.voucher!==key){
-    slot.innerHTML=`<section class="pp-home-voucher" aria-labelledby="pp-voucher-title">
-      <div class="pp-voucher-top"><span class="pp-voucher-label">Limited-time offer</span><span class="pp-voucher-timer">${ic('clock',15)} Ends in <span data-voucher-clock></span></span></div>
-      <h2 id="pp-voucher-title">${esc(title)}</h2><p>${esc(details)}</p>
-      <div class="pp-voucher-code"><code>${esc(promo.code)}</code><button type="button" class="btn p" data-a="copy" data-id="${esc(promo.code)}" aria-label="Copy code ${esc(promo.code)}">Copy code</button></div>
-    </section>`;
-    slot.dataset.voucher=key;
-    slot.hidden=false;
-  }
-  const seconds=Math.ceil((Date.parse(promo.expires_at)-now)/1000);
-  const hours=Math.floor(seconds/3600), minutes=Math.floor(seconds/60)%60;
-  $('[data-voucher-clock]',slot).textContent=[hours,minutes,seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
+  return terms.join(' · ');
 }
 function watchHomeVoucher(){
   const slot=$('#pp-home-voucher');
   if(!slot)return;
+  const slide=$('[data-voucher-slide]',slot), controls=$('[data-voucher-controls]',slot);
+  let shown='', key='', nextAt=Date.now()+7000, rotating=true;
+  function update(step=0){
+    const now=Date.now(), promos=activeVouchers(now);
+    slot.hidden=!promos.length;
+    if(!promos.length){
+      if(key)slide.innerHTML='';
+      shown='';key='';
+      return;
+    }
+    const current=promos.findIndex(p=>p.code===shown);
+    const index=current<0?0:(current+step+promos.length)%promos.length;
+    const promo=promos[index];
+    if(promo.code!==shown)nextAt=now+7000;
+    shown=promo.code;
+    const title=voucherTitle(promo), details=voucherTerms(promo);
+    const nextKey=JSON.stringify([shown,title,details]);
+    if(key!==nextKey){
+      slide.innerHTML=`<div class="pp-voucher-slide">
+      <div class="pp-voucher-top"><span class="pp-voucher-label">Limited-time offer</span><span class="pp-voucher-timer">${ic('clock',15)} Ends in <span data-voucher-clock></span></span></div>
+      <h2>${esc(title)}</h2><p>${esc(details)}</p>
+      <div class="pp-voucher-code"><code>${esc(promo.code)}</code><button type="button" class="btn p" data-a="copy" data-id="${esc(promo.code)}" aria-label="Copy code ${esc(promo.code)}">Copy code</button></div>
+      </div>`;
+      key=nextKey;
+    }
+    controls.hidden=promos.length<2;
+    $('[data-voucher-position]',controls).textContent=`${index+1} / ${promos.length}`;
+    const seconds=Math.ceil((Date.parse(promo.expires_at)-now)/1000);
+    $('[data-voucher-clock]',slide).textContent=[Math.floor(seconds/3600),Math.floor(seconds/60)%60,seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
+  }
+  slot.addEventListener('click',event=>{
+    const arrow=event.target.closest('[data-voucher-step]');
+    if(!arrow)return;
+    rotating=false;
+    update(Number(arrow.dataset.voucherStep));
+  });
   const refresh=async()=>{
     if(document.hidden)return;
     await refreshPromotions();
-    if(slot.isConnected)updateHomeVoucher(slot);
+    if(slot.isConnected)update();
   };
-  updateHomeVoucher(slot);
+  update();
   void refresh();
-  timers.push(setInterval(()=>updateHomeVoucher(slot),1000),setInterval(refresh,60000));
+  timers.push(setInterval(()=>{
+    if(document.hidden)return;
+    const advance=rotating&&Date.now()>=nextAt&&!window.PapalitaMotion?.stopped()
+      &&!slot.contains(document.activeElement)&&!slot.matches(':hover');
+    if(advance)nextAt=Date.now()+7000;
+    update(advance?1:0);
+  },1000),setInterval(refresh,60000));
 }
 const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita · Good Food, Good Mood.</span><nav aria-label="Footer"><button type="button" data-a="about-papalita">About</button><a href="#/support">Contact</a><button type="button" data-papalita-legal>Terms & Privacy</button></nav></footer>`;
 V.home = () => {
@@ -342,7 +375,10 @@ V.home = () => {
     </aside>` : ''}
     ${catalogueError?`<div class="pp-catalog-error" role="alert">${esc(catalogueError)} <button class="link gl" data-a="retry-catalogue">Refresh</button></div>`:''}
     <div class="pp-hero"><div class="pp-hero-copy"><span class="pp-kicker">Made for your everyday</span><h1>Your local favorites,<br><em>delivered.</em></h1><p>Find your next coffee, comfort meal, or something worth sharing in Alegria.</p><button class="btn p" data-a="qa" data-id="rests">Explore stores ${ic('arrow',17)}</button></div><div class="pp-hero-visual">${foodVisual()}<div class="pp-float-note">${ic('store',23)}<span><b>From around the neighborhood</b><small>Alegria, Surigao del Norte</small></span></div></div></div>
-    <div id="pp-home-voucher" hidden></div>
+    <div id="pp-home-voucher" hidden><section class="pp-home-voucher" aria-label="Limited-time vouchers">
+      <div data-voucher-slide></div>
+      <div class="pp-voucher-controls" data-voucher-controls hidden><button type="button" data-voucher-step="-1" aria-label="Previous voucher">${ic('back',17)}</button><span data-voucher-position></span><button type="button" data-voucher-step="1" aria-label="Next voucher">${ic('chev',17)}</button></div>
+    </section></div>
     <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
     ${CATS.length?`<div class="pp-categories" role="group" aria-label="Menu categories"><button class="chipc on" data-a="hcat" data-id="all" aria-pressed="true">${ic('grid',16)}All food</button>${CATS.map(c=>`<button class="chipc" data-a="hcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div>`:''}
     ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic(orderStatus.mode(act)==='pickup'?'store':'orders',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(orderStatus.copy(act)[0])}</span></span>${ic('chev',18)}</a>`:''}
@@ -431,8 +467,37 @@ function openItem(id, editKey) {
 /* ---------- cart ---------- */
 const sumHTML = c => `<div class="sum"><div class="r"><span>Subtotal</span><span>${peso(c.sub)}</span></div>${orderStatus.mode(c) === 'pickup' ? '' : `<div class="r"><span>Delivery fee</span><span>${c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="ok">Free</b>` : c.fee==null?'Not supplied':peso(c.fee)}</span></div>`}
   ${c.disc && c.promo?.type !== 'ship' ? `<div class="r ok"><span>Promo ${esc(c.promo?.code||'Recorded discount')}</span><span>−${peso(c.disc)}</span></div>` : ''}${c.tip ? `<div class="r"><span>Rider tip</span><span>${peso(c.tip)}</span></div>` : ''}<div class="r tot"><span>Total</span><span>${peso(c.total)}</span></div><p class="mu sm" style="margin-top:6px">Check tax details with the store.</p></div>`;
-const promoBox = c => `<div class="panel"><h3 style="margin-bottom:10px">Promo code</h3>${S.promo ? `<div class="row sp"><span class="chip on">${ic('percent', 16)}${esc(S.promo)}</span><button class="btn s sm" data-a="rmpromo">Remove</button></div>${c.perr ? `<p class="err" style="margin-top:8px">${esc(c.perr)}</p>` : `<p class="ok sm" style="margin-top:8px">Saved ${peso(c.disc)} with this code.</p>`}` :
-  `<div class="row"><input class="in" id="pc" placeholder="Enter code" autocapitalize="characters" aria-label="Promo code" maxlength="20"><button class="btn p sm" data-a="applypromo">Apply</button></div><p class="err" id="pcerr"></p><div class="chips" style="margin-top:8px">${window.PROMOS.filter(p => p.active !== false).slice(0, 3).map(p => `<button class="chip" data-a="usepromo" data-id="${p.code}">${p.code}</button>`).join('')}</div>`}</div>`;
+const promoBox = c => `<section class="panel pp-voucher-panel" aria-labelledby="pp-checkout-vouchers">
+  <div class="row sp wrap"><div><h3 id="pp-checkout-vouchers">Vouchers</h3><p class="mu sm">One voucher per checkout.</p></div>
+  <button type="button" class="btn s sm" data-a="choosevoucher">${ic('ticket',17)}${S.promo?'Change voucher':'Choose voucher'}</button></div>
+  ${S.promo?`<div class="row sp wrap pp-selected-voucher"><div><b>${esc(S.promo)}</b><p class="${c.perr?'err':'ok sm'}">${esc(c.perr||`You save ${peso(c.disc)}.`)}</p></div><button type="button" class="btn o sm" data-a="rmpromo">Remove voucher</button></div>`:''}
+</section>`;
+function voucherOptions(){
+  const vouchers=activeVouchers();
+  return vouchers.length?vouchers.map(p=>{
+    const quote=calc(S.cart,p.code),selected=S.promo===p.code&&!quote.perr;
+    return `<button type="button" class="pp-voucher-option" data-a="usepromo" data-id="${esc(p.code)}" aria-pressed="${selected}" ${quote.perr?'disabled':''}>
+      <span>${esc(voucherTitle(p))}<small>${esc(p.code)} · ${esc(voucherTerms(p))}</small></span>
+      <small>${esc(quote.perr||(selected?`Selected · Save ${peso(quote.disc)}`:`Save ${peso(quote.disc)}`))}</small>
+    </button>`;
+  }).join(''):'<p class="mu sm">No active vouchers right now.</p>';
+}
+async function chooseVoucher(){
+  const sheet=openSheet(`<div class="pd pp-voucher-picker"><h2 tabindex="-1" autofocus>Choose a voucher</h2><p class="mu sm">You can apply one voucher to this checkout.</p>
+    <div class="pp-voucher-options" data-voucher-options><p class="mu sm" role="status">Loading vouchers…</p></div>
+    <div class="row"><input class="in" id="pc" placeholder="Enter voucher code" autocapitalize="characters" aria-label="Voucher code" maxlength="20"><button type="button" class="btn p sm" data-a="applypromo">Apply</button></div>
+    <p class="err" id="pcerr" role="alert"></p></div>`,{label:'Choose a voucher'});
+  const loaded=await refreshPromotions();
+  if(sheet===sheetEl)$('[data-voucher-options]',sheet).innerHTML=loaded?voucherOptions():'<p class="err">Vouchers could not load. Close and reopen to try again.</p>';
+}
+function renderVoucherCheckout(){
+  const phone=$('#cp')?.value, note=$('#di')?.value, position=scrollY;
+  render();
+  if(phone!=null&&$('#cp'))$('#cp').value=phone;
+  if(note!=null&&$('#di'))$('#di').value=note;
+  $('[data-a=choosevoucher]')?.focus({preventScroll:true});
+  window.scrollTo(0,position);
+}
 V.cartView = () => { const c = calc();
   if (!S.cart.lines.length) return { html: `<section class="view">${pageHead('Your cart')}${emptyState('cart', 'Your cart is empty', 'Add something delicious and it will show up here.', 'Browse food', 'browse')}</section>` };
   const a = S.addrs.find(x => x.id === CK.addr) || defAddr(); if (a) CK.addr = a.id; const r=c.r;
@@ -453,7 +518,7 @@ V.cartView = () => { const c = calc();
   <div class="sum" style="margin-top:18px;font-size:18px"><div class="r mu"><span>Order Subtotal</span><b style="color:var(--ink)">${peso(c.sub)}</b></div><div class="r mu"><span>${CK.fulfillment === 'pickup' ? 'Pickup Fee' : 'Delivery fee estimate'}</span><b style="color:var(--ink)">${fee}</b></div>${c.disc && c.promo?.type !== 'ship' ? `<div class="r gl"><span>Promo ${esc(c.promo?.code||'Recorded discount')}</span><b>−${peso(c.disc)}</b></div>` : ''}${tip ? `<div class="r mu"><span>Rider tip</span><b style="color:var(--ink)">${peso(tip)}</b></div>` : ''}<p class="sm mu">Check tax details with the store.</p></div>
   ${!c.feeKnown?'<p class="note" style="margin-top:15px">Delivery charges are not configured for this barangay. Choose pickup or contact the store.</p>':''}
   ${!c.minOk ? `<p class="err" style="margin:10px 0">Some stores have not reached their minimum order amount.</p>` : ''}
-  <button class="pbar" id="place" data-a="place" ${c.minOk&&c.feeKnown?'':'disabled'}><span>Place Order</span><i></i><b>${c.feeKnown?peso(c.total+tip):'Fee unavailable'}</b></button>
+  <button class="pbar" id="place" data-a="place" data-total="${c.total+tip}" ${c.minOk&&c.feeKnown&&!c.perr?'':'disabled'}><span>Place Order</span><i></i><b>${c.feeKnown?peso(c.total+tip):'Fee unavailable'}</b></button>
   <p class="mu sm" style="text-align:center;margin-top:12px;letter-spacing:.04em">TAPPING PLACE ORDER CONFIRMS YOUR ACCEPTANCE OF TERMS</p><p style="text-align:center;margin-top:8px"><span class="sm mu">Orders are submitted securely to Papalita. Cash payment only.</span></p></section>` }; };
 
 /* ---------- checkout ---------- */
@@ -475,18 +540,33 @@ async function placeOrder() {
   const db = window.PAPALITA_DB;
   if (!db) return toast('Supabase is unavailable. Please try again.');
   const btn = $('#place'); btn.disabled = true; btn.firstElementChild.textContent = 'Placing orders…';
+  const reviewedTotal=Number(btn.dataset.total??(c.total+CK.tip)), reviewedPromo=S.promo;
   try {
     const { data: auth, error: authError } = await db.auth.getUser();
     if (authError) throw authError;
     if (!auth?.user) throw new Error('Please sign in again before ordering.');
     const address = CK.fulfillment === 'pickup' ? 'Pickup at store' : `${a.label} — ${a.line}${a.landmark ? ' (' + a.landmark + ')' : ''}, ${a.city}`;
-    const reviewedTotal=c.total;await refreshCommercialData();c=calc();if(c.perr||Math.abs(reviewedTotal-c.total)>.009){render();throw Error('Charges or promotions changed. Review the updated total before ordering.');}if(!c.feeKnown)throw Error('Delivery charges are not configured. Choose pickup or contact the store.');
+    await refreshCommercialData();
+    c=calc();
+    if(c.perr||reviewedPromo!==S.promo||Math.abs(reviewedTotal-c.total-CK.tip)>.009){
+      renderVoucherCheckout();
+      throw Error(c.perr||'Charges or promotions changed. Review the updated total before ordering.');
+    }
+    if(!c.feeKnown)throw Error('Delivery charges are not configured. Choose pickup or contact the store.');
+    let eligibleRunning=0, allocatedCents=0;
     const groups = c.groups.map((g, index) => {
       if (!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(g.rid))) throw new Error('Invalid store ID. Refresh the menu and retry.');
       const storeFee = CK.fulfillment === 'pickup' ? 0 : feeOf(g.rest);
-      const eligible = !c.promo?.rid || String(c.promo.rid) === String(g.rid);
-      const discountBase = c.promo?.rid ? c.groups.filter(x => String(x.rid) === String(c.promo.rid)).reduce((n,x)=>n+x.sub,0) : c.sub;
-      const discount = eligible && !c.perr && discountBase ? Math.min(g.sub + storeFee, Math.round(c.disc * g.sub / discountBase)) : 0;
+      let discount=0;
+      if(c.disc&&promoMatchesStore(c.promo,g.rid)){
+        if(c.promo.type==='ship')discount=storeFee;
+        else{
+          eligibleRunning+=g.sub;
+          const runningCents=Math.round(c.disc*100*eligibleRunning/c.eligibleSub);
+          discount=(runningCents-allocatedCents)/100;
+          allocatedCents=runningCents;
+        }
+      }
       const tip = CK.fulfillment === 'pickup' ? 0 : (index === 0 ? (CK.tip || 0) : 0);
       return { store_id: g.rid, delivery_fee: storeFee, discount, tip,
         items: g.lines.map(l => ({ product_id: l.itemId, quantity: l.qty, selected_options: l.sel || {}, special_instructions: l.note || '' })) };
@@ -503,7 +583,7 @@ async function placeOrder() {
       const group = c.groups[index], result = data[index];
       return { id: result.order_id, rid: g.store_id, items: group.lines.map(l => ({ ...l })),
         sub: Number(result.subtotal), fee: Number(result.delivery_fee), disc: g.discount,
-        total: Number(result.total_amount), tip: g.tip, promo: g.discount ? S.promo : null,
+        total: Number(result.total_amount), tip: g.tip, promo: g.discount ? reviewedPromo : null,
         createdAt, source: 'supabase', status: 'pending', stage: 0, upd: createdAt, uid: auth.user.id,
         fulfillment: CK.fulfillment, addr: address, note: ($('#di').value || '').trim(),
         contact: { name: S.user.name, phone }, pay: { method: 'cod', status: 'unpaid', source: 'supabase' } };
@@ -536,6 +616,19 @@ const orderLocationLabel = o => ({pickup: 'Pickup at', delivery: 'Deliver to'})[
 const orderLocation = o => orderStatus.mode(o) === 'pickup'
   ? R(o.rid)?.addr || R(o.rid)?.name || 'Collect at the store'
   : o.addr || 'Address on order';
+function orderMapLink(order, fulfillment) {
+  if (order.status === 'cancelled' || !['pickup','delivery'].includes(fulfillment)) return '';
+  const store = R(order.rid);
+  const place = fulfillment === 'pickup'
+    ? [store?.name?.trim(),store?.addr?.trim()].filter(Boolean).join(', ')
+    : String(order.addr || '').replace(/^.*? — /, '').trim();
+  if (!place || place.toLowerCase() === 'pickup at store') return '';
+  const destination = /\bSurigao del Norte\b/i.test(place) ? place
+    : place + (/\bAlegria\b/i.test(place) ? '' : ', Alegria') + ', Surigao del Norte';
+  const action = fulfillment === 'pickup' ? 'dir/?api=1&destination=' : 'search/?api=1&query=';
+  const url = 'https://www.google.com/maps/' + action + encodeURIComponent(destination);
+  return `<a class="btn s sm" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ic('pin',16)}${fulfillment === 'pickup' ? 'Directions to store' : 'View drop-off map'}</a>`;
+}
 /* ---------- receipt ---------- */
 function receiptHTML(o, anim) { const r=R(o.rid)||{name:'Store',items:[]}, pr = o.promo && window.PROMOS.find(p => p.code === o.promo); let n = 0; const L = (a, b, cls = '') => `<div class="ln ${cls}" style="--i:${n++}"><span>${a}</span><i></i><span>${b}</span></div>`;
   const stamp=o.pay?.status==='paid'?'PAYMENT RECORDED':o.pay?.method==='cod'?'CASH PAYMENT':'PAYMENT NOT CONFIRMED';
@@ -619,7 +712,8 @@ V.track = id => { const o = ORD(id); if (!o) return linkedOrderView(id);
           : statuses.map(([,title],i)=>`<li class="${i<=idx?'done':''} ${i===idx?'cur':''}"${i===idx?' aria-current="step"':''}>
               <span class="b">${ic(i<idx?'check':'clock',16)}</span><b>${title}</b></li>`).join('')}
         </ol></div>
-        <div class="panel"><b>${orderLocationLabel(o)}</b><p>${esc(orderLocation(o))}</p>
+        <div class="panel"><div class="row sp wrap" style="margin-bottom:10px"><div><b>${orderLocationLabel(o)}</b><p>${esc(orderLocation(o))}</p></div><div class="row wrap">${orderMapLink(o,fulfillment)}
+          ${fulfillment==='delivery'&&isCurrent(o)?`<button class="btn p sm" data-a="livemap" data-id="${esc(id)}">${ic('map',16)}Live delivery map</button>`:''}</div></div>
         <div class="row sp"><b>Total</b><b>${peso(o.total)}</b></div></div>`;
     };
     return {html:`<section class="view" id="trk">${make()}</section>`,after:()=>{
@@ -883,11 +977,26 @@ async function saveProfile(f){
 const go = p => nav(p), browse = () => nav('/discover?tab=dishes&reset=1');
 function toggleFav(k, id) { const a = S.fav[k], i = a.indexOf(id); i >= 0 ? a.splice(i, 1) : a.push(id); save(); const on = i < 0;
   $$(`[data-a=fav][data-k=${k}][data-id="${id}"]`).forEach(b => { b.setAttribute('aria-pressed', on); $('svg', b).classList.toggle('on', on); }); toast(on ? 'Saved to favorites.' : 'Removed from favorites.'); if (/favorites/.test(location.hash)) render(); }
-function setPromo(code) { const p = window.PROMOS.find(x => x.code === code); if (!p) return toast('That code is not valid.'); S.promo = code; save();
-  const c = calc(); toast(!S.cart.lines.length ? `${code} saved. It applies when you check out.` : c.perr ? c.perr : `${code} applied. You save ${peso(c.disc)}.`); if (/cart|checkout|promos/.test(location.hash)) render(); }
+const onCheckout = () => /^\/(?:cart|checkout)$/.test(curPath());
+function setPromo(code, onError=toast){
+  if(!activeVouchers().some(p=>p.code===code))return onError('This voucher is no longer available.');
+  const quote=calc(S.cart,code), checkout=onCheckout();
+  if(checkout&&quote.perr)return onError(quote.perr);
+  S.promo=code;
+  save();
+  if(checkout)renderVoucherCheckout();
+  else if(curPath()==='/promos')render();
+  toast(!S.cart.lines.length?`${code} saved for checkout.`:quote.perr||`${code} applied. You save ${peso(quote.disc)}.`);
+}
 const syncLoc = a => { const n = (a && a.city || '').split(',')[0].trim(), b = window.BRGYS.find(x => x.n === n); if (b) { S.loc.brgy = b.n; S.loc.label = b.n + ', Alegria'; save(); } };
 function moreSheet() { openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:6px">More</h2>${[['grid', 'All categories', '/categories'], ['heart', 'Favorites', '/favorites'], ['bell', 'Notifications', '/notifications'], ['pin', 'Saved addresses', '/addresses'], ['help', 'Support', '/support'], ['user', 'Profile', '/profile']].map(([i, t, p]) => `<button class="li" data-a="go" data-id="${p}"><span class="ic">${ic(i)}</span><b class="grow">${t}</b>${ic('chev', 18, 'mu')}</button>`).join('')}</div>`, { label: 'More' }); }
 const A = {
+  livemap: b => {
+    const order=ORD(b.dataset.id), uid=S.user.id;
+    if(!order || orderStatus.mode(order)!=='delivery')return;
+    if(!window.PapalitaLiveMap){toast('Live map could not load. Refresh to retry.');return;}
+    window.PapalitaLiveMap.open(order,authDB(),()=>S.user.in&&S.user.id===uid&&curPath()==='/track/'+order.id);
+  },
   tip: b => { CK.tip = +b.dataset.v; render(); },
   receipt: b => { const o = ORD(b.dataset.id); openSheet(`<div class="pd" style="padding-top:34px">${receiptHTML(o, false)}<button class="btn p blk" style="margin-top:14px" data-a="printrcpt" data-id="${o.id}">Save / print receipt</button></div>`, { label: 'Receipt' }); }, printrcpt: b => printReceipt(b.dataset.id),
   cater: b => go('/catering/request?rid=' + b.dataset.id), newcater: () => go('/catering/request'),
@@ -910,8 +1019,14 @@ const A = {
   flt: b => { const k = b.dataset.k, v = b.dataset.v; if (k === 'cat' && v === 'catering') return go('/catering'); F[k] = k === 'cat' ? v : +v; fillDiscover(); }, fpromo: () => { F.promo = !F.promo; fillDiscover(); },
   fclear: () => { F = { ...F, q: '', cat: 'all', price: 0, rating: 0, eta: 0, promo: false }; render(); },
   jump: b => { $$('.chips.solid .chip').forEach(x => x.classList.toggle('on', x === b)); const e = document.getElementById(b.dataset.id); e && e.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
-  usepromo: b => setPromo(b.dataset.id), rmpromo: () => { S.promo = null; save(); render(); },
-  applypromo: () => { const v = $('#pc').value.trim().toUpperCase(); if (!v) return ($('#pcerr').textContent = 'Enter a promo code.'); if (!window.PROMOS.find(p => p.code === v && p.active !== false)) return ($('#pcerr').textContent = 'That code is not valid.'); setPromo(v); },
+  choosevoucher: chooseVoucher,
+  usepromo: b => setPromo(b.dataset.id), rmpromo: () => { S.promo = null; save(); renderVoucherCheckout(); },
+  applypromo: () => {
+    const code=$('#pc').value.trim().toUpperCase(), error=$('#pcerr');
+    error.textContent='';
+    if(!code){error.textContent='Enter a voucher code.';return;}
+    setPromo(code,message=>{error.textContent=message;});
+  },
   copy: async b => { try { await navigator.clipboard.writeText(b.dataset.id); toast(`Copied ${b.dataset.id}.`); } catch { toast('Could not copy the code. You can enter it manually at checkout.'); } },
   qty: b => { const l = S.cart.lines.find(x => x.key === b.dataset.k); l.qty += +b.dataset.d; if (l.qty < 1) return A.rmline(b); if (l.qty > 99) l.qty = 99; save(); updateChrome(); render(); },
   editline: b => openItem(b.dataset.id, b.dataset.k),
