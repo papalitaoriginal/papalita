@@ -1,166 +1,41 @@
-/* Foodie web app (PWA). Vanilla ES modules-free build so it runs from any static host.
-   Layers: utils -> store -> domain (cart/pricing/orders) -> services (gateway/api) -> UI screens -> router. */
-// Papalita startup fix - 2026-10-26
+/* Papalita customer app: live Supabase data and explicit unavailable states. */
 (async () => {
 'use strict';
-const C = window.FOODIE_CONFIG, RS = window.RESTAURANTS, CATS = window.CATEGORIES;
-let catalogueError = '';
-
-// Load the online catalogue before rendering the customer menu.
-try {
-  if (typeof window.loadPapalitaProducts !== 'function') throw Error('Supabase catalogue is not configured.');
-  {
-    const serverStores = await window.loadPapalitaProducts();
-    if (!Array.isArray(serverStores)) throw Error('The store catalogue could not be read.');
-
-    const normalize = value =>
-      String(value ?? '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim();
-
-    const matchStore = (localStore, onlineStore) => {
-      const a = normalize(localStore.name);
-      const b = normalize(onlineStore.name);
-
-      if (a === b) return true;
-
-      // Match the existing Papalita stores even if punctuation differs.
-      if (
-        a.includes('conchita') &&
-        b.includes('conchita')
-      ) return true;
-
-      if (
-        a.includes('kent') && a.includes('kaye') &&
-        b.includes('kent') && b.includes('kaye')
-      ) return true;
-
-      return false;
-    };
-
-    // Live store metadata comes from Supabase, not demo catalogue defaults.
-    const businessLabels = {
-      cafe: 'Café / Coffee Shop', coffee_shop: 'Café / Coffee Shop',
-      restaurant: 'Restaurant', carinderia: 'Carinderia',
-      milk_tea: 'Milk Tea / Beverage Shop', bakery: 'Bakery / Bakeshop',
-      fast_food: 'Fast Food / Snack House', pizza: 'Pizza / Pasta House',
-      grill: 'Grill / BBQ House', desserts: 'Desserts / Ice Cream',
-      bulaloan: 'Bulaloan / Specialty Food'
-    };
-    const businessLabel = value => {
-      const key = String(value || 'restaurant').trim().toLowerCase().replace(/[\s/-]+/g, '_');
-      return businessLabels[key] || String(value || 'Restaurant').replace(/_/g, ' ');
-    };
-    const hour = (value, fallback) => {
-      const match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
-      return match ? `${match[1].padStart(2, '0')}:${match[2]}` : fallback;
-    };
-    const cateringAllowed = value => /^(restaurant|carinderia|bulaloan|specialty[_\s-]*restaurant)$/i.test(String(value || '').trim());
-    const canCater = online => cateringAllowed(online.business_type) && online.catering_enabled === true;
-    const applyStoreDetails = (target, online) => {
-      target.kind = businessLabel(online.business_type);
-      target.catering = canCater(online);
-      if (!target.catering) target.cateringInfo = null;
-      target.hours = [hour(online.open_time, '08:00'), hour(online.close_time, '21:00')];
-      target.closed = online.is_open === false;
-      target.addr = online.address || 'Alegria, Surigao del Norte';
-      target.phone = online.phone || '';
-      target.description = online.description || '';
-      target.cover = online.cover || online.logo_url || '';
-      target.logo_url = online.logo_url || '';
-      target.placeholder = false;
-      target.rating = null; target.reviews = ''; target.reviewsList = []; target.promo = null; target.feature = null; target.stay = false;
-      target.verifiedHours = !!(online.open_time && online.close_time);
-    };
-
-    // Include newly approved Supabase stores not present in the old local sample catalogue.
-    if (Array.isArray(serverStores)) {
-      for (const onlineStore of serverStores) {
-        if (RS.some(localStore => matchStore(localStore, onlineStore))) continue;
-        const items = (onlineStore.items || []).map(product => ({
-          id: String(product.id), name: product.name, price: Number(product.price) || 0,
-          cat: product.cat || 'other', img: product.img || '',
-          desc: product.desc || product.name, sec: 'Menu',
-          available: product.available === true, pop: 50, opts: product.opts || []
-        }));
-        RS.push({
-          id: String(onlineStore.id), name: onlineStore.name,
-          kind: businessLabel(onlineStore.business_type), cat: items[0]?.cat || 'rice',
-          rating: null, reviews: '', eta: [25, 40], min: 0,
-          hours: [hour(onlineStore.open_time, '08:00'), hour(onlineStore.close_time, '21:00')], dx: 0, dy: 0,
-          cover: onlineStore.cover || onlineStore.logo_url || '', addr: onlineStore.address || 'Alegria, Surigao del Norte',
-          phone: onlineStore.phone || '', messenger: '', placeholder: false, catering: canCater(onlineStore),
-          closed: onlineStore.is_open === false, description: onlineStore.description || '',
-          reviewsList: [], items
-        });
-      }
-    }
-    // Approved Supabase stores only; hide local/demo stores not in database.
-    if (Array.isArray(serverStores)) {
-      for (let i = RS.length - 1; i >= 0; i--) {
-        if (!serverStores.some(online => matchStore(RS[i], online))) RS.splice(i, 1);
-      }
-    }
-    let synced = 0;
-
-    if (Array.isArray(serverStores)) {
-      for (const restaurant of RS) {
-        const onlineStore = serverStores.find(
-          s => matchStore(restaurant, s)
-        );
-
-        // Keep the sample menu if no online products are available
-        // for that restaurant yet.
-        if (!onlineStore) {
-  continue;
+const C=window.FOODIE_CONFIG,RS=window.RESTAURANTS,CATS=window.CATEGORIES;
+let catalogueError='',commercialError='';
+const deliveryFees=new Map();
+async function refreshCommercialData(){
+  const client=window.PAPALITA_DB;deliveryFees.clear();window.PROMOS=[];
+  if(!client){commercialError='Supabase is not configured.';return;}
+  const [fees,promos]=await Promise.allSettled([
+    client.from('papalita_delivery_fees').select('barangay,fee,extra_minutes,distance_km'),
+    client.from('papalita_promo_codes').select('code,title,type,value,cap,min_order,expires_at,status').eq('status','active').gte('expires_at',new Date().toISOString())
+  ]);
+  const errors=[];
+  if(fees.status==='fulfilled'&&!fees.value.error){for(const f of fees.value.data||[])if(Number.isFinite(Number(f.fee))&&Number(f.fee)>=0)deliveryFees.set(f.barangay,Number(f.fee));}
+  else errors.push('Delivery charges could not load.');
+  if(promos.status==='fulfilled'&&!promos.value.error)window.PROMOS=(promos.value.data||[]).filter(p=>['flat','percent','ship'].includes(p.type)&&Date.parse(p.expires_at)>=Date.now()).map(p=>({code:p.code,title:p.title,desc:'',type:p.type,value:Number(p.value),cap:p.cap==null?null:Number(p.cap),min:Number(p.min_order),exp:p.expires_at.slice(0,10),expires_at:p.expires_at,active:true}));
+  else errors.push('Promotions could not load.');
+  commercialError=errors.join(' ');
 }
+try{
+  if(typeof window.loadPapalitaProducts!=='function')throw Error('Supabase catalogue is not configured.');
+  const [stores]=await Promise.all([window.loadPapalitaProducts(),refreshCommercialData()]);
+  if(!Array.isArray(stores))throw Error('The catalogue could not be read.');
+  RS.splice(0,RS.length,...stores.map(s=>{
+    const items=(s.items||[]).filter(p=>Number.isFinite(Number(p.price))&&Number(p.price)>0).map(p=>({id:String(p.id),name:p.name,price:Number(p.price),cat:p.cat||'Other',img:p.img||'',desc:p.desc||'',sec:p.cat||'Menu',available:p.available===true,opts:Array.isArray(p.opts)?p.opts:[]}));
+    const business=String(s.business_type||'Food business');
+    return{id:String(s.id),name:s.name,kind:business.replace(/_/g,' '),description:s.description||'',items,
+      cat:items[0]?.cat||'Other',cover:s.cover||s.logo_url||'',logo_url:s.logo_url||'',addr:s.address||'',phone:s.phone||'',messenger:'',
+      hours:[s.open_time||'',s.close_time||''],verifiedHours:!!(s.open_time&&s.close_time),open_state:s.is_open,closed:s.is_open===false,
+      rating:null,reviews:'',reviewsList:[],min:0,
+      catering:/^(restaurant|carinderia|bulaloan|specialty[_\s-]*restaurant)$/i.test(business)&&s.catering_enabled===true,
+      stay:false,feature:null,promo:null};
+  }));
+}catch(error){RS.splice(0);catalogueError='Stores could not load. Check your connection and refresh.';console.error('[Papalita] Catalogue:',error.message);}
+const categoryIds=[...new Set(RS.flatMap(r=>r.items).map(i=>String(i.cat)))];
+CATS.splice(0,CATS.length,...categoryIds.map(id=>({id,name:id.replace(/[_-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),img:''})));
 
-applyStoreDetails(restaurant, onlineStore);
-
-// CRITICAL: use the real Supabase store UUID for checkout, including matched legacy stores.
-restaurant.id = String(onlineStore.id);
-
-// Keep the local menu if there are no online products.
-if (!Array.isArray(onlineStore.items)) continue;
-        const onlineItems = onlineStore.items.map(product => ({
-          id: String(product.id),
-          name: product.name,
-          price: Number(product.price) || 0,
-          cat: product.cat || 'other',
-          img: product.img || '',
-          desc: product.desc || product.name,
-          sec: product.cat || 'Menu',
-          available: product.available === true,
-          pop: 50,
-          opts: product.opts || []
-        }));
-
-        // Use live Supabase products only; no local/demo menu items.
-        restaurant.items = onlineItems;
-
-synced++;
-      }
-    }
-
-    console.info(
-      '[Papalita] Customer catalogue synced for stores:',
-      synced
-    );
-  }
-} catch (error) {
-  RS.splice(0); catalogueError = 'Stores could not load. Check your connection and refresh to try again.';
-  console.error(
-    '[Papalita] Customer catalogue sync failed:',
-    error
-  );
-}
-// Only actual menu categories. Keep product-specific category names from Supabase.
-const suppliedCategories = new Map(CATS.map(c => [String(c.id), c]));
-const categoryIds = [...new Set(RS.flatMap(r => r.items || []).map(i => String(i.cat || 'other')))];
-CATS.splice(0, CATS.length, ...categoryIds.map(id => ({id, name:suppliedCategories.get(id)?.name || id.replace(/[_-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()), img:suppliedCategories.get(id)?.img || ''})));
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const peso = n => '₱' + (Number(n) || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -200,24 +75,21 @@ const R = id => RS.find(r => String(r.id) === String(id));
 const ITEM = id => { for (const r of RS) { const i = r.items.find(i => i.id === id); if (i) return { item: i, rest: r }; } return null; };
 const ALL = () => RS.flatMap(r => r.items.map(i => ({ item: i, rest: r })));
 const brg = () => window.BRGYS.find(b => b.n === (S.loc || {}).brgy) || window.BRGYS[0];
-const feeOf = r => brg().fee, etaOf = r => [r.eta[0] + brg().eta + (r.busy || 0), r.eta[1] + brg().eta + (r.busy || 0)];
+const feeOf = () => deliveryFees.has(S.loc.brgy)?deliveryFees.get(S.loc.brgy):null;
 const iso = d => new Date(d).toISOString();
-function seed() {
-  return { v: 1, user: { id: 'demo', name: 'Tommy', email: 'tommy@example.com', phone: '09171234567', photo: '', in: false }, users: {}, recent: [],
-    cart: { rid: null, lines: [] }, fav: { items: [], rests: [] }, promo: null,
-    orders: [],
-    cater: [],
-    notes: [{ id: 'n1', type: 'promo', t: 'Catering for your next event', b: 'Request trays or a full buffet for 10–50 guests.', at: Date.now() - 36e5, read: false },
-            { id: 'n2', type: 'account', t: 'Welcome to Papalita', b: 'Pick your barangay so we can show the right delivery fee.', at: Date.now() - 864e5, read: true }],
-    addrs: [{ id: 'a1', label: 'Home', line: 'Purok 1', city: 'Poblacion, Alegria', landmark: '', def: true }],
-    pay: [{ id: 'p1', type: 'gcash', detail: '0917 ••• 4567' }], loc: { label: C.location.label, brgy: 'Poblacion', perm: 'unknown' } };
-}
+function seed(){return {v:1,user:{id:null,name:'',email:'',phone:'',photo:'',in:false},users:{},recent:[],cart:{rid:null,lines:[]},fav:{items:[],rests:[]},promo:null,orders:[],cater:[],notes:[],addrs:[],pay:[],loc:{label:C.location?.label||'Poblacion, Alegria',brgy:'Poblacion',perm:'unknown'}};}
 let S; try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!S || S.v !== 1) S = seed();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
-const unread = () => S.notes.filter(n => !n.read && (n.uid || 'demo') === S.user.id).length;
+// Migrate only authenticated, server-confirmed orders from the previous cache.
+const realId=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
+S.orders=(S.orders||[]).filter(o=>realId(o.id)&&realId(o.uid)&&(o.source==='supabase'||o.demo===false)).map(o=>{const copy={...o,source:'supabase',pay:{...o.pay}};delete copy.demo;delete copy.pay.demo;return copy;});
+S.cater=(S.cater||[]).filter(q=>realId(q.id)&&realId(q.uid));
+S.notes=[];S.users=S.users||{};S.cart=S.cart||{rid:null,lines:[]};S.promo=null;S.pay=[];
+const unread=()=>S.notes.filter(n=>!n.read&&n.uid===S.user.id).length;
 const cartCount = () => S.cart.lines.reduce((a, l) => a + l.qty, 0);
 // Backward-compatible migration: old carts had one rid for all lines.
 S.cart.lines.forEach(l => { if (!l.rid) l.rid = S.cart.rid || (ITEM(l.itemId) || {}).rest?.id; });
+S.cart.lines=S.cart.lines.filter(l=>ITEM(l.itemId)&&R(l.rid));
 const cartGroups = (cart = S.cart) => { const groups = new Map(); for (const line of cart.lines) { const rid = String(line.rid || cart.rid || ''); if (!groups.has(rid)) groups.set(rid, []); groups.get(rid).push(line); } return [...groups].map(([rid, lines]) => ({ rid, rest: R(rid), lines, sub: lines.reduce((sum, l) => sum + l.unit * l.qty, 0) })); };
 
 const notify = (type, t, b, who) => { S.notes.unshift({ id: uid('n'), type, t, b, at: Date.now(), read: false, uid: who || S.user.id }); save(); };
@@ -226,34 +98,35 @@ const notify = (type, t, b, who) => { S.notes.unshift({ id: uid('n'), type, t, b
 const nowMin = () => { const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date()); return +p[0].value % 24 * 60 + +p[2].value; };
 const toMin = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
 const fmtT = s => { let [h, m] = s.split(':').map(Number); h %= 24; return ((h + 11) % 12 + 1) + (m ? ':' + String(m).padStart(2, '0') : ':00') + (h < 12 ? ' AM' : ' PM'); };
-const isOpen = r => { if (r.closed) return false; const o = toMin(r.hours[0]), c = toMin(r.hours[1]), n = nowMin(); return c > 1440 ? (n >= o || n < c - 1440) : n >= o && n < c; };
+const isOpen=r=>{if(r.closed||r.open_state===false)return false;if(!r.verifiedHours)return r.open_state===true;const o=toMin(r.hours[0]),c=toMin(r.hours[1]),n=nowMin();return c<o?n>=o||n<c:n>=o&&n<c;};
 const hoursText = r => r.hours[0] === '00:00' && r.hours[1] === '24:00' ? 'Open 24 hours' : `${fmtT(r.hours[0])} – ${fmtT(r.hours[1])}`;
-const dist = r => Math.hypot(r.dx, r.dy) + brg().km;
+
 const defSel = item => { const s = {}; (item.opts||[]).forEach(g => { if (g.req && g.ch?.length) s[g.id] = [g.ch[0].n]; }); return s; };
 const unitPrice = (item, sel) => Number(item.price) + (item.opts||[]).reduce((a, g) => a + (sel[g.id] || []).reduce((b, n) => b + Number((g.ch.find(c => c.n === n) || {}).p || 0), 0), 0);
 const selText = l => Object.values(l.sel || {}).flat().join(', ');
-const validPromo = (p, sub, rid) => { if (!p || p.active === false) return 'This code is no longer active.'; if (p.exp && new Date(p.exp + 'T23:59:59+08:00') < new Date()) return 'This code has expired.'; if (p.rid && p.rid !== rid) return `Only valid for ${R(p.rid)?.name || "another store"} orders.`; if (sub < p.min) return `Add ${peso(p.min - sub)} more to use ${p.code}.`; return ''; };
+const validPromo = (p, sub, rid) => { if (!p || p.active === false) return 'This code is no longer active.'; if(p.expires_at&&Date.parse(p.expires_at)<=Date.now()) return 'This code has expired.'; if (p.rid && p.rid !== rid) return `Only valid for ${R(p.rid)?.name || "another store"} orders.`; if (sub < p.min) return `Add ${peso(p.min - sub)} more to use ${p.code}.`; return ''; };
 function calc(cart = S.cart, code = S.promo) {
   const groups = cartGroups(cart);
   const sub = groups.reduce((n, g) => n + g.sub, 0);
   const pickup = CK.fulfillment === 'pickup';
-  const fee = pickup ? 0 : groups.reduce((n, g) => n + (g.rest ? feeOf(g.rest) : 0), 0);
+  const feeKnown=pickup||Number.isFinite(feeOf());
+  const fee=pickup?0:groups.reduce((n,g)=>n+(Number(feeOf(g.rest))||0),0);
   const p = code && window.PROMOS.find(x => x.code === code);
   // Store-specific codes apply only to the matching store, never another store.
   const eligible = p && p.rid ? groups.filter(g => String(g.rid) === String(p.rid)) : groups;
   const eligibleSub = eligible.reduce((n, g) => n + g.sub, 0);
   const eligibleFee = pickup ? 0 : eligible.reduce((n, g) => n + (g.rest ? feeOf(g.rest) : 0), 0);
-  const perr = p ? (!eligible.length ? 'This voucher is not valid for the stores in your cart.' : validPromo(p, eligibleSub, p.rid || eligible[0].rid)) : '';
+  const perr=code&&!p?'This promotion is no longer available.':p ? (!eligible.length ? 'This voucher is not valid for the stores in your cart.' : validPromo(p, eligibleSub, p.rid || eligible[0].rid)) : '';
   let disc = 0;
   if (p && !perr) disc = p.type === 'flat' ? Math.min(p.value, eligibleSub) : p.type === 'percent' ? Math.min(Math.round(eligibleSub * p.value / 100), p.cap ?? Infinity) : eligibleFee;
   const total = Math.max(0, sub + fee - disc);
-  return { r: groups[0]?.rest, groups, sub, fee, disc, perr, promo: p, total, vat: total * 12 / 112,
+  return { r: groups[0]?.rest, groups, sub, fee, feeKnown, disc, perr, promo: p, total,
     minOk: pickup || groups.every(g => g.rest && g.sub >= (g.rest.min || 0)), pickup };
 }
 
 function addToCart(item, rest, sel, qty, note, replaceKey, fx) {
   if (!item.available) return toast('Sold out right now.');
-  if (!isOpen(rest)) return toast(`${rest.name} is closed. Opens ${fmtT(rest.hours[0])}.`);
+  if (!isOpen(rest)) return toast(`${rest.name} is not accepting orders right now.`);
   const unit = unitPrice(item, sel), k = JSON.stringify([rest.id, item.id, sel, note]);
   if (replaceKey) S.cart.lines = S.cart.lines.filter(l => l.key !== replaceKey);
   const ex = S.cart.lines.find(l => JSON.stringify([l.rid || S.cart.rid, l.itemId, l.sel, l.note]) === k);
@@ -266,30 +139,10 @@ function addToCart(item, rest, sel, qty, note, replaceKey, fx) {
   toast(replaceKey ? 'Cart updated.' : `${item.name} added to cart.`, 'View cart', () => nav('/cart'));
 }
 
-const T = [0, 15, 35, 50, 65, 95];       // demo timeline (seconds). Production: driven by backend status events
-const STEPS = [['Order received', 'The restaurant has your order.', 'check'], ['Preparing your food', 'The kitchen is cooking.', 'fork'], ['Rider assigned', 'Marco is on the way to the restaurant.', 'user'], ['Picking up your order', 'Rider is at the restaurant.', 'store'], ['On the way', 'Your food is heading to you.', 'bike'], ['Delivered', 'Enjoy your meal!', 'home']];
-const stageOf = o => {
-  if (o.status === 'cancelled' || o.status === 'refunded') return -1;
-  if (o.demo === false) return ({pending:0,confirmed:0,preparing:1,ready:3,out_for_delivery:4,completed:5})[o.status] ?? 0;
-  const e = (Date.now() - o.createdAt) / 1000;
-  let s = 0; T.forEach((t, i) => { if (e >= t) s = i; }); return s;
-};
-const isCurrent = o => { const s = stageOf(o); return s >= 0 && s < 5; };
-const etaMin = o => { const r = R(o.rid); return Math.max(0, Math.round((etaOf(r)[1] * 60 - Math.min((Date.now() - o.createdAt) / 1000, etaOf(r)[1] * 60)) / 60)); };
-const RIDER = { name: 'Marco Reyes', phone: '09181234567', vehicle: 'Motorcycle' };
-const MODE = 'foodie.alegria.mode', isLive = () => { try { return localStorage.getItem(MODE) === 'live'; } catch (e) { return false; } };
-function mergeStore() { let st; try { st = JSON.parse(localStorage.getItem(KEY)); } catch (e) { return false; } if (!st) return false; let ch = false;
-  (st.orders || []).forEach(o => { const i = S.orders.findIndex(x => x.id === o.id); if (i < 0) { S.orders.push(o); ch = true; } else if ((o.upd || 0) > (S.orders[i].upd || 0)) { S.orders[i] = o; ch = true; } });
-  S.cater = S.cater || []; (st.cater || []).forEach(q => { const i = S.cater.findIndex(x => x.id === q.id); if (i < 0) { S.cater.push(q); ch = true; } else if ((q.upd || 0) > (S.cater[i].upd || 0)) { S.cater[i] = q; ch = true; } });
-  (st.notes || []).forEach(n => { if (!S.notes.find(x => x.id === n.id)) { S.notes.push(n); ch = true; } }); S.notes.sort((a, b) => b.at - a.at);
-  if (ch) { save(); updateChrome(); if (/^\/(orders|order\/|notifications|catering)/.test(curPath()) && !sheetEl && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName)) render(); } return ch; }
-window.addEventListener('storage', e => { if (e.key === KEY) mergeStore(); });
-// Legacy timed order progression is disabled. Existing live tracking reads Supabase.
-
+const STEPS=[['Order received','Waiting for store confirmation.','check'],['Order confirmed','The store accepted your order.','check'],['Preparing your food','The kitchen is preparing your order.','fork'],['Ready for handoff','Your order is ready for pickup or delivery handoff.','store'],['On the way','Your order is out for delivery.','bike'],['Completed','Your order has been completed.','home']];
+const stageOf=o=>o.status==='cancelled'?-1:({pending:0,confirmed:1,preparing:2,ready:3,out_for_delivery:4,completed:5})[o.status]??-1;
+const isCurrent=o=>stageOf(o)>=0&&stageOf(o)<5;
 /* ---------- services ---------- */
-const Gateway = { async pay(order, method) {            // payment adapter: demo now, server endpoint in production
-  if (C.payments.provider === 'demo') { await delay(900); return { status: method === 'cod' ? 'pending' : 'demo_authorized', ref: 'DEMO-' + Math.random().toString(36).slice(2, 8).toUpperCase(), demo: true }; }
-  throw new Error(`Payment provider "${C.payments.provider}" needs the server endpoint /api/payments (see README).`); } };
 const PAYNAME = { gcash: 'GCash', maya: 'Maya', cod: 'Cash on Delivery', card: 'Credit / debit card' };
 
 /* ---------- UI primitives ---------- */
@@ -331,7 +184,7 @@ function render() {
   timers.forEach(clearInterval); timers = []; closeSheet();
   const [path, qs] = (location.hash.slice(1) || '/').split('?'), params = new URLSearchParams(qs || '');
   const main = $('#view');
-  if (!S.user.in) { document.body.classList.add('authing'); main.innerHTML = authLayout(); window.PapalitaMotion?.refresh(main); afterAuth(); window.scrollTo(0, 0); updateChrome(); return; }
+  if (!S.user.in || AU.view==='reset') { document.body.classList.add('authing'); main.innerHTML = authLayout(); window.PapalitaMotion?.refresh(main); afterAuth(); window.scrollTo(0, 0); updateChrome(); return; }
   document.body.classList.remove('authing');
   let m, fn; for (const [re, f] of ROUTES) if ((m = path.match(re))) { fn = f; break; }
   if (!fn) { fn = 'notFound'; m = []; }
@@ -387,9 +240,6 @@ const fillCurated = () => {
 
 const popularDishes = () => ALL()
   .filter(({item}) => PD === 'all' || item.cat === PD)
-  .sort((a,b) => Number(Boolean(b.item.best)) - Number(Boolean(a.item.best)) ||
-     Number(b.item.pop || 0) - Number(a.item.pop || 0) ||
-     Number(b.item.r || b.rest.rating || 0) - Number(a.item.r || a.rest.rating || 0))
   .slice(0, 8);
 
 const fillPopular = () => {
@@ -448,15 +298,14 @@ function fillDiscover() {
 }
 function fillResults() {
   const terms = F.q.toLowerCase().split(/\s+/).filter(Boolean), cn = id => (CATS.find(c => c.id === id) || {}).name || '';
-  const fits = r => (!F.eta || etaOf(r)[1] <= F.eta) && (!F.promo || r.promo);
   let html, n;
   if (F.tab === 'dishes') {
-    let a = ALL().filter(({ item: i, rest: r }) => fits(r) && (F.cat === 'all' || i.cat === F.cat) && (!F.price || i.price <= F.price) && (i.r || r.rating) >= F.rating && terms.every(t => `${i.name} ${i.desc} ${r.name} ${r.kind} ${cn(i.cat)}`.toLowerCase().includes(t)));
-    a.sort((x, y) => F.sort === 'rating' ? (y.item.r || y.rest.rating) - (x.item.r || x.rest.rating) : F.sort === 'price' ? x.item.price - y.item.price : F.sort === 'eta' ? etaOf(x.rest)[0] - etaOf(y.rest)[0] : y.item.pop - x.item.pop);
+    let a = ALL().filter(({ item: i, rest: r }) => (F.cat === 'all' || i.cat === F.cat) && (!F.price || i.price <= F.price) && terms.every(t => `${i.name} ${i.desc} ${r.name} ${r.kind} ${cn(i.cat)}`.toLowerCase().includes(t)));
+    if(F.sort==='price')a.sort((x,y)=>x.item.price-y.item.price);
     n = a.length; html = a.map(dishCard).join('');
   } else {
-    let a = RS.filter(r => fits(r) && (F.cat === 'all' || r.cat === F.cat || r.items.some(i => i.cat === F.cat)) && (!F.price || Math.min(...r.items.map(i => i.price)) <= F.price) && r.rating >= F.rating && terms.every(t => `${r.name} ${r.kind} ${r.items.map(i => i.name + ' ' + i.desc).join(' ')}`.toLowerCase().includes(t)));
-    a.sort((x, y) => F.sort === 'rating' ? y.rating - x.rating : F.sort === 'price' ? Math.min(...x.items.map(i => i.price)) - Math.min(...y.items.map(i => i.price)) : F.sort === 'eta' ? etaOf(x)[0] - etaOf(y)[0] : parseFloat(y.reviews) - parseFloat(x.reviews));
+    let a = RS.filter(r => (F.cat === 'all' || r.cat === F.cat || r.items.some(i => i.cat === F.cat)) && (!F.price || Math.min(...r.items.map(i => i.price)) <= F.price) && terms.every(t => `${r.name} ${r.kind} ${r.items.map(i => i.name + ' ' + i.desc).join(' ')}`.toLowerCase().includes(t)));
+    if(F.sort==='price')a.sort((x,y)=>Math.min(...x.items.map(i=>i.price))-Math.min(...y.items.map(i=>i.price)));
     n = a.length; html = a.map(restCard).join('');
   }
   $('#results').innerHTML = n ? `<p class="mu sm" style="margin:12px 0">${n} ${F.tab === 'dishes' ? 'dish' : 'restaurant'}${n > 1 ? (F.tab === 'dishes' ? 'es' : 's') : ''} found</p><div class="grid ${F.tab === 'rests' ? 'restaurant-results-grid' : ''}">${html}</div>` : emptyState('search', 'No matches', 'Try a different word or remove a filter.', 'Clear filters', 'fclear');
@@ -465,17 +314,17 @@ function fillResults() {
 /* ---------- restaurant ---------- */
 V.restaurant = id => { const r = R(id); if (!r) return V.notFound(); const op = isOpen(r), secs = [...new Set(r.items.map(i => i.sec))];
   return { html: `<section class="view"><div class="cover">${photo(r.cover, r.name + ' cover photo', { w: 1200, eager: 1 })}<div class="cov-sh"></div><div class="cov-b"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><span class="row">${hrt('rests', r.id)}<button class="ib w" data-a="share" data-id="${r.id}" aria-label="Share restaurant">${ic('share')}</button></span></div></div>
-  <div class="fcard"><div class="row sp"><h1 style="font-size:28px">${esc(r.name)}</h1><span class="status ${op?'open':'closed'}">${op?'Open':'Closed'}</span></div><p class="mu" style="margin-top:6px">${esc(r.kind)} • ${esc(r.addr)}${op ? '' : ' • <b style="color:var(--er)">Closed, opens ' + fmtT(r.hours[0]) + '</b>'}</p>
-  <div class="stats"><div>${ic('store',18,'gc')}Menu & availability</div><div>${ic('pin',18,'gc')}Alegria</div></div></div></div>
-  <p class="sm mu" style="margin:12px 6px 0">${r.busy ? `<span class="status closed">Busy · +${r.busy} min</span> ` : ''}Min order ${peso(r.min)}${r.promo ? ` · <button class="link gl" style="padding:0" data-a="usepromo" data-id="${r.promo}">Code ${r.promo}</button>` : ''}</p>
+  <div class="fcard"><div class="row sp"><h1 style="font-size:28px">${esc(r.name)}</h1><span class="status ${op?'open':'closed'}">${op?'Open':'Closed'}</span></div><p class="mu" style="margin-top:6px">${esc(r.kind)} • ${esc(r.addr)}${op?'':' • Not accepting orders'}</p>
+  <div class="stats"><div>${ic('store',18,'gc')}Menu & availability</div><div>${ic('pin',18,'gc')}Alegria</div></div></div>
+  <p class="sm mu" style="margin:12px 6px 0">${r.busy ? `<span class="status closed">Busy · +${r.busy} min</span> ` : ''}${r.promo ? ` · <button class="link gl" style="padding:0" data-a="usepromo" data-id="${r.promo}">Code ${r.promo}</button>` : ''}</p>
   ${r.feature ? `<button class="mint row" data-a="jump" data-id="s-${esc(r.feature.sec)}" style="width:100%;text-align:left;margin-top:14px">${photo(r.feature.img, r.feature.title, { ar: '1', w: 200 }).replace('class="ph', 'style="width:64px;border-radius:16px;flex:none" class="ph')}<span class="grow"><b style="font-size:17px">${esc(r.feature.title)}</b><br><span class="sm mu">${esc(r.feature.sub)}</span></span>${ic('chev', 18, 'mu')}</button>` : ''}
-  ${r.catering ? `<div class="mint row" style="margin-top:12px">${ic('box', 26, 'gc')}<span class="grow"><b>Catering for 10–50 guests</b><br><span class="sm mu">Trays, bulalo and lechon sets, full buffet</span></span><button class="btn p sm" data-a="cater" data-id="${r.id}">Request</button></div>` : ''}
+  ${r.catering ? `<div class="mint row" style="margin-top:12px">${ic('box', 26, 'gc')}<span class="grow"><b>Ask about catering</b><br><span class="sm mu">Confirm menus, prices and availability with the store.</span></span><button class="btn p sm" data-a="cater" data-id="${r.id}">Request</button></div>` : ''}
   <div class="chips solid" style="margin-top:12px;position:sticky;top:var(--st);background:var(--bg);z-index:5;padding:10px 0">${secs.map((s, k) => `<button class="chip ${k ? '' : 'on'}" data-a="jump" data-id="s-${esc(s)}">${esc(s)}</button>`).join('')}${r.catering ? '<button class="chip" data-a="jump" data-id="s-catering">Catering</button>' : ''}${r.stay ? '<button class="chip" data-a="jump" data-id="s-stay">Stay &amp; Events</button>' : ''}</div>
   ${secs.map((s, k) => `<div id="s-${esc(s)}" style="margin-top:18px"><div class="sec-h" style="margin-bottom:4px"><h2>${esc(s)}</h2></div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:0 28px">${r.items.filter(i => i.sec === s).map(i => `<div class="mi" tabindex="0" role="button" data-a="item" data-id="${i.id}" aria-label="${esc(i.name)} ${peso(i.price)}">${photo(i.img, i.name, { ar: '1', w: 300 })}<div class="bd"><div class="row sp" style="align-items:flex-start"><h3 style="font-size:18px">${esc(i.name)}</h3><span class="mu">${peso(i.price)}</span></div><p class="mu sm" style="margin:6px 0 10px">${esc(i.desc)}</p>${i.available ? `<button class="addp" data-a="quick" data-id="${i.id}" ${op ? '' : 'disabled'} aria-label="Quick add ${esc(i.name)}">${ic('plus', 16)}Add</button>` : '<span class="status closed">Sold out</span>'}</div></div>`).join('')}</div></div>`).join('')}
-  ${r.catering ? cateringSection(r) : ''}${r.stay ? staySection(r) : ''}
+  ${r.catering ? cateringSection(r) : ''}
   <div class="sec"><h2 style="margin-bottom:10px">Contact</h2><div class="panel">${contactBtns(r)}</div></div>
-  <div class="sec"><h2 style="margin-bottom:10px">Opening hours</h2><div class="panel"><div class="row sp"><span>Store hours</span><b>${r.verifiedHours?hoursText(r):'Ask the store'}</b></div>${r.placeholder ? '<p class="sm mu" style="margin-top:8px"><span class="demo">PLACEHOLDER</span> Hours are samples until the store confirms them.</p>' : ''}</div></div>
-  <div class="sec"><h2 style="margin-bottom:10px">Reviews</h2>${[...communityReviews(r.id), ...r.reviewsList].map(v => `<div class="panel"><div class="row sp"><b>${esc(v.who)}</b>${stars(v.r)}</div><p class="mu" style="margin-top:6px">${esc(v.t)}</p></div>`).join('')}</div></section>` }; };
+  <div class="sec"><h2 style="margin-bottom:10px">Opening hours</h2><div class="panel"><div class="row sp"><span>Store hours</span><b>${r.verifiedHours?hoursText(r):'Ask the store'}</b></div></div></div>
+</section>` }; };
 
 /* Match instructions to the actual product; seller-configured option groups remain unchanged. */
 function instructionPlaceholder(item, rest) {
@@ -505,14 +354,14 @@ function openItem(id, editKey) {
 }
 
 /* ---------- cart ---------- */
-const sumHTML = c => `<div class="sum"><div class="r"><span>Subtotal</span><span>${peso(c.sub)}</span></div><div class="r"><span>Delivery fee</span><span>${c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="ok">Free</b>` : peso(c.fee)}</span></div>
-  ${c.disc && c.promo.type !== 'ship' ? `<div class="r ok"><span>Promo ${esc(c.promo.code)}</span><span>−${peso(c.disc)}</span></div>` : ''}${c.tip ? `<div class="r"><span>Rider tip</span><span>${peso(c.tip)}</span></div>` : ''}<div class="r tot"><span>Total</span><span>${peso(c.total)}</span></div><p class="mu sm" style="margin-top:6px">Check tax details with the store.</p></div>`;
+const sumHTML = c => `<div class="sum"><div class="r"><span>Subtotal</span><span>${peso(c.sub)}</span></div><div class="r"><span>Delivery fee</span><span>${c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="ok">Free</b>` : c.fee==null?'Not supplied':peso(c.fee)}</span></div>
+  ${c.disc && c.promo?.type !== 'ship' ? `<div class="r ok"><span>Promo ${esc(c.promo?.code||'Recorded discount')}</span><span>−${peso(c.disc)}</span></div>` : ''}${c.tip ? `<div class="r"><span>Rider tip</span><span>${peso(c.tip)}</span></div>` : ''}<div class="r tot"><span>Total</span><span>${peso(c.total)}</span></div><p class="mu sm" style="margin-top:6px">Check tax details with the store.</p></div>`;
 const promoBox = c => `<div class="panel"><h3 style="margin-bottom:10px">Promo code</h3>${S.promo ? `<div class="row sp"><span class="chip on">${ic('percent', 16)}${esc(S.promo)}</span><button class="btn s sm" data-a="rmpromo">Remove</button></div>${c.perr ? `<p class="err" style="margin-top:8px">${esc(c.perr)}</p>` : `<p class="ok sm" style="margin-top:8px">Saved ${peso(c.disc)} with this code.</p>`}` :
   `<div class="row"><input class="in" id="pc" placeholder="Enter code" autocapitalize="characters" aria-label="Promo code" maxlength="20"><button class="btn p sm" data-a="applypromo">Apply</button></div><p class="err" id="pcerr"></p><div class="chips" style="margin-top:8px">${window.PROMOS.filter(p => p.active !== false).slice(0, 3).map(p => `<button class="chip" data-a="usepromo" data-id="${p.code}">${p.code}</button>`).join('')}</div>`}</div>`;
 V.cartView = () => { const c = calc();
   if (!S.cart.lines.length) return { html: `<section class="view">${pageHead('Your cart')}${emptyState('cart', 'Your cart is empty', 'Add something delicious and it will show up here.', 'Browse food', 'browse')}</section>` };
-  const a = S.addrs.find(x => x.id === CK.addr) || defAddr(); if (a) CK.addr = a.id; const r = c.r, arr = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit' }).format(new Date(Date.now() + etaOf(r)[1] * 6e4));
-  const pl = payLabel(), tip = CK.tip || 0; const fee = c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="gl">Free</b>` : peso(c.fee);
+  const a = S.addrs.find(x => x.id === CK.addr) || defAddr(); if (a) CK.addr = a.id; const r=c.r;
+  const pl = payLabel(), tip = CK.tip || 0; const fee = c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="gl">Free</b>` : c.feeKnown?peso(c.fee):'Not configured';
   return { html: `<section class="view pp-cart-view" style="max-width:640px;margin:0 auto"><div class="rv-h"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><h1>ORDER REVIEW</h1><span style="width:44px"></span></div>
   <div class="rv-lab"><span>Order type</span></div><div class="chips"><button class="chip ${CK.fulfillment === 'delivery' ? 'on' : ''}" data-a="fulfillment" data-v="delivery">Delivery</button><button class="chip ${CK.fulfillment === 'pickup' ? 'on' : ''}" data-a="fulfillment" data-v="pickup">Pickup at store</button></div><div class="rv-lab"><span>${CK.fulfillment === 'pickup' ? 'Pickup locations' : 'Delivery address'}</span>${CK.fulfillment === 'pickup' ? '' : '<button data-a="addrpick">EDIT</button>'}</div>
   ${CK.fulfillment === 'pickup' ? `<div class="panel">${c.groups.map(g => `<p><b>${esc(g.rest?.name || 'Store')}</b><br>${esc(g.rest?.addr || 'Contact the store for pickup location')}</p>`).join('')}</div>` : `<div class="row" style="gap:14px"><span class="pbtn" style="width:56px;height:56px;background:#fff;color:var(--ink);box-shadow:var(--sh)">${ic('pin', 22)}</span><div class="grow">${a ? `<b style="font-size:20px">${esc(a.label)}</b> ${a.def ? '<span class="status n" style="letter-spacing:.06em">PRIMARY</span>' : ''}<p class="mu">${esc(a.line)} • ${esc(a.city)}${a.landmark ? '<br>Landmark: ' + esc(a.landmark) : ''}</p>` : `<b>No address yet</b><p class="mu">Add where we should deliver.</p>`}</div></div>`}
@@ -526,34 +375,27 @@ V.cartView = () => { const c = calc();
   <div class="field" style="margin-top:14px"><label for="di">Instructions (optional)</label><textarea class="in" id="di" maxlength="200" placeholder="Gate color, landmarks, leave at lobby…"></textarea></div>
   ${CK.fulfillment === 'pickup' ? '' : `<div class="rv-lab" style="margin-top:24px"><span>Tip your rider</span><span class="sm mu" style="letter-spacing:0;text-transform:none;font-weight:600">Optional</span></div><div class="chips">${[0, 20, 30, 50, 100].map(v => `<button class="chip ${tip === v ? 'on' : ''}" data-a="tip" data-v="${v}" aria-pressed="${tip === v}">${v ? peso(v) : 'No tip'}</button>`).join('')}</div>`}
   <div style="margin-top:14px">${promoBox(c)}</div>
-  <div class="sum" style="margin-top:18px;font-size:18px"><div class="r mu"><span>Order Subtotal</span><b style="color:var(--ink)">${peso(c.sub)}</b></div><div class="r mu"><span>${CK.fulfillment === 'pickup' ? 'Pickup Fee' : 'Delivery fee estimate'}</span><b style="color:var(--ink)">${fee}</b></div>${c.disc && c.promo.type !== 'ship' ? `<div class="r gl"><span>Promo ${esc(c.promo.code)}</span><b>−${peso(c.disc)}</b></div>` : ''}${tip ? `<div class="r mu"><span>Rider tip</span><b style="color:var(--ink)">${peso(tip)}</b></div>` : ''}<p class="sm mu">Check tax details with the store.</p></div>
+  <div class="sum" style="margin-top:18px;font-size:18px"><div class="r mu"><span>Order Subtotal</span><b style="color:var(--ink)">${peso(c.sub)}</b></div><div class="r mu"><span>${CK.fulfillment === 'pickup' ? 'Pickup Fee' : 'Delivery fee estimate'}</span><b style="color:var(--ink)">${fee}</b></div>${c.disc && c.promo?.type !== 'ship' ? `<div class="r gl"><span>Promo ${esc(c.promo?.code||'Recorded discount')}</span><b>−${peso(c.disc)}</b></div>` : ''}${tip ? `<div class="r mu"><span>Rider tip</span><b style="color:var(--ink)">${peso(tip)}</b></div>` : ''}<p class="sm mu">Check tax details with the store.</p></div>
+  ${!c.feeKnown?'<p class="note" style="margin-top:15px">Delivery charges are not configured for this barangay. Choose pickup or contact the store.</p>':''}
   ${!c.minOk ? `<p class="err" style="margin:10px 0">Some stores have not reached their minimum order amount.</p>` : ''}
-  <button class="pbar" id="place" data-a="place" ${c.minOk ? '' : 'disabled'}><span>Place Order</span><i></i><b>${peso(c.total + tip)}</b></button>
+  <button class="pbar" id="place" data-a="place" ${c.minOk&&c.feeKnown?'':'disabled'}><span>Place Order</span><i></i><b>${c.feeKnown?peso(c.total+tip):'Fee unavailable'}</b></button>
   <p class="mu sm" style="text-align:center;margin-top:12px;letter-spacing:.04em">TAPPING PLACE ORDER CONFIRMS YOUR ACCEPTANCE OF TERMS</p><p style="text-align:center;margin-top:8px"><span class="sm mu">Orders are submitted securely to Papalita. Cash payment only.</span></p></section>` }; };
 
 /* ---------- checkout ---------- */
 let CK = { addr: null, pay: 'cod', det: {}, fulfillment: 'delivery', tip: 0 };
-const luhn = n => { let s = 0, d = false; for (let i = n.length - 1; i >= 0; i--) { let x = +n[i]; if (d) { x *= 2; if (x > 9) x -= 9; } s += x; d = !d; } return s % 10 === 0; };
 const PH = /^(09|\+639)\d{9}$/;
-const payLabel = () => { const p = CK.pay, d = CK.det || {}; if (p === 'card') return ['Credit / debit card', d.last4 ? 'DEBIT CARD •••• ' + d.last4 : 'ADD CARD DETAILS']; if (p === 'cod') return [CK.fulfillment === 'pickup' ? 'Cash on Pickup' : 'Cash on Delivery', CK.fulfillment === 'pickup' ? 'PAY AT THE STORE' : 'PAY THE RIDER ON ARRIVAL']; const n = (d.wallet || S.user.phone || '').replace(/\s/g, ''); return [PAYNAME[p], n ? 'MOBILE •••• ' + n.slice(-4) : 'ADD MOBILE NUMBER']; };
+const payLabel=()=>[CK.fulfillment==='pickup'?'Cash on Pickup':'Cash on Delivery',CK.fulfillment==='pickup'?'PAY AT THE STORE':'PAY ON ARRIVAL'];
 function addrPick() { const el = openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:12px">Deliver to</h2>${S.addrs.map(a => `<label class="opt"><input type="radio" name="ap" value="${a.id}" ${(CK.addr || (defAddr() || {}).id) === a.id ? 'checked' : ''}><span class="grow"><b>${esc(a.label)}</b><br><span class="mu sm">${esc(a.line)}, ${esc(a.city)}</span></span></label>`).join('')}<button class="btn s blk" data-a="addrform" style="margin-top:6px">${ic('plus', 18)}Add new address</button><button class="btn o blk" data-a="loc" style="margin-top:8px">${ic('pin', 18)}Change barangay</button></div>`, { label: 'Delivery address' });
   el.addEventListener('change', e => { if (e.target.name === 'ap') { CK.addr = e.target.value; S.addrs.forEach(a => a.def = a.id === CK.addr); syncLoc(S.addrs.find(a => a.id === CK.addr)); save(); closeSheet(); updateChrome(); render(); } }); }
-function payPick() { const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2 style="margin-bottom:6px">Payment method</h2><p class="note" style="margin-bottom:12px">Online payment is not connected yet. Choose cash payment.</p>${Object.entries(PAYNAME).filter(([k]) => k === 'cod').map(([k, l]) => `<label class="opt"><input type="radio" name="pmeth" value="${k}" ${CK.pay === k ? 'checked' : ''}><span class="grow">${l}</span></label>`).join('')}<div id="pmx" style="margin-top:8px"></div><button class="btn p blk">Use this method</button></form>`, { label: 'Payment method' });
-  const cur = () => $('input[name=pmeth]:checked', el).value, fields = () => { const p = cur(); $('#pmx', el).innerHTML = p === 'card' ? `<div class="field"><label for="kn">Card number</label><input class="in" id="kn" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" maxlength="23"><p class="err" data-e="kn"></p></div><div class="two"><div class="field"><label for="kx">Expiry (MM/YY)</label><input class="in" id="kx" inputmode="numeric" placeholder="MM/YY" maxlength="5"><p class="err" data-e="kx"></p></div><div class="field"><label for="kc">CVV</label><input class="in" id="kc" inputmode="numeric" maxlength="4"><p class="err" data-e="kc"></p></div></div>` : p === 'cod' ? '<p class="sm mu">Pay cash on delivery or at pickup.</p>' : `<div class="field"><label for="wn">${PAYNAME[p]} mobile number</label><input class="in" id="wn" inputmode="tel" value="${esc((CK.det || {}).wallet || S.user.phone || '')}" placeholder="09XXXXXXXXX"><p class="err" data-e="wn"></p></div>`; };
-  el.addEventListener('change', e => { if (e.target.name === 'pmeth') fields(); }); fields();
-  $('form', el).onsubmit = e => { e.preventDefault(); const p = cur(), v = id => ($('#' + id, el) || {}).value?.trim() || '', er = {}, det = {};
-    if (p === 'card') { const n = v('kn').replace(/\s/g, ''), x = v('kx').match(/^(\d\d)\/(\d\d)$/); if (!/^\d{13,19}$/.test(n) || !luhn(n)) er.kn = 'Enter a valid card number.'; if (!x || +x[1] < 1 || +x[1] > 12 || new Date(2000 + +x[2], +x[1], 0, 23, 59) < new Date()) er.kx = 'Enter a valid, unexpired date.'; if (!/^\d{3,4}$/.test(v('kc'))) er.kc = 'Enter the 3 or 4 digit code.'; det.last4 = n.slice(-4); }
-    else if (p !== 'cod') { if (!PH.test(v('wn').replace(/\s/g, ''))) er.wn = 'Enter your registered mobile number.'; det.wallet = v('wn'); }
-    $$('[data-e]', el).forEach(x => x.textContent = ''); const k = Object.keys(er); if (k.length) { k.forEach(x => $(`[data-e=${x}]`, el).textContent = er[x]); return $('#' + k[0], el).focus(); }
-    CK.pay = p; CK.det = det; closeSheet(); render(); }; }
 async function placeOrder() {
-  const c = calc(), a = S.addrs.find(x => x.id === CK.addr) || defAddr();
+  let c=calc();const a=S.addrs.find(x=>x.id===CK.addr)||defAddr();
   if (!S.cart.lines.length) return;
   const phoneField = $('#cp'), phone = (phoneField.value || '').trim().replace(/\s/g, '');
   $('#cpe').textContent = ''; phoneField.classList.remove('bad');
   if (CK.fulfillment !== 'pickup' && !a) { toast('Add a delivery address first.'); return addrForm(); }
   if (!PH.test(phone)) { phoneField.classList.add('bad'); $('#cpe').textContent = 'Use a PH mobile number like 09171234567.'; return phoneField.focus(); }
   if (!c.minOk) return toast('One or more stores have not reached their minimum order.');
+  if(!c.feeKnown)return toast('Delivery charges are not configured. Choose pickup or contact the store.');
   if (CK.pay !== 'cod') return toast('Only cash payment is available.');
   const db = window.PAPALITA_DB;
   if (!db) return toast('Supabase is unavailable. Please try again.');
@@ -563,6 +405,7 @@ async function placeOrder() {
     if (authError) throw authError;
     if (!auth?.user) throw new Error('Please sign in again before ordering.');
     const address = CK.fulfillment === 'pickup' ? 'Pickup at store' : `${a.label} — ${a.line}${a.landmark ? ' (' + a.landmark + ')' : ''}, ${a.city}`;
+    const reviewedTotal=c.total;await refreshCommercialData();c=calc();if(c.perr||Math.abs(reviewedTotal-c.total)>.009){render();throw Error('Charges or promotions changed. Review the updated total before ordering.');}if(!c.feeKnown)throw Error('Delivery charges are not configured. Choose pickup or contact the store.');
     const groups = c.groups.map((g, index) => {
       if (!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(g.rid))) throw new Error('Invalid store ID. Refresh the menu and retry.');
       const storeFee = CK.fulfillment === 'pickup' ? 0 : feeOf(g.rest);
@@ -586,49 +429,44 @@ async function placeOrder() {
       return { id: result.order_id, rid: g.store_id, items: group.lines.map(l => ({ ...l })),
         sub: Number(result.subtotal), fee: Number(result.delivery_fee), disc: g.discount,
         total: Number(result.total_amount), tip: g.tip, promo: g.discount ? S.promo : null,
-        createdAt, demo: false, status: 'pending', stage: 0, upd: createdAt, uid: auth.user.id,
+        createdAt, source: 'supabase', status: 'pending', stage: 0, upd: createdAt, uid: auth.user.id,
         fulfillment: CK.fulfillment, addr: address, note: ($('#di').value || '').trim(),
-        contact: { name: S.user.name, phone }, pay: { method: 'cod', status: 'unpaid', demo: false } };
+        contact: { name: S.user.name, phone }, pay: { method: 'cod', status: 'unpaid', source: 'supabase' } };
     });
     S.user.phone = phone; CK.tip = 0; S.orders.unshift(...orders);
     S.cart = { rid: null, lines: [] }; S.promo = null;
     orders.forEach(o => notify('order', `Order submitted · ${o.id}`, `${R(o.rid)?.name || 'Store'} order saved to Supabase.`));
     save(); updateChrome(); nav('/confirmation/' + orders[0].id);
+    // Notification failures must never turn an already saved order into a
+    // checkout failure or invite a second purchase.
+    for(const order of orders){
+      try{Promise.resolve(window.PAPALITA_NOTIFICATIONS?.orderPlaced(order.id)).catch(error=>console.warn('[Papalita] Order phone alert:',error.message));}
+      catch(error){console.warn('[Papalita] Order phone alert:',error.message);}
+    }
     if (orders.length > 1) toast(`${orders.length} store orders submitted successfully.`);
   } catch (error) {
     console.error('[Papalita] Checkout failed:', error);
     toast('Order not confirmed: ' + (error.message || 'Please try again.'));
-    btn.disabled = false; btn.firstElementChild.textContent = 'Place Order';
+    if(btn.isConnected){btn.disabled=false;btn.firstElementChild.textContent='Place Order';}
   }
 }
 
-const ORD = id => S.orders.find(o => o.id === id);
+const ORD=id=>S.orders.find(o=>o.id===id&&o.uid===S.user.id&&o.source==='supabase');
 const orderLines = o => o.items.map(l => `<div class="row sp sm" style="padding:5px 0"><span>${l.qty} × ${esc(l.name)}${selText(l) ? `<br><span class="mu">${esc(selText(l))}</span>` : ''}</span><span>${peso(l.unit * l.qty)}</span></div>`).join('');
-const payTag = o => `${PAYNAME[o.pay.method]} ${o.pay.demo ? '<span class="demo">DEMO</span>' : ''}`;
+const payTag=o=>esc(PAYNAME[o.pay?.method]||o.pay?.method||'Payment method not supplied');
 /* ---------- receipt ---------- */
-const hash32 = str => { let h = 2166136261; for (const c of String(str)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
-function barcode(code) { let h = hash32(code), x = 0, bars = ''; for (let i = 0; i < 48; i++) { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; const w = 1 + (h % 3), g = 1 + ((h >>> 9) % 2); bars += `<rect x="${x}" y="0" width="${w}" height="40"/>`; x += w + g; } return `<svg class="barcode" viewBox="0 0 ${x} 40" preserveAspectRatio="none" role="img" aria-label="Order code ${esc(code)}">${bars}</svg>`; }
-function receiptHTML(o, anim) { const r = R(o.rid), pr = o.promo && window.PROMOS.find(p => p.code === o.promo); let n = 0; const L = (a, b, cls = '') => `<div class="ln ${cls}" style="--i:${n++}"><span>${a}</span><i></i><span>${b}</span></div>`;
-  const stamp = o.pay.method === 'cod' ? 'PAY ON ARRIVAL' : o.pay.demo ? 'PAID · DEMO' : 'PAID';
+function receiptHTML(o, anim) { const r=R(o.rid)||{name:'Store',items:[]}, pr = o.promo && window.PROMOS.find(p => p.code === o.promo); let n = 0; const L = (a, b, cls = '') => `<div class="ln ${cls}" style="--i:${n++}"><span>${a}</span><i></i><span>${b}</span></div>`;
+  const stamp=o.pay?.status==='paid'?'PAYMENT RECORDED':o.pay?.method==='cod'?'CASH PAYMENT':'PAYMENT NOT CONFIRMED';
   return `<div class="rwrap ${anim ? 'print' : ''}"><div class="rcpt" id="rcpt-${o.id}"><div class="rhead"><b>PAPALITA</b><span>Good food, good mood</span><span class="rst">${esc(r.name)}</span><span>${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).toUpperCase()}</span></div><div class="dash"></div>
   <div class="rno"><span>ORDER NO.</span><b>${esc(o.id)}</b></div><div class="dash"></div>
   ${o.items.map(l => L(`${l.qty} x ${esc(l.name).toUpperCase()}`, peso(l.unit * l.qty)) + (selText(l) ? `<div class="sub" style="--i:${n++}">${esc(selText(l))}</div>` : '')).join('')}<div class="dash"></div>
-  ${L('SUBTOTAL', peso(o.sub))}${L('DELIVERY FEE', o.disc && pr && pr.type === 'ship' ? 'FREE' : peso(o.fee))}${o.disc && pr && pr.type !== 'ship' ? L('PROMO ' + esc(pr.code), '-' + peso(o.disc), 'g') : ''}${o.tip ? L('RIDER TIP', peso(o.tip)) : ''}
+  ${L('SUBTOTAL', peso(o.sub))}${L('DELIVERY FEE', o.disc && pr && pr.type === 'ship' ? 'FREE' : o.fee==null?'Not supplied':peso(o.fee))}${o.disc && (!pr||pr.type !== 'ship') ? L('PROMO ' + esc(pr?.code||'RECORDED'), '-' + peso(o.disc), 'g') : ''}${o.tip ? L('RIDER TIP', peso(o.tip)) : ''}
   <div class="ln tot" style="--i:${n++}"><span>TOTAL</span><i></i><span>${peso(o.total)}</span></div><div class="sub" style="--i:${n++}">Order summary · ask the store for a tax invoice</div><div class="dash"></div>
   ${L('PAYMENT', esc(PAYNAME[o.pay.method]).toUpperCase())}<div class="ln" style="--i:${n++}"><span>DELIVER TO</span></div><div class="sub" style="--i:${n++};color:#222">${esc(o.addr)}</div>${o.note ? `<div class="sub" style="--i:${n++}">Note: ${esc(o.note)}</div>` : ''}<div class="dash"></div>
-  <div class="rbar" style="--i:${n++}">${barcode(o.id)}<span>${esc(o.id)}</span></div><p class="thx" style="--i:${n++}">SALAMAT, ALEGRIA!<br><small>Thank you for ordering local.</small></p><div class="stamp">${stamp}</div></div></div>`; }
-V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r = R(o.rid);
+  <div class="rbar" style="--i:${n++}"><span>${esc(o.id)}</span></div><p class="thx" style="--i:${n++}">SALAMAT, ALEGRIA!<br><small>Thank you for ordering local.</small></p><div class="stamp">${stamp}</div></div></div>`; }
+V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r=R(o.rid)||{name:'Store',items:[]};
   return { html: `<section class="view" style="max-width:520px;margin:0 auto;text-align:center"><div class="okh"><span class="okc">${ic('check', 40)}</span><h1>Order placed!</h1><p class="mu">The store will review your order.</p></div><div class="slot" aria-hidden="true"></div>${receiptHTML(o, true)}
   <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic('bike', 18)}Track order</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
-/* ---------- ratings ---------- */
-const rateCard = o => o.review ? `<div class="panel"><h3>Your review</h3><div class="row g" style="margin:6px 0">${[1, 2, 3, 4, 5].map(n => ic('star', 20, n <= o.review.store ? 'star' : 'mu')).join('')}</div>${o.review.comment ? `<p class="mu sm">“${esc(o.review.comment)}”</p>` : ''}</div>` : `<div class="panel" style="background:var(--or-s);border:0"><b style="font-size:17px">How was your order?</b><p class="sm mu" style="margin:4px 0 10px">Rate ${esc(R(o.rid).name)}${o.rider ? ' and your rider' : ''}.</p><button class="btn p blk" data-a="rate" data-id="${o.id}">Rate order</button></div>`;
-const communityReviews = rid => S.orders.filter(o => o.rid === rid && o.review).map(o => ({ who: o.contact.name, r: o.review.store, t: o.review.comment || (o.review.tags || []).join(', ') || 'Rated ' + o.review.store + ' stars' }));
-function rateSheet(oid) { const o = ORD(oid), r = R(o.rid), st = { store: 0, rider: 0, tags: [] }, TAGS = ['Tasty', 'Fresh', 'On time', 'Good packaging', 'Good value', 'Friendly rider'];
-  const row = (k, label) => `<div class="field"><label id="l-${k}">${label}</label><div class="stars" role="radiogroup" aria-labelledby="l-${k}">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="sbtn" role="radio" aria-checked="false" data-sr="${k}" data-n="${n}" aria-label="${n} star${n > 1 ? 's' : ''}">${ic('star', 36)}</button>`).join('')}</div></div>`;
-  const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2>How was your order?</h2><p class="mu sm" style="margin:4px 0 14px">${esc(o.id)} · ${esc(r.name)}</p>${row('store', 'Rate ' + esc(r.name))}${o.rider ? row('rider', 'Rate your rider ' + esc(o.rider.name.split(' ')[0])) : ''}
-  <div class="field"><label>What went well?</label><div class="chips" style="flex-wrap:wrap">${TAGS.map(t => `<button type="button" class="chip" data-tg="${t}" aria-pressed="false">${t}</button>`).join('')}</div></div><div class="field"><label for="rc">Comment (optional)</label><textarea class="in" id="rc" maxlength="300" placeholder="Tell others about it"></textarea></div><p class="err" id="re"></p><button class="btn p blk">Submit review</button></form>`, { label: 'Rate order' });
-  el.addEventListener('click', e => { const b = e.target.closest('.sbtn'), t = e.target.closest('[data-tg]'); if (b) { const k = b.dataset.sr, n = +b.dataset.n; st[k] = n; $$(`[data-sr=${k}]`, el).forEach(x => { const on = +x.dataset.n <= n; x.classList.toggle('on', on); x.setAttribute('aria-checked', +x.dataset.n === n); }); $('#re', el).textContent = ''; } if (t) { const i = st.tags.indexOf(t.dataset.tg); i >= 0 ? st.tags.splice(i, 1) : st.tags.push(t.dataset.tg); t.classList.toggle('on', i < 0); t.setAttribute('aria-pressed', i < 0); } });
-  $('form', el).onsubmit = e => { e.preventDefault(); if (!st.store) return ($('#re', el).textContent = 'Please rate the restaurant (1 to 5 stars).'); o.review = { store: st.store, rider: o.rider ? st.rider : 0, tags: st.tags, comment: $('#rc', el).value.trim(), at: Date.now() }; o.upd = Date.now(); save(); closeSheet(); toast('Thanks for your review!'); render(); }; }
 /* ---------- motion: fly to cart ---------- */
 const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function cartTarget() { for (const el of [$('.pp-home-cart:not(.pp-home-bell)'), $('.pp-cart-anchor'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
@@ -644,7 +482,7 @@ function tickBtn(b) { if (!b || !b.isConnected) return; const html = b.innerHTML
 function printReceipt(id) { const o = ORD(id); if (!o) return; const old = $('#print-root'); old && old.remove(); const d = document.createElement('div'); d.id = 'print-root'; d.innerHTML = receiptHTML(o, false); document.body.append(d); document.body.classList.add('printing'); try { window.print(); } catch (e) { toast('Printing is not available here.'); } setTimeout(() => { document.body.classList.remove('printing'); d.remove(); }, 800); }
 
 /* ---------- tracking ---------- */
-const PATH = 'M60 210 L60 130 L210 130 L210 70 L340 70';
+
 // A push link can refer to a real order that has not been cached on this device.
 function linkedOrderView(id) {
   return {html:`<section class="view"><div class="panel" id="linked-order-state" role="status"><h2>Loading your order…</h2><p class="mu sm">Checking the latest details with Papalita.</p></div></section>`,after:async()=>{
@@ -659,13 +497,17 @@ function linkedOrderView(id) {
       if(items.error)throw items.error;
       if(S.user.id!==uid||!S.user.in)return;
       const order={id:row.id,rid:row.store_id,total:Number(row.total_amount)||0,
-        status:row.status,demo:false,uid,createdAt:Date.parse(row.created_at)||Date.now(),
+        status:row.status,source:'supabase',uid,createdAt:Date.parse(row.created_at)||Date.now(),
         upd:Date.parse(row.updated_at)||Date.now(),addr:row.delivery_address||'',
         contact:{name:row.customer_name||S.user.name,phone:row.contact_number||''},
-        pay:{method:row.payment_method||'cod',status:row.payment_status||'unpaid',demo:false},
+        pay:{method:row.payment_method||'cod',status:row.payment_status||'unpaid',source:'supabase'},
         items:(items.data||[]).map(i=>({itemId:i.product_id,name:i.product_name,qty:Number(i.quantity)||0,
           unit:Number(i.unit_price)||0,sel:i.selected_options||{},note:i.special_instructions||'',
           img:ITEM(i.product_id)?.item.img||''}))};
+      order.sub=order.items.reduce((n,i)=>n+i.unit*i.qty,0);
+      order.fee=row.delivery_fee==null?null:Number(row.delivery_fee);
+      order.disc=Number(row.discount_amount??row.discount)||0;
+      order.tip=Number(row.tip)||0;
       const old=S.orders.findIndex(o=>String(o.id)===String(row.id));
       if(old<0)S.orders.push(order);else S.orders[old]=order;save();
       if(curPath()==='/track/'+id)render();
@@ -676,8 +518,8 @@ function linkedOrderView(id) {
   }};
 }
 
-V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r = R(o.rid);
-  if (o.demo === false) {
+V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r=R(o.rid)||{name:'Store',items:[]};
+
     const statuses = [
       ['pending','Order received','Waiting for the store to accept your order.'],
       ['confirmed','Order accepted','The store has confirmed your order.'],
@@ -709,7 +551,7 @@ V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r =
         try {
           const db=window.PAPALITA_DB;
           if(!db) return;
-          const {data,error}=await db.from('orders').select('id,status,updated_at').eq('id',id).single();
+          const {data,error}=await db.from('orders').select('id,status,updated_at').eq('id',id).eq('customer_id',S.user.id).single();
           if(error) throw error;
           if(data && data.status!==o.status){
             o.status=data.status; o.upd=Date.parse(data.updated_at)||Date.now();
@@ -721,45 +563,25 @@ V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r =
       };
       sync(); timers.push(setInterval(sync,5000));
     }};
-  }
-  const html = () => { const s = stageOf(o), done = s === 5, can = s < 0;
-    return `${pageHead('Track order', true, `<span class="chip">${o.id}</span>`)}<div class="two-col"><div><div class="mapbox" aria-label="Delivery route preview"><svg viewBox="0 0 400 260" role="img" aria-label="Map preview of the delivery route"><rect width="400" height="260" fill="#EAF2E8"/><g stroke="#fff" stroke-width="14" fill="none"><path d="M0 130H400M210 0V260M60 0V260M0 210H400M340 0V260M0 70H400"/></g><path d="${PATH}" stroke="#087F32" stroke-width="5" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/><g transform="translate(60 210)"><circle r="14" fill="#fff"/><path d="M-6-3h12v9h-12zM-8-3l2-6h12l2 6" fill="#087F32"/></g><g transform="translate(340 70)"><circle r="14" fill="#101318"/><path d="M-6 1l6-6 6 6v6h-12z" fill="#fff"/></g><g id="rider" transform="translate(60 210)"><circle r="12" fill="#087F32" stroke="#fff" stroke-width="3"/><circle r="4" fill="#fff"/></g></svg></div>
-  <p class="sm mu" style="margin:8px 4px">Schematic route preview. ${C.maps.provider === 'none' ? 'Add a Mapbox or Google Maps token in <code>js/config.js</code> for a live map.' : 'Live map provider configured.'}</p>
-  <div class="panel"><div class="row sp"><div><h2>${can ? 'Order cancelled' : done ? 'Delivered' : `Arriving in ~${etaMin(o)} min`}</h2><p class="mu sm">From ${esc(r.name)}${o.demo !== false ? ' · simulated updates (demo)' : o.rider ? ' · rider ' + esc(o.rider.name) : ' · live updates'}</p></div>${o.demo !== false ? '<span class="demo">DEMO</span>' : '<span class="status open">LIVE</span>'}</div></div>
-  <div class="panel"><ol class="tl">${can ? `<li class="cur"><span class="b">${ic('x', 16)}</span><div><b>${o.status === 'refunded' ? 'Refunded' : 'Cancelled'}</b>${o.cancelReason ? `<div class="sm">${esc(o.cancelReason)}</div>` : ''}</div></li>` : STEPS.map(([t, d, i], k) => `<li class="${k <= s ? 'done' : ''} ${k === s && !done ? 'cur' : ''}"><span class="b">${ic(i, 16)}</span><div><b>${t}</b><div class="sm">${d.replace('Marco', (o.rider || RIDER).name.split(' ')[0])}</div></div></li>`).join('')}</ol></div></div>
-  <aside>${s >= 2 && !done && !can ? `<div class="panel row"><span class="avatar" style="width:52px;height:52px;font-size:18px">${esc((o.rider || RIDER).name.split(' ').map(x => x[0]).join(''))}</span><div class="grow"><b>${(o.rider || RIDER).name}</b><p class="mu sm">${(o.rider || RIDER).vehicle || 'Motorcycle'}</p></div><a class="ib" style="background:var(--or);color:#fff" href="tel:${(o.rider || RIDER).phone}" aria-label="Call rider">${ic('phone')}</a></div>` : ''}
-  <div class="panel"><div class="sm mu">Delivering to</div><p style="font-weight:600">${esc(o.addr)}</p>${o.note ? `<p class="sm mu" style="margin-top:6px">Note: ${esc(o.note)}</p>` : ''}</div><div class="panel"><h3 style="margin-bottom:6px">Order details</h3>${orderLines(o)}<div class="row sp" style="margin-top:8px;border-top:1px dashed var(--ln);padding-top:10px"><b>Total</b><b>${peso(o.total)}</b></div><p class="sm mu" style="margin-top:6px">${payTag(o)}</p></div>
-  ${s >= 0 && s <= 1 ? `<button class="btn d blk" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}${done ? rateCard(o) + `<button class="btn p blk" data-a="reorder" data-id="${o.id}">Reorder</button>` : ''}</aside></div>`; };
-  return { html: `<section class="view" id="trk">${html()}</section>`, after: () => { let last = stageOf(o); const place = () => { const p = $('#trk path[stroke-dasharray]'), rd = $('#rider'); if (!p || !rd || !p.getTotalLength) return; const s = stageOf(o), pr = s >= 5 ? 1 : s === 4 ? Math.min(.96, (Date.now() - o.createdAt) / 1000 > T[4] ? ((Date.now() - o.createdAt) / 1000 - T[4]) / (T[5] - T[4]) : 0) : 0, L = p.getTotalLength(), pt = p.getPointAtLength(L * pr); rd.setAttribute('transform', `translate(${pt.x} ${pt.y})`); };
-    place(); if (last >= 0 && last < 5) timers.push(setInterval(() => { o = ORD(id) || o; const s = stageOf(o); if (s !== last) { last = s; const el = $('#trk'); if (el) el.innerHTML = html(); } place(); const h = $('#trk h2'); if (h && s >= 0 && s < 5) h.textContent = `Arriving in ~${etaMin(o)} min`; }, 1000)); } }; };
+  
+};
 
-/* ---------- orders ---------- */
-let OT = 'current';
-function reorder(o) { const lines = []; o.items.forEach(l => { const x = ITEM(l.itemId); if (x && x.item.available) lines.push({ ...l, key: uid('l'), unit: unitPrice(x.item, l.sel) }); }); if (!lines.length) return toast('Those items are no longer available.'); if (!isOpen(R(o.rid))) return toast(`${R(o.rid).name} is closed right now.`);
+function reorder(o) { const lines = []; o.items.forEach(l => { const x = ITEM(l.itemId); if (x && x.item.available) lines.push({ ...l, key: uid('l'), unit: unitPrice(x.item, l.sel) }); }); if (!lines.length) return toast('Those items are no longer available.'); if(!R(o.rid)||!isOpen(R(o.rid)))return toast('This store is not accepting orders right now.');
   const go = () => { S.cart = { rid: o.rid, lines: lines.map(l => ({...l, rid: o.rid})) }; save(); updateChrome(true); nav('/cart'); }; S.cart.lines.length && S.cart.rid !== o.rid ? confirmDlg('Replace your current cart with this order?', 'Replace cart').then(ok => ok && go()) : go(); }
+let OT='current';
 V.ordersView = (_, p) => { if (p && p.get('t')) OT = p.get('t'); const cur = myOrders().filter(isCurrent), hist = myOrders().filter(o => !isCurrent(o)), list = OT === 'current' ? cur : hist;
-  const card = o => { const s = stageOf(o), r = R(o.rid), st = s < 0 ? (o.status === 'refunded' ? 'Refunded' : 'Cancelled') : s === 5 ? 'Delivered' : STEPS[s][0];
-    return `<div class="panel" tabindex="0" role="link" style="cursor:pointer" data-a="odetail" data-id="${o.id}"><div class="row">${`<div style="width:64px">${photo(o.items[0].img, o.items[0].name, { ar: '1', w: 200 }).replace('class="ph', 'style="border-radius:14px" class="ph')}</div>`}<div class="grow"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${st}</span></div><p class="mu sm">${o.id} · ${new Date(o.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} · ${o.items.reduce((a, l) => a + l.qty, 0)} items</p><b>${peso(o.total)}</b></div></div>
+  const card = o => { const s = stageOf(o), r=R(o.rid)||{name:'Store'}, st = s < 0 ? (o.status === 'refunded' ? 'Refunded' : 'Cancelled') : s === 5 ? 'Completed' : STEPS[s][0];
+    return `<div class="panel" tabindex="0" role="link" style="cursor:pointer" data-a="odetail" data-id="${o.id}"><div class="row">${`<div style="width:64px">${photo(o.items[0]?.img, o.items[0]?.name||'Order', { ar: '1', w: 200 }).replace('class="ph', 'style="border-radius:14px" class="ph')}</div>`}<div class="grow"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${st}</span></div><p class="mu sm">${o.id} · ${new Date(o.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} · ${o.items.reduce((a, l) => a + l.qty, 0)} items</p><b>${peso(o.total)}</b></div></div>
     <div class="row" style="margin-top:12px">${isCurrent(o) ? `<button class="btn p sm grow" data-a="gotrack" data-id="${o.id}">${ic('bike', 16)}Track</button>` : `<button class="btn p sm grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}<button class="btn s sm grow" data-a="odetail" data-id="${o.id}">Details</button></div></div>`; };
   return { html: `<section class="view">${pageHead('Orders', false)}<div class="chips" role="tablist" style="margin-bottom:14px">${[['current', `Current (${cur.length})`], ['history', 'History'], ['catering', `Catering (${myCater().length})`]].map(([k, l]) => `<button class="chip ${OT === k ? 'on' : ''}" role="tab" aria-selected="${OT === k}" data-a="otab" data-v="${k}">${l}</button>`).join('')}</div>
   ${OT === 'catering' ? cateringList() : list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">${list.map(card).join('')}</div>` : emptyState('orders', OT === 'current' ? 'No active orders' : 'No past orders yet', 'Your orders will appear here.', 'Order food', 'browse')}</section>` }; };
-V.orderDetail = id => { const o = ORD(id); if (!o) return V.notFound(); const s = stageOf(o), r = R(o.rid);
-  return { html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead(o.id)}<div class="panel"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${s < 0 ? (o.status === 'refunded' ? 'Refunded' : 'Cancelled') : s === 5 ? 'Delivered' : STEPS[s][0]}</span></div><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:4px">${esc(o.cancelReason)}</p>` : ''}</div>
+V.orderDetail = id => { const o = ORD(id); if (!o) return V.notFound(); const s = stageOf(o), r=R(o.rid)||{name:'Store'};
+  return { html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead(o.id)}<div class="panel"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${s < 0 ? (o.status === 'refunded' ? 'Refunded' : 'Cancelled') : s === 5 ? 'Completed' : STEPS[s][0]}</span></div><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:4px">${esc(o.cancelReason)}</p>` : ''}</div>
   <div class="panel">${orderLines(o)}<div style="margin-top:10px">${sumHTML({ ...o, promo: o.promo && window.PROMOS.find(p => p.code === o.promo), perr: '', vat: (o.total - (o.tip || 0)) * 12 / 112 })}</div></div><div class="panel sm"><div class="row sp"><span class="mu">Deliver to</span><span style="text-align:right">${esc(o.addr)}</span></div><div class="row sp" style="margin-top:8px"><span class="mu">Payment</span><span>${payTag(o)}</span></div></div>
-  ${stageOf(o) === 5 ? rateCard(o) : ''}<button class="btn s blk" data-a="receipt" data-id="${o.id}" style="margin-bottom:10px">${ic('copy', 16)}View receipt</button><div class="row">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${o.id}">Track order</button>` : `<button class="btn p grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}${s >= 0 && s <= 1 ? `<button class="btn d grow" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}</div></section>` }; };
-
-/* ---------- nearby ---------- */
-let NB = 'list';
-function askLocation() { if (!navigator.geolocation) { S.loc.perm = 'unsupported'; save(); toast('Location is not supported on this device.'); return render(); }
-  navigator.geolocation.getCurrentPosition(() => { S.loc.perm = 'granted'; save(); toast('Location is on. Pick your barangay for delivery.'); render(); }, () => { S.loc.perm = 'denied'; save(); toast('Location permission was denied.'); render(); }, { timeout: 8000 }); }
-V.nearby = () => { const a = [...RS].sort((x, y) => dist(x) - dist(y)), perm = S.loc.perm;
-  const map = `<div class="mapbox"><svg viewBox="0 0 400 320" role="img" aria-label="Nearby restaurants map"><rect width="400" height="320" fill="#EAF2E8"/><g stroke="#fff" stroke-width="12"><path d="M0 160H400M200 0V320M90 0V320M310 0V320M0 70H400M0 250H400"/></g><circle cx="200" cy="160" r="9" fill="#1b6cff" stroke="#fff" stroke-width="3"/><text x="200" y="186" text-anchor="middle" font-size="11" font-weight="700" fill="#1b6cff">You</text>${a.map(r => { const x = Math.max(30, Math.min(370, 200 + r.dx * 50)), y = Math.max(30, Math.min(290, 160 + r.dy * 50)); return `<g data-a="rest" data-id="${r.id}" tabindex="0" role="link" aria-label="${esc(r.name)}" style="cursor:pointer" transform="translate(${x} ${y})"><path d="M0 0c-14-14-14-34 0-34s14 20 0 34z" transform="translate(0 0)" fill="#087F32" stroke="#fff" stroke-width="2"/><circle cy="-22" r="4" fill="#fff"/><text y="14" text-anchor="middle" font-size="10" font-weight="700" fill="#101318">${esc(r.name)}</text></g>`; }).join('')}</svg></div><p class="sm mu" style="margin:8px 4px">Schematic map: pins are placed relative to your delivery location. ${C.maps.provider === 'none' ? 'Add a map token in <code>js/config.js</code> for live maps.' : ''}</p>`;
-  return { html: `<section class="view">${pageHead('Nearby', false, `<button class="btn s sm" data-a="loc">${ic('pin', 16)}Change</button>`)}<div class="panel row"><span class="ic" style="width:42px;height:42px;border-radius:14px;background:var(--or-s);color:var(--or);display:grid;place-items:center">${ic('nav')}</span><div class="grow"><b>${esc(S.loc.label)}</b><p class="mu sm">${perm === 'granted' ? 'Location access on' : perm === 'denied' ? 'Location blocked. Enable it in your browser settings, or pick an area manually.' : 'Share your location for accurate distances.'}</p></div>${perm !== 'granted' ? `<button class="btn p sm" data-a="askloc">Use my location</button>` : ''}</div>
-  <div class="chips" style="margin:14px 0">${[['list', 'list', 'List'], ['map', 'map', 'Map']].map(([k, i, l]) => `<button class="chip ${NB === k ? 'on' : ''}" data-a="nbv" data-v="${k}">${ic(i, 16)}${l}</button>`).join('')}</div>
-  ${NB === 'map' ? map : ''}<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));${NB === 'map' ? 'margin-top:14px' : ''}">${a.map(r => `<div class="panel row" tabindex="0" role="link" style="cursor:pointer;margin:0" data-a="rest" data-id="${r.id}"><div style="width:84px">${photo(r.cover, r.name, { ar: '1', w: 240 }).replace('class="ph', 'style="border-radius:16px" class="ph')}</div><div class="grow"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${isOpen(r) ? 'open' : 'closed'}">${isOpen(r) ? 'Open' : 'Closed'}</span></div><p class="mu sm">${esc(r.kind)} · ${dist(r).toFixed(1)} km</p><p class="sm row g">${stars(r.rating)} <span class="mu">· ${ic('clock', 14)} ${etaOf(r)[0] + Math.round(dist(r))}–${etaOf(r)[1] + Math.round(dist(r))} min</span></p></div></div>`).join('')}</div></section>` }; };
+  <button class="btn s blk" data-a="receipt" data-id="${o.id}" style="margin-bottom:10px">${ic('copy', 16)}View receipt</button><div class="row">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${o.id}">Track order</button>` : `<button class="btn p grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}${s >= 0 && s <= 1 ? `<button class="btn d grow" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}</div></section>` }; };
 
 /* ---------- promos ---------- */
-V.promos = () => ({ html: `<section class="view" style="max-width:760px;margin:0 auto">${pageHead('Promotions')}${window.PROMOS.filter(p => p.active !== false).map(p => { const exp = p.exp && new Date(p.exp + 'T23:59:59+08:00') < new Date(), on = S.promo === p.code;
+V.promos = () => ({ html: `<section class="view" style="max-width:760px;margin:0 auto">${pageHead('Promotions')}${!window.PROMOS.length?emptyState('ticket','No current offers','Approved promotions will appear here when available.'):''}${window.PROMOS.filter(p => p.active !== false).map(p => { const exp=p.expires_at&&Date.parse(p.expires_at)<=Date.now(), on = S.promo === p.code;
   return `<div class="panel"><div class="row sp"><div><h3>${esc(p.title)}</h3><p class="mu sm" style="margin-top:2px">${esc(p.desc)}</p></div><span class="chip" style="border:1.5px dashed var(--or);color:var(--or-d)">${esc(p.code)}</span></div>
   <ul class="sm mu" style="margin:10px 0 12px 18px"><li>Minimum order ${peso(p.min)}</li><li>${p.rid ? 'Valid at ' + esc(R(p.rid).name) + ' only' : 'Valid at all restaurants'}</li><li>${exp ? 'Expired' : 'Expires ' + new Date(p.exp + 'T00:00:00+08:00').toLocaleDateString('en-PH', { dateStyle: 'long' })}</li></ul>
   <div class="row"><button class="btn ${on ? 's' : 'p'} sm grow" data-a="usepromo" data-id="${p.code}" ${exp ? 'disabled' : ''}>${on ? 'Applied ✓' : 'Apply promo'}</button><button class="btn o sm" data-a="copy" data-id="${p.code}" aria-label="Copy code ${esc(p.code)}">${ic('copy', 16)}Copy</button></div></div>`; }).join('')}</section>` });
@@ -767,9 +589,9 @@ V.promos = () => ({ html: `<section class="view" style="max-width:760px;margin:0
 /* ---------- profile & account ---------- */
 const row = (i, t, s, a, extra = '') => `<button class="li" data-a="${a}"><span class="ic">${ic(i, 20)}</span><span class="grow"><b>${t}</b>${s ? `<br><span class="sm mu">${s}</span>` : ''}</span>${extra}${ic('chev', 18, 'mu')}</button>`;
 V.profile = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Profile', false)}<div class="panel row">${avatar()}<div class="grow"><h2>${esc(S.user.name)}</h2><p class="mu sm">${esc(S.user.email)}${S.user.phone ? ' · ' + esc(S.user.phone) : ''}</p></div><button class="btn s sm" data-a="go" data-id="/profile/edit">Edit</button></div>
-  <div class="panel" style="padding:4px 16px">${row('pin', 'Saved addresses', S.addrs.length + ' saved', 'go2', '').replace('data-a="go2"', 'data-a="go" data-id="/addresses"')}${[['orders', 'My orders', myOrders().filter(isCurrent).length + ' active', '/orders'], ['box', 'Catering requests', myCater().length + ' sent', '/orders?t=catering'], ['nav', 'Nearby restaurants', 'List and map', '/nearby'], ['card', 'Payment methods', S.pay.length + ' saved', '/payments'], ['heart', 'Favorites', S.fav.items.length + S.fav.rests.length + ' saved', '/favorites'], ['ticket', 'Promotions', 'Discounts and codes', '/promos'], ['bell', 'Notifications', unread() ? unread() + ' unread' : 'All caught up', '/notifications'], ['help', 'Support', 'FAQs and contact', '/support']].map(([i, t, s, p]) => row(i, t, s, 'go').replace('data-a="go"', `data-a="go" data-id="${p}"`)).join('')}</div>
-  <div class="panel" style="padding:4px 16px"><div class="li"><span class="ic">${ic('bike',20)}</span><span class="grow"><b>Order updates</b><br><span class="sm mu">Open an order to check its recorded status.</span></span></div>${S.user.id !== 'demo' ? `<button class="li" data-a="pwchange"><span class="ic">${ic('shield', 20)}</span><span class="grow"><b>Change password</b></span>${ic('chev', 18, 'mu')}</button><button class="li" data-a="delacct" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('trash', 20)}</span><b>Delete account</b></button>` : '<p class="sm mu" style="padding:12px 4px">You are using the demo account.</p>'}<button class="li" data-a="logout" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('logout', 20)}</span><b>Log out</b></button></div></section>` });
-V.editProfile = () => ({ html: `<section class="view" style="max-width:560px;margin:0 auto">${pageHead('Edit profile')}<form id="pf" class="panel" novalidate><div class="row" style="margin-bottom:16px">${avatar()}<label class="btn s sm" style="cursor:pointer">Change photo<input type="file" id="pimg" accept="image/*" class="sr"></label></div><div class="field"><label for="pn">Name</label><input class="in" id="pn" value="${esc(S.user.name)}"><p class="err" data-e="pn"></p></div><div class="field"><label for="pe">Email</label><input class="in" id="pe" type="email" value="${esc(S.user.email)}"><p class="err" data-e="pe"></p></div><div class="field"><label for="pp">Mobile number</label><input class="in" id="pp" value="${esc(S.user.phone || '')}"><p class="err" data-e="pp"></p></div><button class="btn p blk">Save changes</button></form></section>` });
+  <div class="panel" style="padding:4px 16px">${row('pin', 'Saved addresses', S.addrs.length + ' saved', 'go2', '').replace('data-a="go2"', 'data-a="go" data-id="/addresses"')}${[['orders', 'My orders', myOrders().filter(isCurrent).length + ' active', '/orders'], ['box', 'Catering requests', myCater().length + ' sent', '/orders?t=catering'], ['nav', 'Store locations', 'Supplied store addresses', '/nearby'], ['card', 'Payment methods', 'Cash payment', '/payments'], ['heart', 'Favorites', S.fav.items.length + S.fav.rests.length + ' saved', '/favorites'], ['ticket', 'Promotions', 'Discounts and codes', '/promos'], ['bell', 'Notifications', unread() ? unread() + ' unread' : 'All caught up', '/notifications'], ['help', 'Support', 'FAQs and contact', '/support']].map(([i, t, s, p]) => row(i, t, s, 'go').replace('data-a="go"', `data-a="go" data-id="${p}"`)).join('')}</div>
+  <div class="panel" style="padding:4px 16px"><div class="li"><span class="ic">${ic('bike',20)}</span><span class="grow"><b>Order updates</b><br><span class="sm mu">Open an order to check its recorded status.</span></span></div><button class="li" data-a="pwchange"><span class="ic">${ic('shield', 20)}</span><span class="grow"><b>Change password</b></span>${ic('chev', 18, 'mu')}</button><button class="li" data-a="delacct" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('trash', 20)}</span><b>Delete account</b></button><button class="li" data-a="logout" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('logout', 20)}</span><b>Log out</b></button></div></section>` });
+V.editProfile = () => ({ html: `<section class="view" style="max-width:560px;margin:0 auto">${pageHead('Edit profile')}<form id="pf" class="panel" novalidate><div class="row" style="margin-bottom:16px">${avatar()}<label class="btn s sm" style="cursor:pointer">Change photo (this device)<input type="file" id="pimg" accept="image/*" class="sr"></label></div><div class="field"><label for="pn">Name</label><input class="in" id="pn" value="${esc(S.user.name)}"><p class="err" data-e="pn"></p></div><div class="field"><label for="pe">Email</label><input class="in" id="pe" type="email" value="${esc(S.user.email)}"><p class="err" data-e="pe"></p></div><div class="field"><label for="pp">Mobile number</label><input class="in" id="pp" value="${esc(S.user.phone || '')}"><p class="err" data-e="pp"></p></div><button class="btn p blk">Save changes</button></form></section>` });
 V.addresses = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Saved addresses', true, `<button class="btn p sm" data-a="addrform">${ic('plus', 16)}Add</button>`)}${S.addrs.length ? S.addrs.map(a => `<div class="panel"><div class="row sp"><div><h3>${esc(a.label)} ${a.def ? '<span class="status open">Default</span>' : ''}</h3><p class="mu sm">${esc(a.line)}, ${esc(a.city)}</p></div></div><div class="row" style="margin-top:10px"><button class="btn s sm" data-a="addrform" data-id="${a.id}">Edit</button>${a.def ? '' : `<button class="btn s sm" data-a="addrdef" data-id="${a.id}">Make default</button>`}<button class="btn d sm" data-a="addrdel" data-id="${a.id}">Delete</button></div></div>`).join('') : emptyState('pin', 'No saved addresses', 'Add one for faster checkout.', 'Add address', 'addrform')}</section>` });
 function addrForm(id) { const a = S.addrs.find(x => x.id === id) || { label: '', line: '', city: '' };
   const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2 style="margin-bottom:14px">${id ? 'Edit' : 'Add'} address</h2><div class="field"><label for="fl">Label</label><input class="in" id="fl" value="${esc(a.label)}" maxlength="20" placeholder="Home, Work…"><p class="err" data-e="fl"></p></div><div class="field"><label for="fs">Purok, street or building</label><input class="in" id="fs" value="${esc(a.line)}"><p class="err" data-e="fs"></p></div><div class="field"><label for="fc">Barangay</label><select class="in" id="fc">${window.BRGYS.map(b => `<option value="${b.n}, Alegria" ${a.city === b.n + ', Alegria' || (!a.city && b.n === S.loc.brgy) ? 'selected' : ''}>${b.n}</option>`).join('')}</select><p class="err" data-e="fc"></p></div><div class="field"><label for="fk">Landmark (optional)</label><input class="in" id="fk" value="${esc(a.landmark || '')}" maxlength="80" placeholder="Near the chapel, blue gate…"></div><button class="btn p blk">Save address</button></form>`, { label: 'Address' });
@@ -777,63 +599,32 @@ function addrForm(id) { const a = S.addrs.find(x => x.id === id) || { label: '',
     $$('[data-e]', el).forEach(x => x.textContent = ''); const k = Object.keys(er); if (k.length) { k.forEach(x => $(`[data-e=${x}]`, el).textContent = er[x]); return $('#' + k[0], el).focus(); }
     if (id) { Object.assign(a, { label: v('fl'), line: v('fs'), city: v('fc'), landmark: v('fk') }); if (a.def) syncLoc(a); } else { const n = { id: uid('a'), label: v('fl'), line: v('fs'), city: v('fc'), landmark: v('fk'), def: true }; S.addrs.forEach(x => x.def = false); S.addrs.push(n); CK.addr = n.id; syncLoc(n); } save(); closeSheet(); toast('Address saved.'); updateChrome(); render(); };
 }
-V.payments = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Payment methods', true, `<button class="btn p sm" data-a="payform">${ic('plus', 16)}Add</button>`)}<p class="note" style="margin-bottom:14px"><span class="demo">DEMO</span> Only a label and last digits are saved on this device. In production, GCash, Maya and cards are tokenized by your payment provider.</p>${S.pay.length ? S.pay.map(p => `<div class="panel row"><span class="ic" style="width:42px;height:42px;border-radius:14px;background:var(--or-s);color:var(--or);display:grid;place-items:center">${ic('card')}</span><div class="grow"><b>${PAYNAME[p.type]}</b><p class="mu sm">${esc(p.detail)}</p></div><button class="btn d sm" data-a="paydel" data-id="${p.id}">Remove</button></div>`).join('') : emptyState('card', 'No saved methods', 'Cash on Delivery is always available at checkout.', 'Add method', 'payform')}</section>` });
-function payForm() { const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2 style="margin-bottom:14px">Add payment method</h2><div class="field"><label for="pt">Type</label><select class="in" id="pt"><option value="gcash">GCash</option><option value="maya">Maya</option><option value="card">Credit / debit card</option></select></div><div class="field"><label for="pv" id="pvl">Mobile number</label><input class="in" id="pv" inputmode="numeric" placeholder="09XXXXXXXXX"><p class="err" data-e="pv"></p></div><button class="btn p blk">Save method</button></form>`, { label: 'Add payment' });
-  $('#pt', el).onchange = e => { const c = e.target.value === 'card'; $('#pvl', el).textContent = c ? 'Card number' : 'Mobile number'; $('#pv', el).placeholder = c ? '4242 4242 4242 4242' : '09XXXXXXXXX'; };
-  $('form', el).onsubmit = e => { e.preventDefault(); const t = $('#pt', el).value, v = $('#pv', el).value.replace(/\s/g, ''); let d, er = '';
-    if (t === 'card') { if (!/^\d{13,19}$/.test(v) || !luhn(v)) er = 'Enter a valid card number.'; d = (v[0] === '4' ? 'Visa' : v[0] === '5' ? 'Mastercard' : 'Card') + ' •••• ' + v.slice(-4); } else { if (!PH.test(v)) er = 'Use a PH mobile number like 09171234567.'; d = v.slice(0, 4) + ' ••• ' + v.slice(-4); }
-    $('[data-e=pv]', el).textContent = er; if (er) return $('#pv', el).focus(); S.pay.push({ id: uid('p'), type: t, detail: d }); save(); closeSheet(); toast('Payment method added.'); render(); };
-}
-let FT = 'items';
+let FT='items';
 V.favorites = () => { const its = S.fav.items.map(ITEM).filter(Boolean), rs = S.fav.rests.map(R).filter(Boolean);
   return { html: `<section class="view">${pageHead('Favorites')}<div class="chips" style="margin-bottom:14px">${[['items', 'Dishes'], ['rests', 'Restaurants']].map(([k, l]) => `<button class="chip ${FT === k ? 'on' : ''}" data-a="ftb" data-v="${k}">${l}</button>`).join('')}</div>${(FT === 'items' ? its : rs).length ? `<div class="grid">${FT === 'items' ? its.map(dishCard).join('') : rs.map(restCard).join('')}</div>` : emptyState('heart', 'No favorites yet', 'Tap the heart on any dish or restaurant to save it.', 'Explore food', 'browse')}</section>` }; };
 let NT = 'all';
 V.notifications = () => { const l = myNotes().filter(n => NT === 'all' || n.type === NT), tm = t => { const m = Math.round((Date.now() - t) / 6e4); return m < 1 ? 'Just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
   return { html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Notifications', true, `<button class="btn s sm" data-a="readall" ${unread() ? '' : 'disabled'}>Mark all read</button>`)}<div class="chips" style="margin-bottom:14px">${[['all', 'All'], ['order', 'Orders'], ['promo', 'Promotions'], ['account', 'Account']].map(([k, t]) => `<button class="chip ${NT === k ? 'on' : ''}" data-a="ntab" data-v="${k}">${t}</button>`).join('')}</div>
   ${l.length ? l.map(n => `<button class="panel row" style="width:100%;text-align:left;${n.read ? '' : 'background:var(--or-s);border-color:#FFD2A8'}" data-a="nopen" data-id="${n.id}"><span class="ic" style="width:42px;height:42px;border-radius:14px;background:#fff;color:var(--or);display:grid;place-items:center;flex:none">${ic(n.type === 'order' ? 'bike' : n.type === 'promo' ? 'ticket' : 'user', 20)}</span><span class="grow"><b>${esc(n.t)}</b><br><span class="sm mu">${esc(n.b)}</span><br><span class="sm mu">${tm(n.at)}</span></span>${n.read ? '' : '<i style="width:10px;height:10px;border-radius:50%;background:var(--or)" aria-label="Unread"></i>'}</button>`).join('') : emptyState('bell', 'Nothing here', 'We will let you know when something changes.')}</section>` }; };
-const FAQ = [['How long does delivery take?', 'Most orders arrive in 20–50 minutes depending on the restaurant and distance. You can follow your rider live from Track order.'], ['Can I cancel my order?', 'Yes, until the restaurant starts preparing it. Open the order and tap Cancel order.'], ['Which payment methods are supported?', 'GCash, Maya, cards and Cash on Delivery. Online payments run in demo mode until a provider is connected.'], ['An item was missing or wrong.', 'Send us a message below with your order number and we will refund or replace it.']];
-V.support = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Support')}<div class="panel">${FAQ.map(([q, a]) => `<details style="padding:12px 0;border-bottom:1px solid var(--ln)"><summary style="font-weight:700;cursor:pointer;min-height:28px">${q}</summary><p class="mu" style="margin-top:8px">${a}</p></details>`).join('')}</div>
-  <form id="sf" class="panel" novalidate><h3 style="margin-bottom:12px">Contact us</h3><div class="field"><label for="ss">Topic</label><select class="in" id="ss"><option>Order issue</option><option>Payment</option><option>Account</option><option>Other</option></select></div><div class="field"><label for="sm">Message</label><textarea class="in" id="sm" maxlength="500" placeholder="Include your order number if you have one"></textarea><p class="err" data-e="sm"></p></div><button class="btn p blk">Send message</button><p class="sm mu" style="margin-top:8px">Demo: messages are not transmitted until the support backend is connected.</p></form></section>` });
 V.categories = () => ({ html: `<section class="view">${pageHead('All categories')}<div class="grid">${CATS.map(c => `<button class="card" data-a="cat" data-id="${c.id}" style="text-align:left">${photo(c.img, c.name, { w: 500 })}<div class="bd"><div class="nm"><span>${c.name}</span>${ic('chev', 18, 'mu')}</div><div class="meta">${ALL().filter(x => x.item.cat === c.id).length} dishes</div></div></button>`).join('')}</div></section>` });
-/* ---------- accounts, sign-in and registration ----------
-   DEMO: accounts live in this browser only and the confirmation code is shown on screen (no SMS is sent).
-   Production: Supabase Auth (phone OTP via an SMS provider) replaces everything in this section. */
-const ACC = 'foodie.alegria.accounts', SES = 'foodie.alegria.session';
-const DEMO = { id: 'demo', name: 'Tommy', email: 'tommy@example.com', phone: '09171234567', brgy: 'Poblacion' };
-const accounts = () => { try { return JSON.parse(localStorage.getItem(ACC)) || []; } catch (e) { return []; } };
-const saveAcc = a => localStorage.setItem(ACC, JSON.stringify(a));
-const getSession = () => { try { return JSON.parse(sessionStorage.getItem(SES) || localStorage.getItem(SES) || 'null'); } catch (e) { return null; } };
-const setSession = (id, remember) => { try { sessionStorage.removeItem(SES); localStorage.removeItem(SES); (remember ? localStorage : sessionStorage).setItem(SES, JSON.stringify({ id, at: Date.now() })); } catch (e) {} };
-const clearSession = () => { try { sessionStorage.removeItem(SES); localStorage.removeItem(SES); } catch (e) {} };
-const normPhone = p => { p = String(p || '').replace(/[\s-]/g, ''); return p.startsWith('+63') ? '0' + p.slice(3) : p; };
-const maskPhone = p => p.slice(0, 4) + ' ••• ' + p.slice(-4);
-const pwOk = p => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
-const pwScore = p => { let n = 0; if (p.length >= 8) n++; if (/[a-z]/.test(p) && /[A-Z]/.test(p)) n++; if (/\d/.test(p)) n++; if (/[^A-Za-z0-9]/.test(p) || p.length >= 12) n++; return n; };
-async function hashPw(pw, salt) { try { if (window.crypto && crypto.subtle) { const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']); const b = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 60000, hash: 'SHA-256' }, k, 256); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); } } catch (e) {} let h = hash32(salt + pw), out = ''; for (let i = 0; i < 8; i++) { h = hash32(h + ':' + salt + ':' + pw + ':' + i); out += h.toString(16).padStart(8, '0'); } return 'f' + out; /* weak fallback for insecure contexts; real browsers use PBKDF2 above */ }
+/* ---------- Supabase customer account ---------- */
+const clearSession=()=>{try{sessionStorage.removeItem('foodie.alegria.session');localStorage.removeItem('foodie.alegria.session');}catch{}};
+const normPhone=p=>{p=String(p||'').replace(/[\s-]/g,'');return p.startsWith('+63')?'0'+p.slice(3):p;};
+const pwOk=p=>p.length>=8&&/[A-Za-z]/.test(p)&&/\d/.test(p);
+const pwScore=p=>Number(p.length>=8)+Number(/[a-z]/.test(p)&&/[A-Z]/.test(p))+Number(/\d/.test(p))+Number(/[^A-Za-z0-9]/.test(p)||p.length>=12);
 const BUCKET = ['fav', 'addrs', 'pay', 'cart', 'promo', 'loc', 'recent'];
 const freshBucket = brgy => ({ fav: { items: [], rests: [] }, addrs: [], pay: [], cart: { rid: null, lines: [] }, promo: null, recent: [], loc: { label: (brgy || 'Poblacion') + ', Alegria', brgy: brgy || 'Poblacion', perm: 'unknown' } });
 function stashUser() { if (!S.user || !S.user.id) return; (S.users = S.users || {})[S.user.id] = Object.assign(Object.fromEntries(BUCKET.map(k => [k, S[k]])), { prof: { name: S.user.name, email: S.user.email, phone: S.user.phone, photo: S.user.photo || '' } }); }
 function adoptUser(acc) { S.users = S.users || {}; const b = S.users[acc.id] || {}, f = freshBucket(acc.brgy); BUCKET.forEach(k => S[k] = b[k] !== undefined ? b[k] : f[k]); const p = b.prof || {}; S.user = { id: acc.id, name: p.name || acc.name, email: p.email ?? acc.email ?? '', phone: p.phone || acc.phone, photo: p.photo || '', in: false }; }
-function enterApp(acc, remember, isNew) { if (S.user.id !== acc.id) { stashUser(); adoptUser(acc); } S.user.in = true; setSession(acc.id, remember); if (isNew) notify('account', 'Welcome to Papalita', 'Add your address at checkout and order from local stores.'); save(); AU.view = 'login'; AU.fails = 0; location.hash = '#/'; render(); }
-function restoreSession() { S.user.id = S.user.id || 'demo'; S.users = S.users || {}; S.recent = S.recent || []; S.user.in = false; const ses = getSession(); if (!ses) return; const acc = ses.id === 'demo' ? DEMO : accounts().find(a => a.id === ses.id); if (!acc) return clearSession(); if (S.user.id !== acc.id) { stashUser(); adoptUser(acc); } S.user.in = true; }
-const own = x => (x.uid || 'demo') === S.user.id;
-const myOrders = () => S.orders.filter(o=>own(o) && o.demo === false), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
+const own=x=>realId(S.user.id)&&x.uid===S.user.id;
+const myOrders=()=>S.orders.filter(o=>own(o)&&o.source==='supabase'), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
-let AU = { view: 'login', fails: 0, lock: 0, otp: null, reg: null, pending: null, slide: 0, prefill: '', busy: false };
-const SLIDES = [{ img: 'bulalo', t: 'Local favorites, delivered', d: 'Order from Kent and Kaye Bulaloan, Dona Conchita Lakeview Resort and more across Alegria.' }, { img: 'ramen', t: 'Track your rider', d: 'Follow your order from the kitchen to your door, barangay by barangay.' }, { img: 'tray', t: 'Catering for every event', d: 'Birthdays, fiestas and weddings: request trays or a full buffet in minutes.' }];
+let AU={view:'login',prefill:'',busy:false};
 const authHead = () => `<div class="auth-top"><span class="auth-logo papalita-logo-motion"><img src="images/papalita_mark_color.png" alt="Papalita official logo"></span><div><b>PAPALITA</b><span>Good Food, Good Mood.</span></div></div>`;
 const pwField = (id, label, auto, extra = '') => `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${auto}">${`<button type="button" class="pwt" data-a="pwtoggle" data-id="${id}" aria-label="Show password">${ic('eye', 20)}</button>`}</div>${extra}<p class="err" data-e="${id}"></p></div>`;
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
 function authScreen() {
   const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t === 'register'}" class="${t === 'register' ? 'on' : ''}" data-a="authtab" data-v="register">Register</button></div>`;
-  if (AU.view === 'welcome') { const s = SLIDES[AU.slide], last = AU.slide === SLIDES.length - 1;
-    return `<section class="view welcome"><div class="wphoto">${photo(s.img, s.t, { ar: '4/5', w: 900, eager: 1 })}</div><div class="wbody"><div class="dots" aria-hidden="true">${SLIDES.map((_, i) => `<i class="${i === AU.slide ? 'on' : ''}"></i>`).join('')}</div>${AU.slide === 0 ? `<p class="gl" style="font-weight:800">Welcome, ${esc(AU.pending.name.split(' ')[0])}!</p>` : ''}<h1>${esc(s.t)}</h1><p class="mu">${esc(s.d)}</p><div class="row" style="margin-top:18px"><button class="btn s grow" data-a="wskip">Skip</button><button class="btn p grow" data-a="wnext">${last ? 'Get started' : 'Next'}</button></div></div></section>`; }
-  if (AU.view === 'otp') { const o = AU.otp;
-    return `<section class="view auth">${authHead()}<button class="ib" data-a="otpback" aria-label="Back" style="margin-top:18px">${ic('back')}</button><h1 style="margin-top:12px">${o.purpose === 'register' ? 'Confirm your number' : 'Reset your password'}</h1><p class="mu">We sent a 6-digit code to <b style="color:var(--ink)">${maskPhone(o.phone)}</b>.</p>
-    ${C.auth && C.auth.otp !== 'demo' ? '' : `<div class="note" style="margin:14px 0"><span class="demo">DEMO</span> SMS is not connected yet, so your code is shown here: <b class="codebig" id="democode">${o.code}</b></div>`}
-    <form id="vf" novalidate><div class="otp" role="group" aria-label="6-digit confirmation code">${[0, 1, 2, 3, 4, 5].map(i => `<input class="otpbox" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="${i ? 'off' : 'one-time-code'}" data-i="${i}" aria-label="Digit ${i + 1}">`).join('')}</div><p class="err" id="oe" role="alert" style="text-align:center;min-height:20px"></p><p class="sm mu" style="text-align:center">Code expires in <b id="otpt">5:00</b></p><button class="btn p blk" style="margin-top:12px">Verify</button></form>
-    <div style="text-align:center;margin-top:10px"><button class="link" data-a="otpresend" id="rsb" disabled>Resend code</button></div></section>`; }
-  if (AU.view === 'forgot') return `<section class="view auth">${authHead()}<button class="ib" data-a="authtab" data-v="login" aria-label="Back" style="margin-top:18px">${ic('back')}</button><h1 style="margin-top:12px">Forgot password?</h1><p class="mu">Enter your mobile number and we will send a confirmation code.</p><form id="ff" novalidate style="margin-top:16px"><div class="field"><label for="fm">Mobile number</label><input class="in" id="fm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="fm"></p></div><button class="btn p blk">Send code</button></form></section>`;
   if (AU.view === 'reset') return `<section class="view auth">${authHead()}<h1 style="margin-top:22px">Create a new password</h1><form id="rp" novalidate style="margin-top:16px">${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Save password</button></form></section>`;
   if (AU.view === 'register') return `<section class="view auth">${authHead()}<h1 style="margin-top:22px">Create your account</h1><p class="mu" style="margin-bottom:14px">Order from local stores in Alegria. Verify your email after registration to activate your account.</p>${tabs('register')}
     <form id="rf" novalidate><div class="field"><label for="rn">Full name</label><input class="in" id="rn" autocomplete="name" maxlength="60"><p class="err" data-e="rn"></p></div><div class="field"><label for="rm">Mobile number</label><input class="in" id="rm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="rm"></p></div>
@@ -842,21 +633,11 @@ function authScreen() {
     <label class="row sm" style="align-items:flex-start;margin:4px 0 4px"><input type="checkbox" id="rt" style="accent-color:var(--or);width:20px;height:20px;margin-top:2px"><span>I agree to the <button type="button" class="link gl" style="padding:0" data-a="terms">Terms and Privacy Policy</button></span></label><p class="err" data-e="rt"></p><button class="btn p blk" style="margin-top:10px">Create account</button></form></section>`;
   return `<section class="view auth">${authHead()}<h1 style="margin-top:22px">Welcome back</h1><p class="mu" style="margin-bottom:14px">Log in to order, track your rider and manage catering requests.</p>${tabs('login')}
     <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
-    <div class="row sp" style="margin-bottom:12px"><label class="row sm"><input type="checkbox" id="lr" style="accent-color:var(--or);width:20px;height:20px"> Keep me signed in</label><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div><button class="btn p blk">Log in</button></form>
+    <div class="row sp" style="margin-bottom:12px"><span class="sm mu">Papalita account</span><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div><button class="btn p blk">Log in</button></form>
     <p class="note" style="margin-top:16px">Secure login powered by Supabase Auth.</p></section>`;
 }
 const clearErrs = f => { $$('.in', f).forEach(i => i.classList.remove('bad')); $$('[data-e]', f).forEach(x => x.textContent = ''); };
 const showErrs = (f, er) => { clearErrs(f); const k = Object.keys(er); k.forEach(x => { const i = $('#' + x, f); i && i.classList.add('bad'); const e = $(`[data-e=${x}]`, f); e && (e.textContent = er[x]); }); if (k.length) { const i = $('#' + k[0], f); i && i.focus(); } return k.length; };
-const newCode = () => String(Math.floor(100000 + Math.random() * 900000));
-function sendOtp(purpose, phone, payload) { const keep = AU.otp && AU.otp.phone === phone ? AU.otp.resends : 0; AU.otp = { purpose, phone, payload, code: newCode(), exp: Date.now() + 300000, sentAt: Date.now(), tries: 0, resends: keep }; AU.view = 'otp'; render(); }
-function afterAuth() { if (AU.view !== 'otp') return; const first = $('.otpbox'); first && first.focus(); const tick = () => { const o = AU.otp; if (!o || !$('#otpt')) return; const left = Math.max(0, Math.ceil((o.exp - Date.now()) / 1000)); $('#otpt').textContent = left ? Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') : 'expired'; const w = Math.max(0, 30 - Math.floor((Date.now() - o.sentAt) / 1000)), b = $('#rsb'); if (b) { b.disabled = w > 0 || o.resends >= 3; b.textContent = o.resends >= 3 ? 'Resend limit reached' : w > 0 ? `Resend code in ${w}s` : 'Resend code'; } }; tick(); timers.push(setInterval(tick, 1000)); }
-async function verifyOtp() { const o = AU.otp; if (!o || AU.busy) return; const boxes = $$('.otpbox'), code = boxes.map(b => b.value).join(''), er = $('#oe');
-  if (code.length < 6) return (er.textContent = 'Enter all 6 digits.');
-  if (Date.now() > o.exp) return (er.textContent = 'This code has expired. Request a new one.');
-  if (o.tries >= 5) return (er.textContent = 'Too many wrong attempts. Request a new code.');
-  if (code !== o.code) { o.tries++; const left = 5 - o.tries; er.textContent = `Wrong code. ${left} attempt${left === 1 ? '' : 's'} left.`; boxes.forEach(b => { b.value = ''; b.classList.add('bad'); }); setTimeout(() => boxes.forEach(b => b.classList.remove('bad')), 600); boxes[0].focus(); return; }
-  AU.busy = true; try { if (o.purpose === 'register') { const r = AU.reg, salt = uid('s'), acc = { id: uid('u'), name: r.name, phone: r.phone, email: r.email, brgy: r.brgy, salt, pw: await hashPw(r.pw, salt), createdAt: Date.now(), verified: true }; const a = accounts(); a.push(acc); saveAcc(a); AU.pending = acc; AU.reg = null; AU.otp = null; AU.slide = 0; AU.view = 'welcome'; }
-    else { AU.view = 'reset'; } } finally { AU.busy = false; } render(); }
 const authDB = () => {
   if (!window.PAPALITA_DB) throw new Error('Supabase client not available. Check js/config.js and script loading.');
   return window.PAPALITA_DB;
@@ -865,9 +646,9 @@ function useAuthUser(user) {
   const meta = user.user_metadata || {};
   const acc = { id:user.id, name:meta.full_name || user.email?.split('@')[0] || 'Customer',
     phone:meta.phone || '', email:user.email || '', brgy:meta.barangay || 'Poblacion' };
-  if (S.user.id !== acc.id) { stashUser(); adoptUser(acc); }
+  if(S.user.id!==acc.id){stashUser();adoptUser(acc);} S.user.name=acc.name;S.user.phone=acc.phone;
   S.user.in = true;
-  S.user.email = acc.email;
+  S.user.email = acc.email;S.cart.lines=S.cart.lines.filter(l=>ITEM(l.itemId)&&R(l.rid||S.cart.rid));
   setTimeout(()=>window.dispatchEvent(new Event('papalita-session-ready')),0);
   save();
 }
@@ -919,37 +700,37 @@ async function doRegister(f) {
   } catch(err) { showErrs(f,{re:err.message || 'Registration failed.'}); }
   finally { AU.busy = false; }
 }
-async function doReset(f) { const p1 = $('#np1', f).value, er = {}; if (!pwOk(p1)) er.np1 = 'Use at least 8 characters with a letter and a number.'; else if ($('#np2', f).value !== p1) er.np2 = 'Passwords do not match.'; if (showErrs(f, er)) return;
-  const a = accounts(), acc = a.find(x => x.id === AU.otp.payload.id); acc.salt = uid('s'); acc.pw = await hashPw(p1, acc.salt); saveAcc(a); AU.prefill = acc.phone; AU.otp = null; AU.view = 'login'; AU.fails = 0; AU.lock = 0; toast('Password updated. Please log in.'); render(); }
 function meter(input) { const id = input.id, n = pwScore(input.value), bars = $$(`[data-m=${id}] i`), t = $(`[data-mt=${id}]`); bars.forEach((b, i) => { b.className = i < n ? 's' + n : ''; }); if (t) t.textContent = !input.value ? 'Use 8+ characters with letters and numbers.' : ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][n] + (pwOk(input.value) ? '' : ' · needs 8+ characters, a letter and a number'); }
 function termsSheet() { window.papalitaOpenLegal?.(); }
-function pwChangeSheet() { const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2 style="margin-bottom:12px">Change password</h2>${pwField('cp0', 'Current password', 'current-password')}${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Update password</button></form>`, { label: 'Change password' });
-  $('form', el).onsubmit = async e => { e.preventDefault(); const f = e.target, er = {}, a = accounts(), acc = a.find(x => x.id === S.user.id); if (!acc || (await hashPw($('#cp0', f).value, acc.salt)) !== acc.pw) er.cp0 = 'Current password is incorrect.'; const p1 = $('#np1', f).value; if (!pwOk(p1)) er.np1 = 'Use at least 8 characters with a letter and a number.'; else if ($('#np2', f).value !== p1) er.np2 = 'Passwords do not match.'; if (showErrs(f, er)) return; acc.salt = uid('s'); acc.pw = await hashPw(p1, acc.salt); saveAcc(a); closeSheet(); toast('Password updated.'); }; }
-function deleteAcctSheet() { const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2 style="margin-bottom:6px">Delete your account?</h2><p class="mu sm" style="margin-bottom:14px">Your saved addresses, favorites and payment methods on this device will be removed. Past orders stay with the stores. This cannot be undone.</p>${pwField('dp', 'Enter your password to confirm', 'current-password')}<div class="row"><button type="button" class="btn o grow" data-a="close">Cancel</button><button class="btn d grow">Delete account</button></div></form>`, { label: 'Delete account' });
-  $('form', el).onsubmit = async e => { e.preventDefault(); const f = e.target, a = accounts(), acc = a.find(x => x.id === S.user.id); if (!acc || (await hashPw($('#dp', f).value, acc.salt)) !== acc.pw) return showErrs(f, { dp: 'Password is incorrect.' }); saveAcc(a.filter(x => x.id !== acc.id)); if (S.users) delete S.users[acc.id]; S.user.id = '_gone'; adoptUser(DEMO); clearSession(); save(); closeSheet(); AU.view = 'login'; toast('Your account was deleted.'); render(); }; }
-document.addEventListener('input', e => { const t = e.target; if (t.classList && t.classList.contains('otpbox')) { t.value = t.value.replace(/\D/g, '').slice(-1); if (t.value) { const n = t.nextElementSibling; n ? n.focus() : verifyOtp(); } } if (t.id === 'rpw' || t.id === 'np1') meter(t); });
-document.addEventListener('keydown', e => { const t = e.target; if (t.classList && t.classList.contains('otpbox')) { if (e.key === 'Backspace' && !t.value && t.previousElementSibling) t.previousElementSibling.focus(); if (e.key === 'ArrowLeft' && t.previousElementSibling) t.previousElementSibling.focus(); if (e.key === 'ArrowRight' && t.nextElementSibling) t.nextElementSibling.focus(); } });
-document.addEventListener('paste', e => { const t = e.target; if (t.classList && t.classList.contains('otpbox')) { const d = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '').slice(0, 6); if (!d) return; e.preventDefault(); const bs = $$('.otpbox'); bs.forEach((b, i) => b.value = d[i] || ''); d.length === 6 ? verifyOtp() : bs[d.length].focus(); } });
-document.addEventListener('submit', e => { const f = e.target; if (!f.id) return; if (f.id === 'lf') { e.preventDefault(); doLogin(f); } else if (f.id === 'rf') { e.preventDefault(); doRegister(f); } else if (f.id === 'vf') { e.preventDefault(); verifyOtp(); } else if (f.id === 'rp') { e.preventDefault(); doReset(f); }
-  else if (f.id === 'ff') { e.preventDefault(); const ph = normPhone($('#fm', f).value), acc = accounts().find(a => a.phone === ph); if (!PH.test(ph)) return showErrs(f, { fm: 'Use a PH mobile number like 09171234567.' }); if (!acc) return showErrs(f, { fm: 'No account found with that number.' }); sendOtp('reset', ph, { id: acc.id }); } });
-const AUTH_A = {
-  authtab: b => { AU.view = b.dataset.v; render(); }, forgot: async () => { const email = prompt('Enter your registered email address:'); if (!email) return; try { const {error} = await authDB().auth.resetPasswordForEmail(email.trim(), {redirectTo:location.origin+location.pathname}); if (error) throw error; toast('Password reset email sent.'); } catch(e) { toast(e.message); } }, terms: termsSheet, pwchange: () => toast('Password changes must use Supabase Auth.'), delacct: () => toast('Contact support to request account deletion.'),
-  pwtoggle: b => { const i = document.getElementById(b.dataset.id), show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.innerHTML = ic(show ? 'eyeoff' : 'eye', 20); b.setAttribute('aria-label', show ? 'Hide password' : 'Show password'); },
-  otpback: () => { AU.view = AU.otp && AU.otp.purpose === 'register' ? 'register' : 'forgot'; render(); },
-  otpresend: () => { const o = AU.otp; if (!o || o.resends >= 3 || Date.now() - o.sentAt < 30000) return; o.resends++; o.code = newCode(); o.exp = Date.now() + 300000; o.sentAt = Date.now(); o.tries = 0; const d = $('#democode'); d && (d.textContent = o.code); $$('.otpbox').forEach(b => b.value = ''); $('.otpbox').focus(); $('#oe').textContent = ''; toast('A new code was sent.'); },
-  wnext: () => { if (AU.slide < SLIDES.length - 1) { AU.slide++; render(); } else A.wskip(); }, wskip: () => enterApp(AU.pending, false, true),
-  demologin: () => enterApp(DEMO, false, false)
+async function doReset(f){
+  const password=$('#np1',f).value,er={};if(!pwOk(password))er.np1='Use 8+ characters, a letter and a number.';if($('#np2',f).value!==password)er.np2='Passwords do not match.';if(showErrs(f,er))return;
+  const button=f.querySelector('button.btn.p');button.disabled=true;
+  try{const verified=await authDB().auth.getUser();if(verified.error)throw verified.error;if(!verified.data?.user)throw Error('The password reset session has expired. Request another email.');
+    const q=await authDB().auth.updateUser({password});if(q.error)throw q.error;if(!q.data?.user)throw Error('The server did not confirm the password update.');
+    await window.PAPALITA_NOTIFICATIONS?.disconnectPhone();const signedOut=await authDB().auth.signOut({scope:'local'});if(signedOut.error){toast('Password updated. Please sign out manually.');return;}
+    S.user.in=false;AU.view='login';save();render();toast('Password updated. Sign in with your new password.');
+  }catch(error){showErrs(f,{np1:error.message});}finally{if(button.isConnected)button.disabled=false;}
+}
+function pwChangeSheet(){AU.view='reset';render();}
+function afterAuth(){}
+document.addEventListener('input',e=>{if(['rpw','np1'].includes(e.target.id))meter(e.target);});
+document.addEventListener('submit',e=>{
+  const f=e.target;if(f.id==='lf'){e.preventDefault();void doLogin(f);}
+  else if(f.id==='rf'){e.preventDefault();void doRegister(f);}
+  else if(f.id==='rp'){e.preventDefault();void doReset(f);}
+});
+const AUTH_A={
+  authtab:b=>{if(['login','register'].includes(b.dataset.v)){AU.view=b.dataset.v;render();}},
+  forgot:async()=>{const email=prompt('Enter your registered email address:');if(!email)return;if(!/^\S+@\S+\.\S+$/.test(email.trim()))return toast('Enter a valid email address.');try{const q=await authDB().auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(q.error)throw q.error;toast('If this email is registered, check its password-reset message.');}catch(error){toast('Reset request failed: '+error.message);}},
+  terms:termsSheet,pwchange:pwChangeSheet,delacct:deleteAcctSheet,
+  pwtoggle:b=>{const input=document.getElementById(b.dataset.id),show=input.type==='password';input.type=show?'text':'password';b.innerHTML=ic(show?'eyeoff':'eye',20);b.setAttribute('aria-label',show?'Hide password':'Show password');}
 };
 
 /* ---------- catering ---------- */
 window.addEventListener('focus',()=>{ if(S.user.in)refreshCateringRequests().catch(console.error); });
-const CATER_STORE_IDS = {
-  kentkaye: '0923513b-a424-4af3-a950-ee9f7678228a',
-  conchita: 'a0a8e4f5-299e-403c-99b4-a8a780a0f88a'
-};
-const CATER_LOCAL_IDS = Object.fromEntries(Object.entries(CATER_STORE_IDS).map(([k,v])=>[v,k]));
+const CATER_STORE_IDS=Object.fromEntries(RS.filter(r=>r.catering).map(r=>[r.id,r.id]));
 function fromCateringRow(x) {
-  return { id:x.id,kind:'catering',rid:CATER_LOCAL_IDS[x.store_id]||'kentkaye',
+  return { id:x.id,kind:'catering',rid:x.store_id,
     type:x.event_type||'',name:x.customer_name,phone:x.customer_phone,date:x.event_date||'',
     time:x.event_time||'',guests:x.guests,brgy:x.venue_barangay||'',venue:x.venue_details||'',
     pkg:x.package||'',notes:x.notes||'',status:x.status==='pending'?'sent':x.status,
@@ -961,17 +742,15 @@ async function refreshCateringRequests() {
   if(!user)return;
   const {data,error}=await db.from('catering_requests').select('*').eq('customer_id',user.id).order('created_at',{ascending:false});
   if(error)throw error;
+  if(S.user.id!==user.id||!S.user.in)return;
   const remote=(data||[]).map(fromCateringRow);
   S.cater=remote;save();
   if(/^\/(orders|catering)/.test(curPath()))render();
 }
 const CSTAT = { sent: ['Sent', 'n'], confirmed: ['Confirmed', 'open'], quoted: ['Quoted', 'n'], completed: ['Completed', 'open'], cancelled: ['Cancelled', 'closed'] };
-const EVENTS = ['Birthday', 'Wedding', 'Company event', 'Fiesta', 'Other'], PKGS = ['Tray meals', 'Lechon and bulalo set', 'Full buffet'];
+const EVENTS = ['Birthday', 'Wedding', 'Company event', 'Fiesta', 'Other'], PKGS = ['Discuss with the store'];
 const todayPH = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
-const contactBtns = r => `<div class="contact">${[['call', 'phone', 'Call'], ['sms', 'send', 'Text'], ['msgr', 'chat', 'Messenger'], ['copy', 'copy', 'Copy number']].map(([k, i, l]) => `<button class="cbtn" data-a="contact" data-k="${k}" data-id="${r.id}">${ic(i, 20)}<span>${l}</span></button>`).join('')}</div>${r.placeholder ? '<p class="sm mu" style="margin-top:10px"><span class="demo">PLACEHOLDER</span> Phone number not set yet. Add the real number in <code>js/data.js</code>.</p>' : `<p class="sm mu" style="margin-top:10px">${esc(r.phone)}</p>`}`;
-const cateringCard = r => `<div class="card" style="cursor:default">${photo(r.cateringInfo.cover, r.name + ' catering trays')}<div class="bd" style="padding:16px 20px 20px;gap:10px"><div class="row sp"><h3 style="font-size:21px">${esc(r.name)}</h3><span class="status open">Catering</span></div><p class="mu">Good for 10 / 20 / 50 guests · <b style="color:var(--ink)">${esc(r.cateringInfo.from)}</b> <span class="demo">SAMPLE</span></p><div class="chips">${r.cateringInfo.pkgs.map(x => `<span class="chip" style="min-height:34px">${x}</span>`).join('')}</div><button class="btn p blk" data-a="cater" data-id="${r.id}">Request catering</button></div></div>`;
 const cateringSection = r => `<div class="sec" id="s-catering"><div class="sec-h" style="margin-bottom:10px"><h2>Catering</h2><span class="gl lab2">Events</span></div>${cateringCard(r)}</div>`;
-const staySection = r => `<div class="sec" id="s-stay"><div class="sec-h" style="margin-bottom:10px"><h2>Stay and Events</h2></div><div class="panel">${r.stay.map(t => `<div class="row sp" style="padding:12px 0;border-bottom:1px solid var(--ln)"><div><b>${t}</b><p class="sm mu">${t === 'Rooms' ? 'Overnight stay by the lake' : t === 'Day Pass' ? 'Enjoy the resort for the day' : 'Weddings, reunions and meetings'}</p></div><button class="btn p sm" data-a="inquire" data-id="${r.id}" data-t="${t}">Book</button></div>`).join('')}<p class="sm mu" style="margin:10px 0 8px">Questions? Contact the resort:</p>${contactBtns(r)}</div></div>`;
 V.catering = () => { const rs = RS.filter(r => r.catering);
   return { html: `<section class="view">${pageHead('Catering')}<div class="mint row"><span class="grow"><b style="font-size:19px">Food for every gathering</b><br><span class="sm mu">Birthdays, weddings, fiestas and company events across Alegria. Send a request and the store will confirm by phone or message.</span></span></div>
   <div class="row" style="margin:14px 0"><button class="btn s sm" data-a="go" data-id="/orders?t=catering">${ic('orders', 16)}My requests (${myCater().length})</button></div><div class="grid2">${rs.map(cateringCard).join('')}</div></section>` }; };
@@ -984,21 +763,41 @@ V.cateringForm = (_, p) => { const rs = RS.filter(r => r.catering), rid = p.get(
   <div class="two"><div class="field"><label for="cg">Number of guests</label><input class="in" id="cg" type="number" inputmode="numeric" min="10" max="500" placeholder="10 – 500"><p class="err" data-e="cg"></p></div><div class="field"><label for="ck">Package</label><select class="in" id="ck">${PKGS.map(x => `<option>${x}</option>`).join('')}</select></div></div>
   <div class="two"><div class="field"><label for="cb">Venue barangay</label><select class="in" id="cb">${window.BRGYS.map(b => `<option ${b.n === S.loc.brgy ? 'selected' : ''}>${b.n}</option>`).join('')}</select></div><div class="field"><label for="cv">Venue (purok, landmark)</label><input class="in" id="cv" maxlength="100" placeholder="Barangay hall, Purok 2…"></div></div>
   <div class="field"><label for="cx">Notes</label><textarea class="in" id="cx" maxlength="400" placeholder="Dietary needs, budget, setup time…"></textarea></div>
-  <button class="btn p blk">Send request</button><p class="sm mu" style="margin-top:8px"><span class="demo">DEMO</span> Requests are securely submitted to Papalita via Supabase.</p></form></section>` }; };
-V.cateringSent = id => { const q = (S.cater || []).find(x => x.id === id); if (!q) return V.notFound();
-  return { html: `<section class="view" style="max-width:600px;margin:0 auto;text-align:center"><div class="empty" style="padding-bottom:10px"><div class="big" style="background:var(--or);color:#fff;width:96px;height:96px">${ic('check', 48)}</div><h1 style="font-size:30px">Request sent</h1><p style="margin-top:8px">Reference <b style="color:var(--ink)">${q.id}</b></p><p>${esc(R(q.rid).name)} will confirm by phone or message.</p></div>
+  <button class="btn p blk">Send request</button><p class="sm mu" style="margin-top:8px">An inquiry is sent to the store; it is not a confirmed booking.</p></form></section>` }; };
+V.cateringSent = id => { const q = (S.cater || []).find(x => x.id === id&&own(x)); if (!q) return V.notFound();
+  return { html: `<section class="view" style="max-width:600px;margin:0 auto;text-align:center"><div class="empty" style="padding-bottom:10px"><div class="big" style="background:var(--or);color:#fff;width:96px;height:96px">${ic('check', 48)}</div><h1 style="font-size:30px">Request sent</h1><p style="margin-top:8px">Reference <b style="color:var(--ink)">${q.id}</b></p><p>${esc(R(q.rid)?.name||'Store')} will confirm by phone or message.</p></div>
   <div class="panel sm" style="text-align:left">${[['Event', q.type], ['Date', q.date + (q.time ? ' · ' + q.time : '')], ['Guests', q.guests], ['Package', q.pkg], ['Venue', (q.venue ? q.venue + ', ' : '') + q.brgy + ', Alegria']].filter(x => x[1]).map(([a, b]) => `<div class="row sp" style="padding:5px 0"><span class="mu">${a}</span><b style="text-align:right">${esc(b)}</b></div>`).join('')}</div>
   <div class="row" style="margin-top:16px"><button class="btn s grow" data-a="home">Back home</button><button class="btn p grow" data-a="go" data-id="/orders?t=catering">My requests</button></div></section>` }; };
 function cateringList() { const l = myCater(); if (!l.length) return emptyState('box', 'No catering requests', 'Plan a gathering and send your first request.', 'Request catering', 'newcater');
   return `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">${l.map(q => { const [lb, cl] = CSTAT[q.status] || CSTAT.sent;
-    return `<div class="panel" style="margin:0"><div class="row sp"><h3>${esc(R(q.rid).name)}</h3><span class="status ${cl}">${lb}</span></div><p class="mu sm">${q.id} · ${q.kind === 'inquiry' ? 'Resort inquiry · ' : ''}${esc(q.type)}${q.date ? ' · ' + q.date : ''}${q.guests ? ' · ' + q.guests + ' guests' : ''}</p>${q.pkg ? `<p class="sm" style="margin-top:4px">${esc(q.pkg)}</p>` : ''}
+    return `<div class="panel" style="margin:0"><div class="row sp"><h3>${esc(R(q.rid)?.name||'Store')}</h3><span class="status ${cl}">${lb}</span></div><p class="mu sm">${q.id} · ${q.kind === 'inquiry' ? 'Resort inquiry · ' : ''}${esc(q.type)}${q.date ? ' · ' + q.date : ''}${q.guests ? ' · ' + q.guests + ' guests' : ''}</p>${q.pkg ? `<p class="sm" style="margin-top:4px">${esc(q.pkg)}</p>` : ''}
     <div class="row" style="margin-top:12px"><button class="btn s sm grow" data-a="contact" data-k="call" data-id="${q.rid}">${ic('phone', 16)}Call store</button></div></div>`; }).join('')}</div>`; }
-function inquireSheet(rid, type) { const r = R(rid);
-  const el = openSheet(`<form class="pd" style="padding-top:34px" novalidate><h2 style="margin-bottom:4px">${esc(r.name)}</h2><p class="mu sm" style="margin-bottom:14px">Send an inquiry. The resort will reply by phone or message.</p><div class="field"><label for="qt">I am asking about</label><select class="in" id="qt">${r.stay.map(t => `<option ${t === type ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="two"><div class="field"><label for="qn">Name</label><input class="in" id="qn" value="${esc(S.user.name)}"><p class="err" data-e="qn"></p></div><div class="field"><label for="qp">Mobile number</label><input class="in" id="qp" inputmode="tel" value="${esc(S.user.phone || '')}"><p class="err" data-e="qp"></p></div></div><div class="two"><div class="field"><label for="qd">Date</label><input class="in" id="qd" type="date" min="${todayPH()}"><p class="err" data-e="qd"></p></div><div class="field"><label for="qg">Guests</label><input class="in" id="qg" type="number" min="1" max="500"><p class="err" data-e="qg"></p></div></div><div class="field"><label for="qx">Notes</label><textarea class="in" id="qx" maxlength="300"></textarea></div><button class="btn p blk">Send inquiry</button></form>`, { label: 'Resort inquiry' });
-  $('form', el).onsubmit = e => { e.preventDefault(); const v = i => $('#' + i, el).value.trim(), er = {}; if (v('qn').length < 2) er.qn = 'Enter your name.'; if (!PH.test(v('qp').replace(/\s/g, ''))) er.qp = 'Use a PH mobile number like 09171234567.'; if (!v('qd')) er.qd = 'Choose a date.'; const g = +v('qg'); if (!(g >= 1 && g <= 500)) er.qg = 'Enter 1 – 500 guests.';
-    $$('[data-e]', el).forEach(x => x.textContent = ''); const k = Object.keys(er); if (k.length) { k.forEach(x => $(`[data-e=${x}]`, el).textContent = er[x]); return $('#' + k[0], el).focus(); }
-    const q = { id: 'CT-' + Math.floor(100000 + Math.random() * 900000), kind: 'inquiry', rid, type: v('qt'), name: v('qn'), phone: v('qp'), date: v('qd'), guests: g, notes: v('qx'), status: 'sent', createdAt: Date.now(), uid: S.user.id }; (S.cater = S.cater || []).unshift(q);
-    notify('order', `Inquiry sent · ${q.id}`, `${r.name} will reply about ${q.type}.`); save(); closeSheet(); toast('Inquiry sent.'); OT = 'catering'; go('/orders?t=catering'); }; }
+V.nearby=()=>({html:`<section class="view">${pageHead('Store locations')}${RS.length?`<div class="grid">${RS.map(r=>`<article class="panel"><h2>${esc(r.name)}</h2><p class="mu sm" style="margin:10px 0">${esc(r.addr||'Address not supplied by the store.')}</p><button class="btn s sm" data-a="rest" data-id="${esc(r.id)}">Open menu</button>${r.addr?` <a class="btn s sm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr+', Alegria, Surigao del Norte')}" target="_blank" rel="noopener">Open map</a>`:''}</article>`).join('')}</div>`:emptyState('store','No stores available','Please check again later.')}</section>`});
+V.payments=()=>({html:`<section class="view" style="max-width:680px;margin:auto">${pageHead('Payment methods')}<div class="panel"><h2>Cash payment</h2><p class="mu" style="margin-top:10px">Pay cash on delivery or at pickup. Online wallet and card processing are not connected.</p></div></section>`});
+const FAQ=[['How do I check an order?','Open Orders, select your order and view its recorded status. Timing is confirmed by the store.'],['How do I cancel?','Open the order before preparation and request cancellation. The database must confirm the change.'],['How can I pay?','Cash payment is supported. Online payments are not connected.'],['I need help with an order.','Contact the store shown on your order. Include your order reference when discussing a problem.']];
+V.support=()=>({html:`<section class="view" style="max-width:680px;margin:auto">${pageHead('Support')}<div class="panel">${FAQ.map(([q,a])=>`<details style="padding:12px 0"><summary style="font-weight:700;cursor:pointer">${esc(q)}</summary><p class="mu sm" style="margin-top:10px">${esc(a)}</p></details>`).join('')}</div><div class="panel"><h2>Contact a store</h2><p class="mu sm" style="margin:10px 0">Papalita’s central support messaging service is not connected. Use the store’s supplied contact number for order questions.</p>${RS.filter(r=>r.phone).map(r=>`<p style="margin-top:12px"><b>${esc(r.name)}</b><br><a class="link gl" href="tel:${esc(r.phone.replace(/[^+\d]/g,''))}">Call ${esc(r.phone)}</a></p>`).join('')||'<p class="mu sm">No store contact numbers are available yet.</p>'}</div></section>`});
+function payPick(){const el=openSheet(`<form class="pd" style="padding-top:34px"><h2>Payment method</h2><label class="opt" style="margin-top:16px"><input type="radio" checked name="cash"><span>Cash on delivery or pickup</span></label><p class="mu sm" style="margin:12px 0">No online payment is processed by this app.</p><button class="btn p blk">Use cash payment</button></form>`,{label:'Payment method'});$('form',el).onsubmit=e=>{e.preventDefault();CK.pay='cod';CK.det={};closeSheet();render();};}
+function deleteAcctSheet(){openSheet(`<div class="pd" style="padding-top:38px"><h2>Account deletion</h2><p class="mu" style="margin-top:12px">Account deletion needs Papalita’s authenticated server support. This app cannot delete an account directly. Your account has not been deleted.</p><button class="btn s blk" style="margin-top:18px" data-a="close">Close</button></div>`,{label:'Account deletion'});}
+const contactBtns=r=>r.phone?`<div class="contact"><a class="cbtn" href="tel:${esc(r.phone.replace(/[^+\d]/g,''))}">${ic('phone',20)}Call store</a><a class="cbtn" href="sms:${esc(r.phone.replace(/[^+\d]/g,''))}">${ic('send',20)}Text store</a></div><p class="sm mu" style="margin-top:10px">${esc(r.phone)}</p>`:'<p class="mu sm">The store has not supplied a contact number.</p>';
+const cateringCard=r=>`<article class="card"><div class="bd" style="padding:20px"><h2>${esc(r.name)}</h2><p class="mu" style="margin:10px 0">Ask this participating store about catering, availability and pricing. An inquiry is not a confirmed booking.</p><button class="btn p" data-a="cater" data-id="${esc(r.id)}">Request catering</button></div></article>`;
+function locSheet(){const el=openSheet(`<div class="pd" style="padding-top:36px"><h2>Your barangay</h2><p class="mu sm" style="margin:10px 0">Choose your delivery area in Alegria.</p>${window.BRGYS.map(b=>`<label class="opt"><input type="radio" name="lc" value="${esc(b.n)}" ${S.loc.brgy===b.n?'checked':''}><span class="grow">${esc(b.n)}</span><small>${deliveryFees.has(b.n)?peso(deliveryFees.get(b.n)):'Delivery fee not configured'}</small></label>`).join('')}</div>`,{label:'Choose barangay'});el.addEventListener('change',e=>{if(e.target.name==='lc'){S.loc={...S.loc,brgy:e.target.value,label:e.target.value+', Alegria'};save();closeSheet();updateChrome();render();}});}
+async function cancelRealOrder(id){
+  const o=ORD(id);if(!o||!await confirmDlg('Request cancellation of this order?','Cancel order',true))return;
+  try{const verified=await authDB().auth.getUser();if(verified.error)throw verified.error;const uid=verified.data?.user?.id;if(!uid||uid!==S.user.id)throw Error('Please sign in again.');
+    const q=await authDB().from('orders').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',id).eq('customer_id',uid).in('status',['pending','confirmed']).select('id,status,updated_at').maybeSingle();
+    if(q.error)throw q.error;if(q.data?.status!=='cancelled')throw Error('Cancellation was not permitted or the order status has changed.');o.status=q.data.status;o.upd=Date.parse(q.data.updated_at)||Date.now();save();toast('Order cancellation confirmed.');render();
+  }catch(error){toast('Order not cancelled: '+error.message);}
+}
+async function saveProfile(f){
+  const name=$('#pn',f).value.trim(),phone=normPhone($('#pp',f).value),email=$('#pe',f).value.trim(),er={};
+  if(name.length<2)er.pn='Enter your name.';if(!/^\S+@\S+\.\S+$/.test(email))er.pe='Enter a valid email.';if(phone&&!PH.test(phone))er.pp='Enter a valid Philippine mobile number.';if(showErrs(f,er))return;
+  const button=f.querySelector('button[type=submit],button.btn.p');if(button)button.disabled=true;
+  try{const verified=await authDB().auth.getUser();if(verified.error)throw verified.error;if(verified.data?.user?.id!==S.user.id)throw Error('Please sign in again.');
+    const payload={data:{...verified.data.user.user_metadata,full_name:name,phone}};if(email!==verified.data.user.email)payload.email=email;
+    const q=await authDB().auth.updateUser(payload);if(q.error)throw q.error;if(!q.data?.user)throw Error('The server did not confirm the profile change.');
+    S.user.name=q.data.user.user_metadata?.full_name||name;S.user.phone=q.data.user.user_metadata?.phone||phone;S.user.email=q.data.user.email||S.user.email;save();toast(payload.email?'Details saved. Confirm the email change using the link sent to you.':'Account details saved.');go('/profile');
+  }catch(error){showErrs(f,{pn:error.message});}finally{if(button)button.disabled=false;}
+}
 
 /* ---------- actions ---------- */
 const go = p => nav(p), browse = () => nav('/discover?tab=dishes&reset=1');
@@ -1007,16 +806,12 @@ function toggleFav(k, id) { const a = S.fav[k], i = a.indexOf(id); i >= 0 ? a.sp
 function setPromo(code) { const p = window.PROMOS.find(x => x.code === code); if (!p) return toast('That code is not valid.'); S.promo = code; save();
   const c = calc(); toast(!S.cart.lines.length ? `${code} saved. It applies when you check out.` : c.perr ? c.perr : `${code} applied. You save ${peso(c.disc)}.`); if (/cart|checkout|promos/.test(location.hash)) render(); }
 const syncLoc = a => { const n = (a && a.city || '').split(',')[0].trim(), b = window.BRGYS.find(x => x.n === n); if (b) { S.loc.brgy = b.n; S.loc.label = b.n + ', Alegria'; save(); } };
-function locSheet() { const el = openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:4px">Your barangay</h2><p class="mu sm" style="margin-bottom:12px">Delivering within ${esc(C.municipality)}. Fees and times are sample values.</p>${window.BRGYS.map(b => `<label class="opt"><input type="radio" name="lc" value="${esc(b.n)}" ${S.loc.brgy === b.n ? 'checked' : ''}><span class="grow"><b>${esc(b.n)}</b></span><span class="mu sm">${peso(b.fee)} · +${b.eta} min</span></label>`).join('')}<p class="sm mu" style="margin-top:8px">Not in this list? We do not deliver there yet.</p></div>`, { label: 'Choose barangay' });
-  el.addEventListener('change', e => { if (e.target.name === 'lc') { S.loc.brgy = e.target.value; S.loc.label = e.target.value + ', Alegria'; save(); closeSheet(); toast(`Delivering to ${e.target.value}.`); updateChrome(); render(); } }); }
 function moreSheet() { openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:6px">More</h2>${[['grid', 'All categories', '/categories'], ['heart', 'Favorites', '/favorites'], ['bell', 'Notifications', '/notifications'], ['pin', 'Saved addresses', '/addresses'], ['help', 'Support', '/support'], ['user', 'Profile', '/profile']].map(([i, t, p]) => `<button class="li" data-a="go" data-id="${p}"><span class="ic">${ic(i)}</span><b class="grow">${t}</b>${ic('chev', 18, 'mu')}</button>`).join('')}</div>`, { label: 'More' }); }
 const A = {
-  tip: b => { CK.tip = +b.dataset.v; render(); }, rate: b => rateSheet(b.dataset.id),
+  tip: b => { CK.tip = +b.dataset.v; render(); },
   receipt: b => { const o = ORD(b.dataset.id); openSheet(`<div class="pd" style="padding-top:34px">${receiptHTML(o, false)}<button class="btn p blk" style="margin-top:14px" data-a="printrcpt" data-id="${o.id}">Save / print receipt</button></div>`, { label: 'Receipt' }); }, printrcpt: b => printReceipt(b.dataset.id),
-  mode: () => { try { localStorage.setItem(MODE, isLive() ? 'demo' : 'live'); } catch (e) {} toast(isLive() ? 'Live mode: the store and rider update your next orders.' : 'Demo mode: orders update automatically.'); render(); },
-  cater: b => go('/catering/request?rid=' + b.dataset.id), newcater: () => go('/catering/request'), inquire: b => inquireSheet(b.dataset.id, b.dataset.t),
-  cxcater: b => confirmDlg('Cancel this catering request?', 'Cancel request', true).then(ok => { if (ok) { const q = S.cater.find(x => x.id === b.dataset.id); q.status = 'cancelled'; q.upd = Date.now(); save(); toast('Request cancelled.'); render(); } }),
-  contact: b => { const r = R(b.dataset.id), k = b.dataset.k; if (r.placeholder) return toast('This is a placeholder number. Add the real one in js/data.js.');
+  cater: b => go('/catering/request?rid=' + b.dataset.id), newcater: () => go('/catering/request'),
+  contact: b => { const r = R(b.dataset.id), k = b.dataset.k; if(!r.phone)return toast('The store has not supplied a contact number.');
     if (k === 'call') location.href = 'tel:' + r.phone; else if (k === 'sms') location.href = 'sms:' + r.phone; else if (k === 'msgr') r.messenger ? window.open(r.messenger, '_blank', 'noopener') : toast('Messenger link not set yet.'); else { try { navigator.clipboard.writeText(r.phone); toast('Number copied.'); } catch (e) { toast('Copy is not available here.'); } } },
   place: () => placeOrder(), addrpick: addrPick, paypick: payPick,
   pcat: b => { PD = b.dataset.id; fillPopular(); },
@@ -1025,7 +820,7 @@ const A = {
   close: closeSheet, reload: () => render(), home: () => go('/'), browse, back: () => history.length > 1 ? history.back() : go('/'), go: (b) => { closeSheet(); go(b.dataset.id); },
   fav: b => toggleFav(b.dataset.k, b.dataset.id), item: b => openItem(b.dataset.id), rest: b => go('/restaurant/' + b.dataset.id), restmenu: b => go('/restaurant/' + b.dataset.id),
   quick: b => { const x = ITEM(b.dataset.id); if ((x.item.opts||[]).length) { openItem(x.item.id); return; } const host = b.closest('.card,.mi'), src = (host && $('.ph', host)) || b; addToCart(x.item, x.rest, defSel(x.item), 1, '', null, { rect: src.getBoundingClientRect(), img: x.item.img }); tickBtn(b); },
-  loc: locSheet, askloc: () => { closeSheet(); askLocation(); },
+  loc: locSheet, askloc:locSheet,
   qa: b => { const id = b.dataset.id; if (id === 'rests') go('/discover?tab=rests&reset=1' + (HC !== 'all' ? '&cat=' + HC : '')); else if (id === 'order') go('/discover?tab=dishes&reset=1'); else if (id === 'track') { const o = myOrders().find(isCurrent); o ? go('/track/' + o.id) : (toast('No active orders to track.'), go('/orders')); } else if (id === 'promo') go('/promos'); else moreSheet(); },
   filters: () => go('/discover?f=1&tab=dishes'), catall: () => go('/categories'), cat: b => b.dataset.id === 'catering' ? go('/catering') : go('/discover?tab=dishes&reset=1&cat=' + b.dataset.id),
   sugg: b => { const t = b.dataset.t, id = b.dataset.id; if (t === 'cat') go('/discover?tab=dishes&reset=1&cat=' + id); else if (t === 'rest') go('/restaurant/' + id); else if (t === 'item') { $('#sg').innerHTML = ''; openItem(id); } else { S.recent = [id, ...(S.recent || []).filter(x => x !== id)].slice(0, 6); save(); go('/discover?tab=dishes&reset=1&q=' + encodeURIComponent(id)); } },
@@ -1059,14 +854,13 @@ hideagain: b => {
   render();
 },
 
-  cancel: b => confirmDlg('Cancel this order? This cannot be undone.', 'Cancel order', true).then(ok => { if (!ok) return; const o = ORD(b.dataset.id); o.status = 'cancelled'; o.demo = false; o.stage = Math.max(0, stageOf({ ...o, status: 'active' })); o.upd = Date.now(); if (o.pay.status === 'demo_authorized') o.pay.status = 'refund_pending'; notify('order', `Order cancelled · ${o.id}`, o.pay.method === 'cod' ? 'No payment was taken.' : 'Your demo payment will be refunded.'); save(); toast('Order cancelled.'); render(); }),
-  nbv: b => { NB = b.dataset.v; render(); },
+  cancel:b=>void cancelRealOrder(b.dataset.id),
   addrform: b => addrForm(b.dataset.id), addrdef: b => { S.addrs.forEach(a => a.def = a.id === b.dataset.id); save(); render(); },
   addrdel: b => confirmDlg('Delete this address?', 'Delete', true).then(ok => { if (ok) { S.addrs = S.addrs.filter(a => a.id !== b.dataset.id); if (S.addrs.length && !S.addrs.some(a => a.def)) S.addrs[0].def = true; save(); toast('Address deleted.'); render(); } }),
-  payform: payForm, paydel: b => confirmDlg('Remove this payment method?', 'Remove', true).then(ok => { if (ok) { S.pay = S.pay.filter(p => p.id !== b.dataset.id); save(); render(); } }),
+  payform:payPick,
   ftb: b => { FT = b.dataset.v; render(); }, ntab: b => { NT = b.dataset.v; render(); }, readall: () => { myNotes().forEach(n => n.read = true); save(); updateChrome(); render(); },
   nopen: b => { const n = S.notes.find(x => x.id === b.dataset.id); n.read = true; save(); updateChrome(); const m = n.t.match(/FD-\d+/); if (n.type === 'order' && m && ORD(m[0])) go('/track/' + m[0]); else if (n.type === 'promo') go('/promos'); else render(); },
-  logout: () => confirmDlg('Log out of Papalita?', 'Log out').then(async ok => { if (ok) { await authDB().auth.signOut(); S.user.in = false; clearSession(); save(); AU.view = 'login'; render(); } }),
+  logout: () => confirmDlg('Log out of Papalita?', 'Log out').then(async ok => { if(ok){await window.PAPALITA_NOTIFICATIONS?.disconnectPhone();const result=await authDB().auth.signOut();if(result.error)return toast('Could not sign out: '+result.error.message);S.user.in=false; clearSession(); save(); AU.view = 'login'; render(); } }),
   clrrecent: () => { S.recent = []; save(); const g = $('#sg'); g && (g.innerHTML = ''); },
   install: () => window.PapalitaInstall?.open(), noinstall: () => window.PapalitaInstall?.dismiss(),
   'retry-catalogue': () => location.reload(),
@@ -1140,10 +934,10 @@ document.addEventListener('input', e => { const t = e.target;
 document.addEventListener('change', e => { const t = e.target;
   if (t.matches('[data-sort]')) { F.sort = t.value; fillResults(); }
   if (t.id === 'pimg' && t.files[0]) { const f = t.files[0]; if (!/^image\//.test(f.type) || f.size > 6e6) return toast('Choose an image under 6 MB.'); const im = new Image(), u = URL.createObjectURL(f);
-    im.onload = () => { const c = document.createElement('canvas'), s = Math.min(1, 256 / Math.max(im.width, im.height)); c.width = im.width * s; c.height = im.height * s; c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); S.user.photo = c.toDataURL('image/jpeg', .85); save(); URL.revokeObjectURL(u); render(); toast('Photo updated.'); }; im.src = u; } });
+    im.onload = () => { const c = document.createElement('canvas'), s = Math.min(1, 256 / Math.max(im.width, im.height)); c.width = im.width * s; c.height = im.height * s; c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); S.user.photo = c.toDataURL('image/jpeg', .85); save(); URL.revokeObjectURL(u); render(); toast('Photo saved on this device.'); }; im.src = u; } });
 document.addEventListener('click', e => { if (!e.target.closest('#hs') && $('#sg')) $('#sg').innerHTML = ''; });
 document.addEventListener('submit', async e => { e.preventDefault(); const f = e.target, v = id => ($('#' + id, f) || {}).value?.trim() || '', er = {}, show = () => { $$('.in', f).forEach(i => i.classList.remove('bad')); $$('[data-e]', f).forEach(x => x.textContent = ''); const k = Object.keys(er); k.forEach(x => { $('#' + x, f).classList.add('bad'); $(`[data-e=${x}]`, f).textContent = er[x]; }); if (k.length) $('#' + k[0], f).focus(); return k.length; };
-  if (f.id === 'pf') { if (v('pn').length < 2) er.pn = 'Enter your name.'; if (!/^\S+@\S+\.\S+$/.test(v('pe'))) er.pe = 'Enter a valid email address.'; if (v('pp') && !PH.test(v('pp').replace(/\s/g, ''))) er.pp = 'Use a PH mobile number like 09171234567.'; if (show()) return; Object.assign(S.user, { name: v('pn'), email: v('pe'), phone: v('pp') }); if (S.user.id !== 'demo') { const ac = accounts(), x = ac.find(z => z.id === S.user.id); if (x) { Object.assign(x, { name: v('pn'), email: v('pe'), phone: normPhone(v('pp')) || x.phone }); saveAcc(ac); } } save(); toast('Profile saved.'); go('/profile'); }
+  if(f.id==='pf'){await saveProfile(f);return;}
   if (f.id === 'cf') { if (v('cn').length < 2) er.cn = 'Enter your name.'; if (!PH.test(v('cp').replace(/\s/g, ''))) er.cp = 'Use a PH mobile number like 09171234567.'; if (!v('cd')) er.cd = 'Choose the event date.'; else if (v('cd') < todayPH()) er.cd = 'The date cannot be in the past.'; if (!v('ct')) er.ct = 'Choose a start time.'; const g = +v('cg'); if (!(g >= 10 && g <= 500)) er.cg = 'Enter 10 – 500 guests.'; if (show()) return;
     const btn=f.querySelector('button[type=submit],button.btn.p.blk');
     if(btn) {btn.disabled=true;btn.textContent='Sending request…';}
@@ -1166,11 +960,12 @@ document.addEventListener('submit', async e => { e.preventDefault(); const f = e
     } catch(error) {toast('Request not sent: '+(error.message||'Unknown error'));}
     finally {if(btn){btn.disabled=false;btn.textContent='Send request';}}
     return; }
-  if (f.id === 'sf') { if (v('sm').length < 10) er.sm = 'Tell us a bit more (at least 10 characters).'; if (show()) return; f.reset(); toast('Message recorded (demo). We will reply once support is connected.'); } });
+});
+
 
 /* ---------- boot ---------- */
 window.addEventListener('papalita-order-status', event => {
-  const change=event.detail,order=S.orders.find(o=>String(o.id)===String(change?.order_id)&&o.demo===false&&o.uid===S.user.id);
+  const change=event.detail,order=S.orders.find(o=>String(o.id)===String(change?.order_id)&&o.source==='supabase'&&o.uid===S.user.id);
   if(!order||!['confirmed','preparing','ready','out_for_delivery','completed','cancelled'].includes(change.status))return;
   order.status=change.status;order.upd=Date.now();save();updateChrome();
   if(/^\/(orders|order\/|track\/)/.test(curPath())&&!sheetEl&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||''))render();
@@ -1183,13 +978,17 @@ const recentHTML = () => (S.recent || []).length ? `<div class="sugg"><div class
 document.addEventListener('focusin', e => { if (e.target.id === 'q' && !e.target.value && $('#sg')) $('#sg').innerHTML = recentHTML(); });
 document.body.insertAdjacentHTML('beforeend', '<div id="offline" role="status" hidden>You are offline. Some features may not work.</div>');
 const netUi = () => { const o = $('#offline'); if (o) o.hidden = navigator.onLine !== false; }; window.addEventListener('online', netUi); window.addEventListener('offline', () => { const o = $('#offline'); o && (o.hidden = false); });
+authDB().auth.onAuthStateChange((event)=>{
+  if(event==='PASSWORD_RECOVERY')setTimeout(()=>{AU.view='reset';render();},0);
+  if(event==='SIGNED_OUT')setTimeout(()=>{S.user.in=false;AU.view='login';save();render();},0);
+});
 Object.assign(A, AUTH_A);
-// Supabase Auth is the source of truth; do not restore old local demo sessions.
+// Supabase Auth is the source of truth.
 S.user.in = false;
 clearSession();
 try {
-  const {data} = await authDB().auth.getSession();
-  if (data?.session?.user) useAuthUser(data.session.user);
+  const {data,error}=await authDB().auth.getUser();
+  if(!error&&data?.user)useAuthUser(data.user);
 } catch (err) { console.error('[Papalita] Auth restore failed:',err); }
 chrome(); window.addEventListener('hashchange', render); render();
 const bootstrapSkeleton = document.getElementById('papalita-bootstrap-skeleton');

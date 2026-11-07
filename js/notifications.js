@@ -92,7 +92,7 @@
     state.user = user; state.rows = []; state.serverRows = []; state.error = ''; fallbackRows = [];
     document.querySelector('.pn-status-toast')?.remove();
     knownOrders.clear(); seenAlerts.clear(); orderBaseline = false;
-    pushChecked = false; pushSubscription = null;
+    pushChecked=false;pushSubscription=null;state.pushReady=false;
     if (!user) close();
     updateBadges();
   }
@@ -109,16 +109,17 @@
     toast.innerHTML = `<span><b>${esc(note.title)}</b><small>${esc(note.body)}</small></span><a href="${esc(note.url)}">View order</a><button type="button" aria-label="Dismiss order update">×</button>`;
     toast.querySelector('button').onclick = () => toast.remove();
     document.body.append(toast); setTimeout(() => toast.remove(), 9000);
-    // Active Web Push subscriptions are delivered by the server. Avoid a second
-    // OS alert for the same transition when the existing sender is configured.
-    if (pushChecked && !pushSubscription && window.isSecureContext &&
+    // A running customer app can display its own verified order updates even
+    // when background Web Push is registered but the server sender is delayed.
+    if (window.isSecureContext &&
         'Notification' in window && Notification.permission === 'granted' &&
         navigator.serviceWorker) {
       const recipient = state.user.id;
       void navigator.serviceWorker.getRegistration().then(reg => {
         if (reg && state.user?.id === recipient) return reg.showNotification(note.title, {
-          body:note.body, tag:note.id, icon:'./images/papalita-icon-192-v2.png',
-          data:{url:'./'+note.url}
+          body:note.body,tag:'papalita-order:'+note.order_id,renotify:true,
+          icon:'./images/papalita-icon-192-v2.png',badge:'./images/papalita-icon-192-v2.png',
+          data:{url:'./'+note.url,order_id:note.order_id,status:note.status}
         });
       }).catch(error => console.warn('[Papalita] Order phone alert:',error.message));
     }
@@ -136,6 +137,30 @@
       read_at:null, created_at:new Date(timestamp || Date.now()).toISOString(), local:true};
     fallbackRows = [note,...fallbackRows].slice(0,80);
     localAlert(note);
+  }
+  async function orderPlaced(orderId) {
+    // Called only after the checkout RPC confirms its actual order IDs.
+    // Read the saved row under the current customer's RLS before announcing it.
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(orderId||'')))return false;
+    const client=db();if(!client)return false;
+    try{
+      const auth=await client.auth.getUser();if(auth.error)throw auth.error;
+      const user=auth.data?.user;if(!user)return false;
+      if(state.user?.id!==user.id){resetUser(user);subscribe(user.id);}
+      const seq=requestId;
+      const q=await client.from('orders').select('id,customer_id,status,created_at,updated_at')
+        .eq('id',orderId).eq('customer_id',user.id).maybeSingle();
+      if(q.error)throw q.error;
+      const row=q.data;
+      if(seq!==requestId||state.user?.id!==user.id||!row||row.id!==orderId||row.customer_id!==user.id)return false;
+      const id='order:'+row.id+':placed';if(seenAlerts.has(id))return true;
+      recordOrder(row,false);orderBaseline=true;
+      const note={id,order_id:row.id,status:row.status,title:'Order placed',
+        body:row.status==='pending'?'Your Papalita order was received. Waiting for the store to confirm.':'Your Papalita order was saved. Open it to see the latest status.',
+        type:'order',url:'#/track/'+row.id,read_at:null,created_at:row.created_at,local:true};
+      fallbackRows=[note,...fallbackRows].slice(0,80);localAlert(note);combineRows();
+      if(state.panel)draw();return true;
+    }catch(error){console.warn('[Papalita] Saved-order alert:',error.message);return false;}
   }
   function subscribe(userId) {
     if (channel || typeof db()?.channel !== 'function') return;
@@ -157,14 +182,13 @@
     state.rows = [...rows,...fallback].sort((a,b) => Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,100);
     updateBadges();
   }
-  async function inspectSubscription() {
-    if (!navigator.serviceWorker) { pushChecked = true; return; }
-    const id = state.user?.id;
-    try {
-      const reg = await navigator.serviceWorker.getRegistration();
-      const sub = reg?.pushManager ? await reg.pushManager.getSubscription() : null;
-      if (state.user?.id === id) { pushSubscription = sub; pushChecked = true; }
-    } catch { if (state.user?.id === id) pushChecked = false; }
+  async function inspectSubscription(){
+    const id=state.user?.id;if(!id)return;
+    if(!navigator.serviceWorker){pushChecked=true;return;}
+    try{const reg=await navigator.serviceWorker.getRegistration();const sub=await reg?.pushManager?.getSubscription();
+      let registered=false;if(sub){const q=await db().from('push_subscriptions').select('endpoint').eq('user_id',id).eq('endpoint',sub.endpoint||sub.toJSON().endpoint).maybeSingle();registered=!q.error&&!!q.data;}
+      if(state.user?.id===id){pushSubscription=registered?sub:null;pushChecked=true;state.pushReady=registered;}
+    }catch{if(state.user?.id===id){pushChecked=false;state.pushReady=false;}}
   }
   async function refresh() {
     if (refreshPending) { refreshAgain = true; return; }
@@ -336,6 +360,45 @@
     return Uint8Array.from(raw, c => c.charCodeAt(0));
   }
 
+  async function saveOwnedSubscription(client,userId,subscription) {
+    const verified=await client.auth.getUser();
+    if(verified.error)throw verified.error;
+    if(verified.data?.user?.id!==userId||state.user?.id!==userId)throw Error('Your account changed. Sign in and try again.');
+    const raw=subscription.toJSON();
+    if(!raw.endpoint||!raw.keys?.p256dh||!raw.keys?.auth)throw Error('The browser returned an incomplete phone subscription.');
+    const own=await client.from('push_subscriptions').select('endpoint').eq('user_id',userId).eq('endpoint',raw.endpoint).maybeSingle();
+    if(own.error)throw own.error;
+    const keys={p256dh:raw.keys.p256dh,auth:raw.keys.auth,user_agent:navigator.userAgent};
+    const write=own.data
+      ? await client.from('push_subscriptions').update(keys).eq('user_id',userId).eq('endpoint',raw.endpoint).select('endpoint').maybeSingle()
+      : await client.from('push_subscriptions').insert({user_id:userId,endpoint:raw.endpoint,...keys}).select('endpoint').single();
+    if(write.error)throw write.error;
+    if(!write.data?.endpoint)throw Error('The database did not confirm the phone subscription.');
+    return subscription;
+  }
+  async function registerPhone(client,userId,registration) {
+    const options={userVisibleOnly:true,applicationServerKey:decodeKey(vapidPublicKey)};
+    const previous=await registration.pushManager.getSubscription();
+    let subscription=previous||await registration.pushManager.subscribe(options);
+    try { return await saveOwnedSubscription(client,userId,subscription); }
+    catch(error) {
+      // A shared browser may still hold a subscription saved by another login.
+      // Never overwrite that other account's row or bypass its RLS policy.
+      const conflict=error?.code==='23505'||error?.code==='42501'||/row.level security|duplicate key/i.test(error?.message||'');
+      if(!previous||!conflict)throw error;
+      if(state.user?.id!==userId)throw Error('Your account changed. Please try again.');
+      const removed=await subscription.unsubscribe();
+      if(!removed)throw Error('Could not reset the old phone subscription. Restart Papalita and try again.');
+      subscription=await registration.pushManager.subscribe(options);
+      try { return await saveOwnedSubscription(client,userId,subscription); }
+      catch(second) {
+        const blocked=second?.code==='42501'||/row.level security/i.test(second?.message||'');
+        if(blocked)throw Error('Supabase still blocked this account’s phone subscription. Apply the supplied push-subscription SQL policy fix, then tap Enable again.');
+        throw second;
+      }
+    }
+  }
+
   async function enable() {
     if (state.enabling) return;
     if (!window.isSecureContext || !('Notification' in window) || !navigator.serviceWorker || !('PushManager' in window)) { alert('Open Papalita through HTTPS in Chrome, or use the installed app on iPhone.'); return; }
@@ -349,7 +412,7 @@
       return;
     }
 
-    state.enabling = true;
+    state.enabling=true;state.pushReady=false;
     const enablingUserId = state.user.id;
     try {
       const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
@@ -362,32 +425,19 @@
       let timeout;
       const reg = await Promise.race([navigator.serviceWorker.ready, new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('The app is not ready for push. Reload Papalita and try again.')),10000);})]).finally(()=>clearTimeout(timeout));
       if (state.user?.id !== enablingUserId) throw Error('Your account changed. Sign in and enable notifications again.');
-      let sub = await reg.pushManager.getSubscription();
-
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: decodeKey(vapidPublicKey)
-        });
-      }
-
-      const raw = sub.toJSON();
-      if (state.user?.id !== enablingUserId) throw Error('Your account changed. Please try again.');
-
-      const { error } = await db()
-        .from('push_subscriptions')
-        .upsert({
-          user_id: state.user.id,
-          endpoint: raw.endpoint,
-          p256dh: raw.keys.p256dh,
-          auth: raw.keys.auth,
-          user_agent: navigator.userAgent
-        }, { onConflict: 'endpoint' });
-
-      if (error) throw error;
-
+      const sub=await registerPhone(db(),enablingUserId,reg);
+      if(state.user?.id!==enablingUserId)throw Error('Your account changed. Please try again.');
       pushSubscription = sub; pushChecked = true; state.pushReady = true;
-      alert('This phone is registered for Papalita notifications. Order push delivery uses your existing server notification setup.');
+      try {
+        await reg.showNotification('Papalita notifications enabled', {
+          body:'This phone is registered for Papalita notifications.',
+          tag:'papalita-phone-registered',icon:'./images/papalita-icon-192-v2.png',
+          data:{url:'./#/notifications'}
+        });
+        alert('Phone notifications enabled. Check your phone notification panel.');
+      } catch(displayError) {
+        alert('Phone registered, but Android could not display the notification. Check Chrome/Papalita notification settings: '+displayError.message);
+      }
     } catch (err) {
       console.error(err);
       alert('Could not enable notifications: ' + err.message);
@@ -494,6 +544,12 @@
 
   window.PAPALITA_NOTIFICATIONS = {
     refresh,
+    orderPlaced,
+    disconnectPhone:async()=>{
+      try{const reg=await navigator.serviceWorker?.getRegistration();const sub=await reg?.pushManager?.getSubscription();if(sub)await sub.unsubscribe();}
+      catch(error){console.warn('[Papalita] Phone sign-out:',error.message);}
+      pushSubscription=null;state.pushReady=false;pushChecked=false;
+    },
     open: () => {
       triggerFocus = document.activeElement; state.panel = true; draw();
       refresh().then(draw).catch(error=>{state.error=error.message;draw();});
