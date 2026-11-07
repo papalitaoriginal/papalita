@@ -201,6 +201,7 @@ td b{font-weight:700}
 <!-- PAPALITA ADMIN PRESENTATION START -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="papalita-admin-merchant">
+#pa-promo-form .field[hidden]{display:none}
 /* Presentation only. Existing admin forms, data services and mutations are retained. */
 :root{--pa-bg:#f8f8f4;--pa-surface:#fff;--pa-soft:#f3f5f0;--pa-ink:#202e25;--pa-muted:#6c766e;--pa-line:#e3e7df;--pa-accent:#087f45;--pa-accent-soft:#e9f4eb;--pa-sidebar:#19211b;--pa-active:#f2dfa0;--pa-banner:#f3ebc8;--pa-danger:#b73832}
 body.pa-active{--ink:var(--pa-ink);--muted:var(--pa-muted);--mu:var(--pa-muted);--line:var(--pa-line);--ln:var(--pa-line);--soft:var(--pa-soft);--sf:var(--pa-soft);--a:var(--pa-accent);--or:var(--pa-accent);--a-s:var(--pa-accent-soft);--or-s:var(--pa-accent-soft);--a-d:var(--pa-ink);--or-d:var(--pa-ink);--danger:var(--pa-danger);font-family:Inter,'Plus Jakarta Sans',system-ui,sans-serif;background:var(--pa-bg);color:var(--pa-ink);margin:0;font-size:13px;line-height:1.55}
@@ -966,6 +967,22 @@ const paPromoRepo={
  create(payload){return paSaved(getAuthClient().from(this.table).insert(payload).select('*'));},
  update(id,payload){return paSaved(getAuthClient().from(this.table).update({...payload,updated_at:new Date().toISOString()}).eq('id',id).select('*'));}
 };
+const paPromoDurationMs=Object.freeze({minutes:60000,hours:3600000,days:86400000});
+function paPromoExpiry({expiry_unit, duration, expires}){
+ if(expiry_unit==='date'){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(expires)||expires<paToday())throw Error('Choose today or a future expiry date.');
+  const end=new Date(expires+'T23:59:59+08:00');
+  if(!Number.isFinite(+end)||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(end)!==expires)throw Error('Enter a valid expiry date.');
+  return end.toISOString();
+ }
+ const unit=paPromoDurationMs[expiry_unit];
+ if(typeof unit!=='number')throw Error('Choose a valid expiry option.');
+ const amount=Number(duration);
+ if(!Number.isSafeInteger(amount)||amount<1)throw Error('Enter a whole duration of at least 1.');
+ const end=new Date(Date.now()+amount*unit);
+ if(!Number.isFinite(+end)||end.getUTCFullYear()>9999)throw Error('Enter a shorter duration.');
+ return end.toISOString();
+}
 function paPromoPayload(values){
  const code=String(values.code||'').trim().toUpperCase(),type=values.type;
  if(!/^[A-Z0-9]{3,16}$/.test(code))throw Error('Use 3–16 letters or numbers for the code.');
@@ -974,9 +991,7 @@ function paPromoPayload(values){
  if(!Number.isFinite(value)||value<0||(type!=='ship'&&value<=0)||(type==='percent'&&value>100))throw Error(type==='percent'?'Percentage must be between 1 and 100.':'Enter a valid discount value.');
  if(cap!==null&&(!Number.isFinite(cap)||cap<=0))throw Error('Maximum discount must be greater than zero, or leave it blank.');
  if(!Number.isFinite(min)||min<0)throw Error('Minimum order must be zero or more.');
- if(!/^\d{4}-\d{2}-\d{2}$/.test(values.expires)||values.expires<paToday())throw Error('Choose today or a future expiry date.');
- const expires_at=new Date(values.expires+'T23:59:59+08:00');if(!Number.isFinite(+expires_at)||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(expires_at)!==values.expires)throw Error('Enter a valid expiry date.');
- return {code,type,value,cap:type==='ship'?null:cap,min_order:min,expires_at:expires_at.toISOString(),status:'active',title:type==='ship'?'Free delivery':type==='percent'?value+'% off':paMoney(value)+' off'};
+ return {code,type,value,cap:type==='ship'?null:cap,min_order:min,expires_at:paPromoExpiry(values),status:'active',title:type==='ship'?'Free delivery':type==='percent'?value+'% off':paMoney(value)+' off'};
 }
 let paPromoFilter='current';
 async function paLivePromos(){
@@ -984,7 +999,9 @@ async function paLivePromos(){
  try{
   const all=await paPromoRepo.list();if(!target.isConnected)return;
   const rows=all.filter(p=>paPromoFilter==='archived'?p.status==='archived':p.status!=='archived');
-  target.innerHTML=`<div class="row sp wrap" style="margin-bottom:16px"><p class="mu sm">Promos saved to your database. Removed codes can be restored from Archived.</p><div class="row"><button class="btn ${paPromoFilter==='current'?'p':'s'} sm" id="pa-promos-current">Current</button><button class="btn ${paPromoFilter==='archived'?'p':'s'} sm" id="pa-promos-archived">Archived</button></div></div><p class="err" id="pa-promo-error" role="alert"></p>${paTable(['Code','Offer','Minimum order','Expires (PH)','Status','Actions'],rows.map(p=>`<tr><td><b>${esc(p.code)}</b></td><td>${esc(p.title)}${p.cap?`<br><small class="mu">Up to ${paMoney(p.cap)}</small>`:''}</td><td>${paMoney(p.min_order)}</td><td>${paDate(p.expires_at)}</td><td>${paPill(p.status==='active'&&+new Date(p.expires_at)<Date.now()?'expired':p.status)}</td><td><div class="row">${p.status==='archived'?`<button class="btn s sm" data-promo-restore="${esc(p.id)}">Restore inactive</button>`:`<button class="btn s sm" data-promo-toggle="${esc(p.id)}">${p.status==='active'?'Deactivate':'Activate'}</button><button class="btn d sm" data-promo-delete="${esc(p.id)}" aria-label="Delete promo ${esc(p.code)}">Delete</button>`}</div></td></tr>`),paPromoFilter==='archived'?'No archived promos':'No promo codes yet')}${paPromoFilter==='current'?`<section class="panel"><h3>Create promo</h3><form id="pa-promo-form"><div class="two"><div class="field"><label for="pc">Code</label><input class="in" id="pc" name="code" maxlength="16" required autocomplete="off" autocapitalize="characters" pattern="[A-Za-z0-9]{3,16}" placeholder="Enter your promo code"></div><div class="field"><label for="pt">Type</label><select class="in" id="pt" name="type"><option value="flat">Flat amount off</option><option value="percent">Percent off</option><option value="ship">Free delivery</option></select></div><div class="field"><label for="pv">Discount value (₱ or %)</label><input class="in" id="pv" name="value" type="number" min="0.01" step="0.01" required></div><div class="field"><label for="pm">Maximum discount (₱, optional)</label><input class="in" id="pm" name="cap" type="number" min="0.01" step="0.01"></div><div class="field"><label for="pn">Minimum order (₱)</label><input class="in" id="pn" name="min_order" type="number" min="0" step="0.01" value="0" required></div><div class="field"><label for="pd">Expiry date (Philippine time)</label><input class="in" id="pd" name="expires" type="date" min="${paToday()}" required></div></div><p class="err" id="pa-promo-form-error" role="alert"></p><button class="btn p" type="submit">Create promo</button></form></section>`:''}`;
+  target.innerHTML=`<div class="row sp wrap" style="margin-bottom:16px"><p class="mu sm">Promos saved to your database. Removed codes can be restored from Archived.</p><div class="row"><button class="btn ${paPromoFilter==='current'?'p':'s'} sm" id="pa-promos-current">Current</button><button class="btn ${paPromoFilter==='archived'?'p':'s'} sm" id="pa-promos-archived">Archived</button></div></div><p class="err" id="pa-promo-error" role="alert"></p>${paTable(['Code','Offer','Minimum order','Expires (PH)','Status','Actions'],rows.map(p=>`<tr><td><b>${esc(p.code)}</b></td><td>${esc(p.title)}${p.cap?`<br><small class="mu">Up to ${paMoney(p.cap)}</small>`:''}</td><td>${paMoney(p.min_order)}</td><td>${paDate(p.expires_at)}</td><td>${paPill(p.status==='active'&&+new Date(p.expires_at)<Date.now()?'expired':p.status)}</td><td><div class="row">${p.status==='archived'?`<button class="btn s sm" data-promo-restore="${esc(p.id)}">Restore inactive</button>`:`<button class="btn s sm" data-promo-toggle="${esc(p.id)}">${p.status==='active'?'Deactivate':'Activate'}</button><button class="btn d sm" data-promo-delete="${esc(p.id)}" aria-label="Delete promo ${esc(p.code)}">Delete</button>`}</div></td></tr>`),paPromoFilter==='archived'?'No archived promos':'No promo codes yet')}${paPromoFilter==='current'?`<section class="panel"><h3>Create promo</h3><form id="pa-promo-form"><div class="two"><div class="field"><label for="pc">Code</label><input class="in" id="pc" name="code" maxlength="16" required autocomplete="off" autocapitalize="characters" pattern="[A-Za-z0-9]{3,16}" placeholder="Enter your promo code"></div><div class="field"><label for="pt">Type</label><select class="in" id="pt" name="type"><option value="flat">Flat amount off</option><option value="percent">Percent off</option><option value="ship">Free delivery</option></select></div><div class="field"><label for="pv">Discount value (₱ or %)</label><input class="in" id="pv" name="value" type="number" min="0.01" step="0.01" required></div><div class="field"><label for="pm">Maximum discount (₱, optional)</label><input class="in" id="pm" name="cap" type="number" min="0.01" step="0.01"></div><div class="field"><label for="pn">Minimum order (₱)</label><input class="in" id="pn" name="min_order" type="number" min="0" step="0.01" value="0" required></div><div class="field"><label for="pa-expiry-unit">Promo expires</label><select class="in" id="pa-expiry-unit" name="expiry_unit"><option value="minutes">After minutes</option><option value="hours">After hours</option><option value="days">After days</option><option value="date">At the end of a date</option></select></div>
+  <div class="field"><label for="pa-duration">Duration</label><input class="in" id="pa-duration" name="duration" type="number" min="1" step="1" placeholder="e.g. 15" aria-describedby="pa-duration-help" required><small class="mu" id="pa-duration-help">Starts when you create the promo.</small></div>
+  <div class="field" hidden><label for="pd">Expiry date (Philippine time)</label><input class="in" id="pd" name="expires" type="date" min="${paToday()}" disabled required></div></div><p class="err" id="pa-promo-form-error" role="alert"></p><button class="btn p" type="submit">Create promo</button></form></section>`:''}`;
   $('#pa-promos-current').onclick=()=>{paPromoFilter='current';V.promos();};$('#pa-promos-archived').onclick=()=>{paPromoFilter='archived';V.promos();};
   const change=async(control,id,status)=>{
    const row=all.find(p=>p.id===id);if(!row)return;
@@ -998,6 +1015,12 @@ async function paLivePromos(){
   $$('[data-promo-restore]',target).forEach(b=>b.onclick=()=>change(b,b.dataset.promoRestore,'inactive'));
   const form=$('#pa-promo-form');if(form){
    $('#pt').onchange=()=>{const ship=$('#pt').value==='ship';$('#pv').disabled=ship;$('#pv').required=!ship;$('#pm').disabled=ship;};
+   form.elements.expiry_unit.onchange=()=>{
+    const useDate=form.elements.expiry_unit.value==='date';
+    const date=form.elements.expires,duration=form.elements.duration;
+    date.disabled=date.closest('.field').hidden=!useDate;
+    duration.disabled=duration.closest('.field').hidden=useDate;
+   };
    form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('button[type=submit]'),error=$('#pa-promo-form-error');error.textContent='';
     try{const payload=paPromoPayload(Object.fromEntries(new FormData(form)));button.disabled=true;await paPromoRepo.create(payload);toast('Promo created in the database.');await V.promos();}
     catch(e){error.textContent=e.code==='23505'?'This promo code already exists. Check Current and Archived.':e.message;button.disabled=false;}
