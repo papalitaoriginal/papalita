@@ -2,6 +2,7 @@
 (async () => {
 'use strict';
 const C=window.FOODIE_CONFIG,RS=window.RESTAURANTS,CATS=window.CATEGORIES;
+const orderStatus = window.PapalitaOrderStatus;
 let catalogueError='',commercialError='';
 const deliveryFees=new Map();
 async function refreshCommercialData(){
@@ -66,7 +67,7 @@ const ICONS = {
 ICONS.chat='<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>';ICONS.eye='<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';ICONS.eyeoff='<path d="M17.9 17.9A10.7 10.7 0 0 1 12 19c-6.4 0-10-7-10-7a18 18 0 0 1 5.1-5.9M9.9 5.2A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-2.2 3.2M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/>';ICONS.chevd='<path d="m6 9 6 6 6-6"/>';ICONS.share='<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>';
 const ic = (n, s = 20, c = '') => `<svg class="i ${c}" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const photo = (key, alt, o = {}) => { const u = window.photoUrl(key, o.w || 600), u2 = window.photoUrl(key, (o.w || 600) * 2);
-  return `<span class="ph ${o.cls || ''}" style="${o.ar ? '--ar:' + o.ar : ''}">${ic('fork', 48)}${u ? `<img src="${u}" srcset="${u} 1x, ${u2} 2x" alt="${esc(alt)}" loading="${o.eager ? 'eager' : 'lazy'}" decoding="async">` : ''}</span>`; };
+  return `<span class="ph ${o.cls || ''}" style="${o.ar ? '--ar:' + o.ar : ''}">${ic('fork', 48)}${u ? `<img src="${esc(u)}"${u2 !== u ? ` srcset="${esc(u)} 1x, ${esc(u2)} 2x"` : ''} alt="${esc(alt)}" loading="${o.eager ? 'eager' : 'lazy'}" decoding="async">` : ''}</span>`; };
 document.addEventListener('error', e => { const t = e.target; if (t.tagName === 'IMG' && t.closest('.ph')) t.closest('.ph').classList.add('failed'); }, true);
 
 /* ---------- store ---------- */
@@ -139,7 +140,6 @@ function addToCart(item, rest, sel, qty, note, replaceKey, fx) {
   toast(replaceKey ? 'Cart updated.' : `${item.name} added to cart.`, 'View cart', () => nav('/cart'));
 }
 
-const STEPS=[['Order received','Waiting for store confirmation.','check'],['Order confirmed','The store accepted your order.','check'],['Preparing your food','The kitchen is preparing your order.','fork'],['Ready for handoff','Your order is ready for pickup or delivery handoff.','store'],['On the way','Your order is out for delivery.','bike'],['Completed','Your order has been completed.','home']];
 const stageOf=o=>o.status==='cancelled'?-1:({pending:0,confirmed:1,preparing:2,ready:3,out_for_delivery:4,completed:5})[o.status]??-1;
 const isCurrent=o=>stageOf(o)>=0&&stageOf(o)<5;
 /* ---------- services ---------- */
@@ -255,28 +255,33 @@ const fillPopular = () => {
   window.PapalitaMotion?.refresh($('#view'));
 };
 
-const foodVisual = (auth=false) => {
-  const choices = ALL().filter(x=>x.item.available && /^https?:/i.test(String(x.item.img || ''))).slice(0,3);
+const foodVisual = () => {
+  const choices = ALL().filter(x=>x.item.available && window.photoUrl(x.item.img)).slice(0,3);
   if (!choices.length) return `<div class="pp-hero-logo"><img src="images/papalita_mark_color.png" alt="Papalita"></div>`;
   return `<div class="pp-food-slides" data-food-slideshow aria-label="Food from the Papalita menu">${choices.map(({item,rest},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(item.img,`${item.name} from ${rest.name}`,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(item.name)}</b><small>${esc(rest.name)}</small></div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Food photos">${choices.map(({item},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(item.name)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
 };
-const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita · Good Food, Good Mood.</span><nav aria-label="Footer"><button type="button" data-a="about-papalita">About</button><a href="#/support">Contact</a><button type="button" data-papalita-legal>Terms & Privacy</button><button type="button" data-motion-toggle aria-pressed="false">Pause animations</button></nav></footer>`;
+const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita · Good Food, Good Mood.</span><nav aria-label="Footer"><button type="button" data-a="about-papalita">About</button><a href="#/support">Contact</a><button type="button" data-papalita-legal>Terms & Privacy</button></nav></footer>`;
 V.home = () => {
   const act = myOrders().find(isCurrent);
   return {html:`<section class="view pp-customer-home">
     <header class="pp-home-header"><a href="#/" class="pp-mini-brand" aria-label="Papalita home"><img src="images/papalita_mark_color.png" alt="">Papalita</a><button class="loc" data-a="loc" aria-label="Change delivery location"><span class="lab">Deliver to</span><span class="locv">${esc(S.loc.label)}${ic('chevd',14)}</span></button><a class="pp-home-bell pp-home-cart" href="#/notifications" aria-label="Notifications">${ic('bell',21)}</a><a class="pp-home-cart" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a></header>
+    ${window.PapalitaInstall?.canOffer() ? `<aside class="pp-install-strip" aria-label="Install Papalita">
+      <img src="images/papalita-icon-192-v2.png" width="40" height="40" alt="">
+      <span class="grow"><b>Papalita on your phone</b><small>Open straight from your home screen.</small></span>
+      <button type="button" class="btn p" data-a="install">Install</button>
+      <button type="button" class="pp-install-close" data-a="noinstall" aria-label="Dismiss install banner">${ic('x',17)}</button>
+    </aside>` : ''}
     ${catalogueError?`<div class="pp-catalog-error" role="alert">${esc(catalogueError)} <button class="link gl" data-a="retry-catalogue">Refresh</button></div>`:''}
     <div class="pp-hero"><div class="pp-hero-copy"><span class="pp-kicker">Made for your everyday</span><h1>Your local favorites,<br><em>delivered.</em></h1><p>Find your next coffee, comfort meal, or something worth sharing in Alegria.</p><button class="btn p" data-a="qa" data-id="rests">Explore stores ${ic('arrow',17)}</button></div><div class="pp-hero-visual">${foodVisual()}<div class="pp-float-note">${ic('store',23)}<span><b>From around the neighborhood</b><small>Alegria, Surigao del Norte</small></span></div></div></div>
     <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
     ${CATS.length?`<div class="pp-categories" role="group" aria-label="Menu categories"><button class="chipc on" data-a="hcat" data-id="all" aria-pressed="true">${ic('grid',16)}All food</button>${CATS.map(c=>`<button class="chipc" data-a="hcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div>`:''}
-    ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic('bike',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(STEPS[stageOf(act)]?.[0] || act.status)}</span></span>${ic('chev',18)}</a>`:''}
+    ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic(orderStatus.mode(act)==='pickup'?'store':'orders',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(orderStatus.copy(act)[0])}</span></span>${ic('chev',18)}</a>`:''}
     <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Stores carousel"></div></div>
     <div class="sec"><div class="sec-h"><h2>On the menu</h2><button class="link gl" data-a="qa" data-id="order">See all ${ic('arrow',16)}</button></div><div class="chips popular-chips" role="group" aria-label="Filter menu"><button class="chip on" data-a="pcat" data-id="all" aria-pressed="true">All food</button>${CATS.map(c=>`<button class="chip" data-a="pcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="popular-grid" id="popular-dishes"></div></div>
     ${RS.some(r=>r.catering)?`<a class="mint row home-promo-card" href="#/catering">${ic('box',24)}<span class="grow"><b>Bring everyone to the table.</b><br><span class="sm mu">Ask participating stores about catering.</span></span>${ic('arrow',19)}</a>`:''}
-    ${!PAPALITA_INSTALLED && window.PapalitaInstall?.canOffer()?`<div class="mint row pp-install-card">${ic('send',22)}<span class="grow"><b>A little closer, every day.</b><br><span class="sm mu">Add Papalita to your home screen.</span></span><button class="btn p sm" data-a="install">Install</button><button class="ib" data-a="noinstall" aria-label="Dismiss install card">${ic('x',17)}</button></div>`:''}
     ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();}};
 };
-function authLayout(){return `<div class="pp-auth-layout"><aside class="pp-auth-pitch" aria-label="About Papalita"><div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><span><b>Papalita</b><small>GOOD FOOD, GOOD MOOD.</small></span></div><div><span class="pp-kicker">Alegria, Surigao del Norte</span><h2>A good mood<br>is <em>on the menu.</em></h2><p>Cafés, comfort food, and local favorites. Find your next delicious moment with Papalita.</p></div><div class="pp-auth-photo">${foodVisual(true)}</div><button type="button" data-motion-toggle aria-pressed="false" class="link gl">Pause animations</button></aside><div class="pp-auth-form">${authScreen()}</div></div>`;}
+function authLayout(){return `<div class="pp-auth-layout"><aside class="pp-auth-pitch" aria-label="About Papalita"><div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><span><b>Papalita</b><small>GOOD FOOD, GOOD MOOD.</small></span></div><div><span class="pp-kicker">Alegria, Surigao del Norte</span><h2>A good mood<br>is <em>on the menu.</em></h2><p>Cafés, comfort food, and local favorites. Find your next delicious moment with Papalita.</p></div><div class="pp-auth-photo">${foodVisual()}</div></aside><div class="pp-auth-form">${authScreen()}</div></div>`;}
 
 function suggestions(q) {
   q = q.trim().toLowerCase(); if (!q) return ''; const has = s => s.toLowerCase().includes(q), out = [];
@@ -354,7 +359,7 @@ function openItem(id, editKey) {
 }
 
 /* ---------- cart ---------- */
-const sumHTML = c => `<div class="sum"><div class="r"><span>Subtotal</span><span>${peso(c.sub)}</span></div><div class="r"><span>Delivery fee</span><span>${c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="ok">Free</b>` : c.fee==null?'Not supplied':peso(c.fee)}</span></div>
+const sumHTML = c => `<div class="sum"><div class="r"><span>Subtotal</span><span>${peso(c.sub)}</span></div>${orderStatus.mode(c) === 'pickup' ? '' : `<div class="r"><span>Delivery fee</span><span>${c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="ok">Free</b>` : c.fee==null?'Not supplied':peso(c.fee)}</span></div>`}
   ${c.disc && c.promo?.type !== 'ship' ? `<div class="r ok"><span>Promo ${esc(c.promo?.code||'Recorded discount')}</span><span>−${peso(c.disc)}</span></div>` : ''}${c.tip ? `<div class="r"><span>Rider tip</span><span>${peso(c.tip)}</span></div>` : ''}<div class="r tot"><span>Total</span><span>${peso(c.total)}</span></div><p class="mu sm" style="margin-top:6px">Check tax details with the store.</p></div>`;
 const promoBox = c => `<div class="panel"><h3 style="margin-bottom:10px">Promo code</h3>${S.promo ? `<div class="row sp"><span class="chip on">${ic('percent', 16)}${esc(S.promo)}</span><button class="btn s sm" data-a="rmpromo">Remove</button></div>${c.perr ? `<p class="err" style="margin-top:8px">${esc(c.perr)}</p>` : `<p class="ok sm" style="margin-top:8px">Saved ${peso(c.disc)} with this code.</p>`}` :
   `<div class="row"><input class="in" id="pc" placeholder="Enter code" autocapitalize="characters" aria-label="Promo code" maxlength="20"><button class="btn p sm" data-a="applypromo">Apply</button></div><p class="err" id="pcerr"></p><div class="chips" style="margin-top:8px">${window.PROMOS.filter(p => p.active !== false).slice(0, 3).map(p => `<button class="chip" data-a="usepromo" data-id="${p.code}">${p.code}</button>`).join('')}</div>`}</div>`;
@@ -366,7 +371,7 @@ V.cartView = () => { const c = calc();
   <div class="rv-lab"><span>Order type</span></div><div class="chips"><button class="chip ${CK.fulfillment === 'delivery' ? 'on' : ''}" data-a="fulfillment" data-v="delivery">Delivery</button><button class="chip ${CK.fulfillment === 'pickup' ? 'on' : ''}" data-a="fulfillment" data-v="pickup">Pickup at store</button></div><div class="rv-lab"><span>${CK.fulfillment === 'pickup' ? 'Pickup locations' : 'Delivery address'}</span>${CK.fulfillment === 'pickup' ? '' : '<button data-a="addrpick">EDIT</button>'}</div>
   ${CK.fulfillment === 'pickup' ? `<div class="panel">${c.groups.map(g => `<p><b>${esc(g.rest?.name || 'Store')}</b><br>${esc(g.rest?.addr || 'Contact the store for pickup location')}</p>`).join('')}</div>` : `<div class="row" style="gap:14px"><span class="pbtn" style="width:56px;height:56px;background:#fff;color:var(--ink);box-shadow:var(--sh)">${ic('pin', 22)}</span><div class="grow">${a ? `<b style="font-size:20px">${esc(a.label)}</b> ${a.def ? '<span class="status n" style="letter-spacing:.06em">PRIMARY</span>' : ''}<p class="mu">${esc(a.line)} • ${esc(a.city)}${a.landmark ? '<br>Landmark: ' + esc(a.landmark) : ''}</p>` : `<b>No address yet</b><p class="mu">Add where we should deliver.</p>`}</div></div>`}
   <div class="field" style="margin-top:14px"><label for="cp">Contact number</label><input class="in" id="cp" inputmode="tel" value="${esc(S.user.phone || '')}" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" id="cpe"></p></div>
-  <div class="mint row" style="margin-top:6px">${ic('clock',22)}<p class="sm">The store confirms preparation and delivery timing after accepting your order.</p></div>
+  <div class="mint row" style="margin-top:6px">${ic('clock',22)}<p class="sm">${CK.fulfillment === 'pickup' ? 'We’ll let you know when your order is ready to collect.' : 'The store confirms preparation and delivery timing after accepting your order.'}</p></div>
   <div class="rv-lab"><span>Your selection · ${c.groups.length} store(s)</span><button data-a="browse">ADD ITEMS</button></div>
   ${c.groups.map(g => `<h3 style="margin:16px 0 6px;color:var(--gc,#087F32)">${esc(g.rest?.name || 'Store')} · ${peso(g.sub)}</h3>${g.lines.map(l => `<div class="row pp-cart-line" style="gap:16px;align-items:flex-start;padding:8px 0">${photo(l.img, l.name, { ar: '1', w: 240 }).replace('class="ph', 'style="width:100px;border-radius:18px;flex:none" class="ph')}<div class="grow"><div class="row sp" style="align-items:flex-start"><h3 style="font-size:19px">${esc(l.name)}</h3><b style="font-size:19px">${peso(l.unit * l.qty)}</b></div><p class="mu sm">${esc(selText(l)) || 'Standard'}${l.note ? ' · “' + esc(l.note) + '”' : ''}</p>
   <div class="row sp" style="margin-top:10px"><div class="qty mintq"><button data-a="qty" data-k="${l.key}" data-d="-1" aria-label="Decrease ${esc(l.name)}">${ic('minus', 16)}</button><b>${l.qty}</b><button data-a="qty" data-k="${l.key}" data-d="1" aria-label="Increase ${esc(l.name)}">${ic('plus', 16)}</button></div><span><button class="rm" data-a="editline" data-k="${l.key}" data-id="${l.itemId}" style="color:var(--mu)">EDIT</button> <button class="rm" data-a="rmline" data-k="${l.key}" aria-label="Remove ${esc(l.name)}">REMOVE</button></span></div></div></div>`).join('')}`).join('')}
@@ -453,20 +458,27 @@ async function placeOrder() {
 
 const ORD=id=>S.orders.find(o=>o.id===id&&o.uid===S.user.id&&o.source==='supabase');
 const orderLines = o => o.items.map(l => `<div class="row sp sm" style="padding:5px 0"><span>${l.qty} × ${esc(l.name)}${selText(l) ? `<br><span class="mu">${esc(selText(l))}</span>` : ''}</span><span>${peso(l.unit * l.qty)}</span></div>`).join('');
-const payTag=o=>esc(PAYNAME[o.pay?.method]||o.pay?.method||'Payment method not supplied');
+const payTag = o => esc(o.pay?.method === 'cod'
+  ? orderStatus.mode(o) === 'pickup' ? 'Cash at pickup'
+    : orderStatus.mode(o) === 'delivery' ? 'Cash on Delivery' : 'Cash payment'
+  : PAYNAME[o.pay?.method] || o.pay?.method || 'Payment method not supplied');
+const orderLocationLabel = o => ({pickup: 'Pickup at', delivery: 'Deliver to'})[orderStatus.mode(o)] || 'Order location';
+const orderLocation = o => orderStatus.mode(o) === 'pickup'
+  ? R(o.rid)?.addr || R(o.rid)?.name || 'Collect at the store'
+  : o.addr || 'Address on order';
 /* ---------- receipt ---------- */
 function receiptHTML(o, anim) { const r=R(o.rid)||{name:'Store',items:[]}, pr = o.promo && window.PROMOS.find(p => p.code === o.promo); let n = 0; const L = (a, b, cls = '') => `<div class="ln ${cls}" style="--i:${n++}"><span>${a}</span><i></i><span>${b}</span></div>`;
   const stamp=o.pay?.status==='paid'?'PAYMENT RECORDED':o.pay?.method==='cod'?'CASH PAYMENT':'PAYMENT NOT CONFIRMED';
   return `<div class="rwrap ${anim ? 'print' : ''}"><div class="rcpt" id="rcpt-${o.id}"><div class="rhead"><b>PAPALITA</b><span>Good food, good mood</span><span class="rst">${esc(r.name)}</span><span>${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).toUpperCase()}</span></div><div class="dash"></div>
   <div class="rno"><span>ORDER NO.</span><b>${esc(o.id)}</b></div><div class="dash"></div>
   ${o.items.map(l => L(`${l.qty} x ${esc(l.name).toUpperCase()}`, peso(l.unit * l.qty)) + (selText(l) ? `<div class="sub" style="--i:${n++}">${esc(selText(l))}</div>` : '')).join('')}<div class="dash"></div>
-  ${L('SUBTOTAL', peso(o.sub))}${L('DELIVERY FEE', o.disc && pr && pr.type === 'ship' ? 'FREE' : o.fee==null?'Not supplied':peso(o.fee))}${o.disc && (!pr||pr.type !== 'ship') ? L('PROMO ' + esc(pr?.code||'RECORDED'), '-' + peso(o.disc), 'g') : ''}${o.tip ? L('RIDER TIP', peso(o.tip)) : ''}
+  ${L('SUBTOTAL', peso(o.sub))}${orderStatus.mode(o) === 'pickup' ? '' : L('DELIVERY FEE', o.disc && pr && pr.type === 'ship' ? 'FREE' : o.fee==null?'Not supplied':peso(o.fee))}${o.disc && (!pr||pr.type !== 'ship') ? L('PROMO ' + esc(pr?.code||'RECORDED'), '-' + peso(o.disc), 'g') : ''}${o.tip ? L('RIDER TIP', peso(o.tip)) : ''}
   <div class="ln tot" style="--i:${n++}"><span>TOTAL</span><i></i><span>${peso(o.total)}</span></div><div class="sub" style="--i:${n++}">Order summary · ask the store for a tax invoice</div><div class="dash"></div>
-  ${L('PAYMENT', esc(PAYNAME[o.pay.method]).toUpperCase())}<div class="ln" style="--i:${n++}"><span>DELIVER TO</span></div><div class="sub" style="--i:${n++};color:#222">${esc(o.addr)}</div>${o.note ? `<div class="sub" style="--i:${n++}">Note: ${esc(o.note)}</div>` : ''}<div class="dash"></div>
+  ${L('PAYMENT', payTag(o).toUpperCase())}<div class="ln" style="--i:${n++}"><span>${orderLocationLabel(o).toUpperCase()}</span></div><div class="sub" style="--i:${n++};color:#222">${esc(orderLocation(o))}</div>${o.note ? `<div class="sub" style="--i:${n++}">Note: ${esc(o.note)}</div>` : ''}<div class="dash"></div>
   <div class="rbar" style="--i:${n++}"><span>${esc(o.id)}</span></div><p class="thx" style="--i:${n++}">SALAMAT, ALEGRIA!<br><small>Thank you for ordering local.</small></p><div class="stamp">${stamp}</div></div></div>`; }
 V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r=R(o.rid)||{name:'Store',items:[]};
   return { html: `<section class="view" style="max-width:520px;margin:0 auto;text-align:center"><div class="okh"><span class="okc">${ic('check', 40)}</span><h1>Order placed!</h1><p class="mu">The store will review your order.</p></div><div class="slot" aria-hidden="true"></div>${receiptHTML(o, true)}
-  <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic('bike', 18)}Track order</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
+  <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic(orderStatus.mode(o)==='pickup'?'store':'orders',18)}${orderStatus.mode(o)==='pickup'?'Track pickup':'Track order'}</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
 /* ---------- motion: fly to cart ---------- */
 const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 function cartTarget() { for (const el of [$('.pp-home-cart:not(.pp-home-bell)'), $('.pp-cart-anchor'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
@@ -497,7 +509,7 @@ function linkedOrderView(id) {
       if(items.error)throw items.error;
       if(S.user.id!==uid||!S.user.in)return;
       const order={id:row.id,rid:row.store_id,total:Number(row.total_amount)||0,
-        status:row.status,source:'supabase',uid,createdAt:Date.parse(row.created_at)||Date.now(),
+        status:row.status,fulfillment:orderStatus.mode(row),source:'supabase',uid,createdAt:Date.parse(row.created_at)||Date.now(),
         upd:Date.parse(row.updated_at)||Date.now(),addr:row.delivery_address||'',
         contact:{name:row.customer_name||S.user.name,phone:row.contact_number||''},
         pay:{method:row.payment_method||'cod',status:row.payment_status||'unpaid',source:'supabase'},
@@ -518,28 +530,26 @@ function linkedOrderView(id) {
   }};
 }
 
-V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r=R(o.rid)||{name:'Store',items:[]};
+V.track = id => { const o = ORD(id); if (!o) return linkedOrderView(id);
 
-    const statuses = [
-      ['pending','Order received','Waiting for the store to accept your order.'],
-      ['confirmed','Order accepted','The store has confirmed your order.'],
-      ['preparing','Preparing your food','Your order is being prepared.'],
-      ['ready','Ready','Your order is ready for pickup or rider handoff.'],
-      ['out_for_delivery','Out for delivery','Your order is on its way.'],
-      ['completed','Completed','Your order has been completed.']
-    ];
     const make = () => {
-      const idx = statuses.findIndex(x => x[0] === o.status);
+      const statuses = orderStatus.timeline(o);
+      const idx = statuses.findIndex(([key]) => key === orderStatus.status(o));
+      const [title, detail, icon] = orderStatus.copy(o);
+      const fulfillment = orderStatus.mode(o);
       const cancelled = o.status === 'cancelled';
-      return `${pageHead('Track order', true, `<span class="chip">${esc(o.id)}</span>`)}
-        <div class="panel"><h2>${cancelled ? 'Order cancelled' : (statuses[Math.max(idx,0)]?.[1] || 'Order update')}</h2>
-        <p class="mu sm">From ${esc(r?.name || 'Store')} · Status from Supabase</p></div>
+      return `${pageHead(fulfillment === 'pickup' ? 'Track pickup' : 'Track order', true)}
+        <div class="panel pp-order-status">
+          <span class="pp-order-status-icon">${ic(icon,24)}</span>
+          <div><p class="pp-order-status-mode">${fulfillment === 'pickup' ? 'Store pickup' : fulfillment === 'delivery' ? 'Delivery' : 'Order status'}</p>
+          <h2>${esc(title)}</h2><p class="mu sm">${esc(detail)}</p></div>
+        </div>
         <div class="panel"><ol class="tl">${cancelled
           ? `<li class="cur"><b>Cancelled</b><div class="sm">This order was cancelled.</div></li>`
-          : statuses.map(([key,title,detail],i)=>`<li class="${i<=idx?'done':''} ${i===idx?'cur':''}">
-              <span class="b">${ic(i<=idx?'check':'clock',16)}</span><div><b>${title}</b><div class="sm">${detail}</div></div></li>`).join('')}
+          : statuses.map(([,title],i)=>`<li class="${i<=idx?'done':''} ${i===idx?'cur':''}"${i===idx?' aria-current="step"':''}>
+              <span class="b">${ic(i<idx?'check':'clock',16)}</span><b>${title}</b></li>`).join('')}
         </ol></div>
-        <div class="panel"><b>Delivering to</b><p>${esc(o.addr || 'Address on order')}</p>
+        <div class="panel"><b>${orderLocationLabel(o)}</b><p>${esc(orderLocation(o))}</p>
         <div class="row sp"><b>Total</b><b>${peso(o.total)}</b></div></div>`;
     };
     return {html:`<section class="view" id="trk">${make()}</section>`,after:()=>{
@@ -551,10 +561,10 @@ V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r=R
         try {
           const db=window.PAPALITA_DB;
           if(!db) return;
-          const {data,error}=await db.from('orders').select('id,status,updated_at').eq('id',id).eq('customer_id',S.user.id).single();
+          const {data,error}=await db.from('orders').select('id,status,fulfillment_type,updated_at').eq('id',id).eq('customer_id',S.user.id).single();
           if(error) throw error;
-          if(data && data.status!==o.status){
-            o.status=data.status; o.upd=Date.parse(data.updated_at)||Date.now();
+          if(data && (data.status!==o.status || (data.fulfillment_type && data.fulfillment_type!==o.fulfillment))){
+            o.status=data.status; o.fulfillment=data.fulfillment_type || o.fulfillment; o.upd=Date.parse(data.updated_at)||Date.now();
             save(); const el=$('#trk'); if(el) el.innerHTML=make();
             updateChrome();
           }
@@ -570,14 +580,14 @@ function reorder(o) { const lines = []; o.items.forEach(l => { const x = ITEM(l.
   const go = () => { S.cart = { rid: o.rid, lines: lines.map(l => ({...l, rid: o.rid})) }; save(); updateChrome(true); nav('/cart'); }; S.cart.lines.length && S.cart.rid !== o.rid ? confirmDlg('Replace your current cart with this order?', 'Replace cart').then(ok => ok && go()) : go(); }
 let OT='current';
 V.ordersView = (_, p) => { if (p && p.get('t')) OT = p.get('t'); const cur = myOrders().filter(isCurrent), hist = myOrders().filter(o => !isCurrent(o)), list = OT === 'current' ? cur : hist;
-  const card = o => { const s = stageOf(o), r=R(o.rid)||{name:'Store'}, st = s < 0 ? (o.status === 'refunded' ? 'Refunded' : 'Cancelled') : s === 5 ? 'Completed' : STEPS[s][0];
+  const card = o => { const s = stageOf(o), r=R(o.rid)||{name:'Store'}, st = orderStatus.copy(o)[0];
     return `<div class="panel" tabindex="0" role="link" style="cursor:pointer" data-a="odetail" data-id="${o.id}"><div class="row">${`<div style="width:64px">${photo(o.items[0]?.img, o.items[0]?.name||'Order', { ar: '1', w: 200 }).replace('class="ph', 'style="border-radius:14px" class="ph')}</div>`}<div class="grow"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${st}</span></div><p class="mu sm">${o.id} · ${new Date(o.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })} · ${o.items.reduce((a, l) => a + l.qty, 0)} items</p><b>${peso(o.total)}</b></div></div>
-    <div class="row" style="margin-top:12px">${isCurrent(o) ? `<button class="btn p sm grow" data-a="gotrack" data-id="${o.id}">${ic('bike', 16)}Track</button>` : `<button class="btn p sm grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}<button class="btn s sm grow" data-a="odetail" data-id="${o.id}">Details</button></div></div>`; };
+    <div class="row" style="margin-top:12px">${isCurrent(o) ? `<button class="btn p sm grow" data-a="gotrack" data-id="${o.id}">${ic(orderStatus.mode(o)==='pickup'?'store':'orders',16)}Track</button>` : `<button class="btn p sm grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}<button class="btn s sm grow" data-a="odetail" data-id="${o.id}">Details</button></div></div>`; };
   return { html: `<section class="view">${pageHead('Orders', false)}<div class="chips" role="tablist" style="margin-bottom:14px">${[['current', `Current (${cur.length})`], ['history', 'History'], ['catering', `Catering (${myCater().length})`]].map(([k, l]) => `<button class="chip ${OT === k ? 'on' : ''}" role="tab" aria-selected="${OT === k}" data-a="otab" data-v="${k}">${l}</button>`).join('')}</div>
   ${OT === 'catering' ? cateringList() : list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">${list.map(card).join('')}</div>` : emptyState('orders', OT === 'current' ? 'No active orders' : 'No past orders yet', 'Your orders will appear here.', 'Order food', 'browse')}</section>` }; };
 V.orderDetail = id => { const o = ORD(id); if (!o) return V.notFound(); const s = stageOf(o), r=R(o.rid)||{name:'Store'};
-  return { html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead(o.id)}<div class="panel"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${s < 0 ? (o.status === 'refunded' ? 'Refunded' : 'Cancelled') : s === 5 ? 'Completed' : STEPS[s][0]}</span></div><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:4px">${esc(o.cancelReason)}</p>` : ''}</div>
-  <div class="panel">${orderLines(o)}<div style="margin-top:10px">${sumHTML({ ...o, promo: o.promo && window.PROMOS.find(p => p.code === o.promo), perr: '', vat: (o.total - (o.tip || 0)) * 12 / 112 })}</div></div><div class="panel sm"><div class="row sp"><span class="mu">Deliver to</span><span style="text-align:right">${esc(o.addr)}</span></div><div class="row sp" style="margin-top:8px"><span class="mu">Payment</span><span>${payTag(o)}</span></div></div>
+  return { html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead(o.id)}<div class="panel"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${orderStatus.copy(o)[0]}</span></div><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:4px">${esc(o.cancelReason)}</p>` : ''}</div>
+  <div class="panel">${orderLines(o)}<div style="margin-top:10px">${sumHTML({ ...o, promo: o.promo && window.PROMOS.find(p => p.code === o.promo), perr: '', vat: (o.total - (o.tip || 0)) * 12 / 112 })}</div></div><div class="panel sm"><div class="row sp"><span class="mu">${orderLocationLabel(o)}</span><span style="text-align:right">${esc(orderLocation(o))}</span></div><div class="row sp" style="margin-top:8px"><span class="mu">Payment</span><span>${payTag(o)}</span></div></div>
   <button class="btn s blk" data-a="receipt" data-id="${o.id}" style="margin-bottom:10px">${ic('copy', 16)}View receipt</button><div class="row">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${o.id}">Track order</button>` : `<button class="btn p grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}${s >= 0 && s <= 1 ? `<button class="btn d grow" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}</div></section>` }; };
 
 /* ---------- promos ---------- */
@@ -967,12 +977,10 @@ document.addEventListener('submit', async e => { e.preventDefault(); const f = e
 window.addEventListener('papalita-order-status', event => {
   const change=event.detail,order=S.orders.find(o=>String(o.id)===String(change?.order_id)&&o.source==='supabase'&&o.uid===S.user.id);
   if(!order||!['confirmed','preparing','ready','out_for_delivery','completed','cancelled'].includes(change.status))return;
-  order.status=change.status;order.upd=Date.now();save();updateChrome();
+  order.status=change.status;order.fulfillment=change.fulfillment_type||order.fulfillment;order.upd=Date.now();save();updateChrome();
   if(/^\/(orders|order\/|track\/)/.test(curPath())&&!sheetEl&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||''))render();
 });
 document.body.insertAdjacentHTML('afterbegin', '<div id="chrome"></div><div id="app"><main id="view" tabindex="-1"></main></div><div id="toasts" role="status" aria-live="polite"></div>');
-let PAPALITA_INSTALLED = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-window.addEventListener('appinstalled', () => { PAPALITA_INSTALLED = true; window.PAPALITA_INSTALL_PROMPT = null; if (S.user.in && curPath() === '/') render(); });
 window.addEventListener('papalita-install-ready', () => { if (S.user.in && curPath() === '/') render(); });
 const recentHTML = () => (S.recent || []).length ? `<div class="sugg"><div class="row sp" style="padding:8px 10px"><b class="sm">Recent searches</b><button class="link gl" data-a="clrrecent" style="padding:4px">Clear</button></div>${S.recent.map(q => `<button data-a="sugg" data-t="q" data-id="${esc(q)}">${ic('clock', 18)}<span>${esc(q)}</span></button>`).join('')}</div>` : '';
 document.addEventListener('focusin', e => { if (e.target.id === 'q' && !e.target.value && $('#sg')) $('#sg').innerHTML = recentHTML(); });

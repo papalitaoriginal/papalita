@@ -5,7 +5,7 @@
   const installed = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const ios = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
   const inApp = () => /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(navigator.userAgent);
-  const canOffer = () => !installed() && !dismissed && (!!offer || ios() && !inApp());
+  const canOffer = () => !installed() && !dismissed && (!!offer || !inApp() && (ios() || /Android/i.test(navigator.userAgent)));
   const changed = () => window.dispatchEvent(new Event('papalita-install-ready'));
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); offer = e; changed(); });
   window.addEventListener('appinstalled', () => { offer = null; dismissed = true; changed(); });

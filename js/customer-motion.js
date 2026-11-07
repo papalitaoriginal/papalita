@@ -2,18 +2,11 @@
 (() => {
   'use strict';
   const media = matchMedia('(prefers-reduced-motion: reduce)');
-  let paused = false;
-  try { paused = localStorage.getItem('papalita.motion.paused') === 'true'; } catch {}
   let carousel = null, revealObserver = null;
-  const stopped = () => paused || media.matches || document.hidden;
+  const stopped = () => media.matches || document.hidden;
   function apply() {
     document.documentElement.dataset.motion = stopped() ? 'paused' : 'running';
-    document.querySelectorAll('[data-motion-toggle]').forEach(b => {
-      b.textContent = media.matches ? 'Reduced motion on' : paused ? 'Play animations' : 'Pause animations';
-      b.setAttribute('aria-pressed', String(paused || media.matches));
-      b.disabled = media.matches;
-    });
-    if (carousel) carousel.toggle();
+    carousel?.toggle();
   }
   function refresh(root = document) {
     carousel?.destroy(); carousel = null;
@@ -41,14 +34,11 @@
       const toggle = () => { clearInterval(timer); timer = null; if (slides.length > 1 && !stopped() && !held) timer = setInterval(() => show(current + 1), 5500); };
       dots.forEach(b => b.onclick = () => { show(Number(b.dataset.slideIndex)); toggle(); });
       const hold = () => { held = true; toggle(); };
-      const release = () => { held = host.matches(':hover') || host.contains(document.activeElement); toggle(); };
-      host.onmouseenter = hold; host.onmouseleave = release; host.onfocusin = hold;
+      const release = () => { held = host.contains(document.activeElement); toggle(); };
+      host.onfocusin = hold;
       host.onfocusout = () => setTimeout(release, 0);
       show(0); carousel = {toggle, destroy: () => clearInterval(timer)};
     }
-    root.querySelectorAll('[data-motion-toggle]').forEach(b => b.onclick = () => {
-      paused = !paused; try { localStorage.setItem('papalita.motion.paused', String(paused)); } catch {} apply();
-    });
     apply();
   }
   media.addEventListener('change', () => { if (media.matches) document.querySelectorAll('.pp-reveal-ready').forEach(n => n.classList.add('pp-entered')); apply(); });

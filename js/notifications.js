@@ -4,7 +4,8 @@
   'use strict';
 
   const db = () => window.PAPALITA_DB;
-  const state = { user: null, rows: [], serverRows: [], panel: false, error: '', enabling: false, pushReady: false };
+  const orderStatus = window.PapalitaOrderStatus;
+  const state = { user: null, rows: [], serverRows: [], panel: false, error: '', feedback: null, enabling: false, pushReady: false };
 
   // Add your VAPID PUBLIC key after Supabase push setup.
   const vapidPublicKey = (window.FOODIE_CONFIG?.notifications?.vapidPublicKey || 'BIcPxYq1yt-b1NcNV61wT8Ix8KLEAc6pFsmQJZzYYcF8JOnpQS1_dCXW3JzhSdwxKsTgPOBwY8fiCal_oRk9vT8').trim();
@@ -20,63 +21,6 @@
     })[c]
   );
 
-  const style = document.createElement('style');
-  style.textContent = `
-    .pn-badge {
-      position:absolute;top:-3px;right:-3px;
-      background:#dc2626;color:white;
-      border-radius:99px;min-width:17px;
-      padding:1px 4px;font-size:10px;
-      font-weight:800;text-align:center
-    }
-    .pn-shade {
-      position:fixed;inset:0;
-      background:#101b1499;z-index:99990;
-      display:flex;align-items:flex-end;
-      justify-content:center
-    }
-    .pn-panel {
-      width:min(100%,540px);max-height:85dvh;
-      overflow:auto;background:white;
-      border-radius:22px 22px 0 0;
-      padding:22px 18px 32px;color:#15251b
-    }
-    .pn-row {
-      border:1px solid #e4eee7;
-      border-radius:14px;padding:13px;
-      margin:9px 0;background:white
-    }
-    .pn-row.unread {
-      background:#edf8f0;
-      border-color:#c2e8cc
-    }
-    .pn-actions {
-      display:flex;gap:8px;
-      flex-wrap:wrap;margin:12px 0
-    }
-    .pn-btn {
-      background:#087f32;color:white;
-      border:0;border-radius:11px;
-      padding:10px 14px;font-weight:700;
-      cursor:pointer
-    }
-    .pn-btn.alt {
-      background:#eef4ef;color:#14502a
-    }
-    .pn-panel small { color:#64756a }
-  `;
-  style.textContent += '\n    .pn-status-toast{position:fixed;z-index:100000;left:16px;right:16px;top:calc(12px + env(safe-area-inset-top,0px));max-width:500px;margin:auto;display:flex;align-items:center;gap:12px;background:#153c26;color:#fff;padding:14px 16px;border:1px solid #377149;border-radius:15px;box-shadow:0 12px 35px #12351f25;font:13px/1.5 Inter,system-ui,sans-serif}\n    .pn-status-toast span{flex:1;min-width:0}.pn-status-toast b{display:block}.pn-status-toast small{display:block;color:#dbeddd;font-size:12px;margin-top:3px}.pn-status-toast a{color:#fff;white-space:nowrap;text-decoration:underline;font-size:12px}.pn-status-toast button{background:none;border:0;color:white;min-width:36px;min-height:40px;font-size:24px;cursor:pointer}\n    .pn-error{color:#a23a2d;background:#fff2ed;border:1px solid #f1d9d0;padding:12px;border-radius:10px;font-size:12px;line-height:1.6;margin:14px 0}\n    .pn-btn:disabled{opacity:.5;cursor:not-allowed}.pn-panel .pn-btn{min-height:44px;font-size:12px}.pn-panel h2{font-size:21px}.pn-panel small{font-size:12px;line-height:1.6}\n    .pn-panel:focus{outline:none}\n';
-  document.head.append(style);
-
-  // Only real, customer-owned Supabase order transitions create these alerts.
-  const statusCopy = {
-    confirmed: ['Order confirmed', 'The store has accepted your order.'],
-    preparing: ['Preparing your order', 'The store is preparing your food.'],
-    ready: ['Your order is ready', 'Your order is ready for pickup or rider handoff.'],
-    out_for_delivery: ['Your order is on the way', 'Your order is out for delivery.'],
-    completed: ['Order completed', 'Your order has been completed.'],
-    cancelled: ['Order cancelled', 'The recorded order status is cancelled.']
-  };
   let requestId = 0, refreshPending = false, refreshAgain = false;
   let activeClient = null, authSubscription = null, identityPending = false, identityAgain = false;
   let channel = null, trackedUser = null, orderBaseline = false;
@@ -89,7 +33,7 @@
     ++requestId;
     if (channel && activeClient) void activeClient.removeChannel(channel).catch(() => {});
     channel = null; trackedUser = user?.id || null;
-    state.user = user; state.rows = []; state.serverRows = []; state.error = ''; fallbackRows = [];
+    state.user = user; state.rows = []; state.serverRows = []; state.error = ''; state.feedback = null; fallbackRows = [];
     document.querySelector('.pn-status-toast')?.remove();
     knownOrders.clear(); seenAlerts.clear(); orderBaseline = false;
     pushChecked=false;pushSubscription=null;state.pushReady=false;
@@ -101,12 +45,12 @@
     seenAlerts.add(note.id);
     window.dispatchEvent(new CustomEvent('papalita-order-status', {detail:{
       order_id:note.order_id, status:note.status, title:note.title,
-      body:note.body, url:note.url
+      body:note.body, url:note.url, fulfillment_type:note.fulfillment_type
     }}));
     document.querySelector('.pn-status-toast')?.remove();
     const toast = document.createElement('div'); toast.className = 'pn-status-toast';
     toast.setAttribute('role','status');
-    toast.innerHTML = `<span><b>${esc(note.title)}</b><small>${esc(note.body)}</small></span><a href="${esc(note.url)}">View order</a><button type="button" aria-label="Dismiss order update">×</button>`;
+    toast.innerHTML = `${messageAvatar()}<div class="pn-toast-copy"><small>Papalita · Now</small><b>${esc(note.title)}</b><p>${esc(note.body)}</p><a href="${esc(note.url)}">Track order</a></div><button class="pn-icon-button" type="button" aria-label="Dismiss order update">×</button>`;
     toast.querySelector('button').onclick = () => toast.remove();
     document.body.append(toast); setTimeout(() => toast.remove(), 9000);
     // A running customer app can display its own verified order updates even
@@ -119,7 +63,7 @@
         if (reg && state.user?.id === recipient) return reg.showNotification(note.title, {
           body:note.body,tag:'papalita-order:'+note.order_id,renotify:true,
           icon:'./images/papalita-icon-192-v2.png',badge:'./images/papalita-icon-192-v2.png',
-          data:{url:'./'+note.url,order_id:note.order_id,status:note.status}
+          data:{url:'./'+note.url,order_id:note.order_id,status:note.status,fulfillment_type:note.fulfillment_type}
         });
       }).catch(error => console.warn('[Papalita] Order phone alert:',error.message));
     }
@@ -129,11 +73,13 @@
     const previous = knownOrders.get(row.id);
     const timestamp = Date.parse(row.updated_at || row.created_at) || 0;
     if (previous && timestamp < previous.timestamp) return;
-    knownOrders.set(row.id, {status:row.status,timestamp});
-    if (!announce || !previous || previous.status === row.status || !statusCopy[row.status]) return;
-    const [title,body] = statusCopy[row.status];
+    const fulfillment = orderStatus.mode(row) || previous?.fulfillment || '';
+    knownOrders.set(row.id, {status:row.status, fulfillment, timestamp});
+    if (!announce || !previous || previous.status === row.status ||
+        !['confirmed','preparing','ready','out_for_delivery','completed','cancelled'].includes(row.status)) return;
+    const [title,body] = orderStatus.copy({status:row.status, fulfillment});
     const note = {id:`order:${row.id}:${row.status}:${timestamp}`, order_id:row.id,
-      status:row.status, title, body, type:'order', url:'#/track/'+row.id,
+      status:row.status, fulfillment_type:fulfillment, title, body, type:'order', url:'#/track/'+row.id,
       read_at:null, created_at:new Date(timestamp || Date.now()).toISOString(), local:true};
     fallbackRows = [note,...fallbackRows].slice(0,80);
     localAlert(note);
@@ -148,15 +94,18 @@
       const user=auth.data?.user;if(!user)return false;
       if(state.user?.id!==user.id){resetUser(user);subscribe(user.id);}
       const seq=requestId;
-      const q=await client.from('orders').select('id,customer_id,status,created_at,updated_at')
+      const q=await client.from('orders').select('id,customer_id,status,fulfillment_type,created_at,updated_at')
         .eq('id',orderId).eq('customer_id',user.id).maybeSingle();
       if(q.error)throw q.error;
       const row=q.data;
       if(seq!==requestId||state.user?.id!==user.id||!row||row.id!==orderId||row.customer_id!==user.id)return false;
       const id='order:'+row.id+':placed';if(seenAlerts.has(id))return true;
       recordOrder(row,false);orderBaseline=true;
-      const note={id,order_id:row.id,status:row.status,title:'Order placed',
-        body:row.status==='pending'?'Your Papalita order was received. Waiting for the store to confirm.':'Your Papalita order was saved. Open it to see the latest status.',
+      const fulfillment = orderStatus.mode(row);
+      const note={id,order_id:row.id,status:row.status,fulfillment_type:fulfillment,title:'Order placed',
+        body:fulfillment === 'pickup' ? 'The store received your pickup order. We’ll let you know when it’s ready.'
+          : row.status === 'pending' ? 'The store received your order. Waiting for confirmation.'
+          : 'Your order was saved. Open tracking for the latest status.',
         type:'order',url:'#/track/'+row.id,read_at:null,created_at:row.created_at,local:true};
       fallbackRows=[note,...fallbackRows].slice(0,80);localAlert(note);combineRows();
       if(state.panel)draw();return true;
@@ -176,7 +125,12 @@
   }
   function combineRows(serverRows) {
     if (serverRows) state.serverRows = serverRows;
-    const rows = state.serverRows || [];
+    const rows = (state.serverRows || []).map(note => {
+      const orderId = String(note.url || '').match(/#\/track\/([a-f0-9-]{36})(?:[?&#]|$)/i)?.[1];
+      if (!orderId && note.type !== 'order') return note;
+      const [title, body] = orderStatus.message(note.title || '', note.body || '', knownOrders.get(orderId));
+      return {...note, order_id: orderId, title, body};
+    });
     // If the server has a matching record, its durable notification wins.
     const fallback = fallbackRows.filter(note => !rows.some(n => n.url === note.url && n.title === note.title));
     state.rows = [...rows,...fallback].sort((a,b) => Date.parse(b.created_at)-Date.parse(a.created_at)).slice(0,100);
@@ -199,7 +153,7 @@
       const results = await Promise.allSettled([
         db().from('customer_notifications').select('id,user_id,title,body,type,url,read_at,created_at')
           .eq('user_id',userId).order('created_at',{ascending:false}).limit(80),
-        db().from('orders').select('id,customer_id,status,updated_at,created_at')
+        db().from('orders').select('id,customer_id,status,fulfillment_type,updated_at,created_at')
           .eq('customer_id',userId).order('created_at',{ascending:false}).limit(100)
       ]);
       if (seq !== requestId || state.user?.id !== userId) return;
@@ -263,86 +217,80 @@
       });
   }
 
+  const messageAvatar = () => '<span class="pn-avatar"><img src="images/papalita_mark_color.png" width="26" height="26" alt=""></span>';
+  const messageDate = new Intl.DateTimeFormat('en-PH', {timeZone:'Asia/Manila', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+
+  function messageRow(note) {
+    const date = new Date(note.created_at);
+    const safeUrl = /^#\/[a-z0-9/?=&_-]*$/i.test(note.url || '');
+    return `<li class="pn-message">
+      ${messageAvatar()}
+      <div class="pn-message-content">
+        <div class="pn-message-meta"><b>Papalita</b>${Number.isNaN(date.valueOf()) ? '' : `<time datetime="${esc(note.created_at)}">${esc(messageDate.format(date))}</time>`}</div>
+        <div class="pn-bubble ${note.read_at ? '' : 'unread'}">
+          <strong>${esc(note.title)}</strong>${note.read_at ? '' : '<span class="pn-unread" aria-label="Unread"></span>'}
+          <p>${esc(note.body)}</p>
+          ${safeUrl || !note.read_at ? `<div class="pn-message-actions">
+            ${safeUrl ? `<button type="button" data-pn="open" data-id="${esc(note.id)}">${note.order_id ? 'Track order' : 'Open'} <span aria-hidden="true">→</span></button>` : ''}
+            ${note.read_at ? '' : `<button type="button" class="pn-mark" data-pn="read" data-id="${esc(note.id)}">Mark read</button>`}
+          </div>` : ''}
+        </div>
+      </div>
+    </li>`;
+  }
+
   function draw() {
     let shade = document.querySelector('#pn-shade');
-
     if (!state.panel) {
       shade?.remove();
       return;
     }
 
     const opening = !shade;
-    if (!shade) {
+    if (opening) {
       shade = document.createElement('div');
       shade.id = 'pn-shade';
       shade.className = 'pn-shade';
       document.body.append(shade);
     }
 
-    const supported =
-      window.isSecureContext && 'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window;
+    const scroll = shade.querySelector('.pn-messages')?.scrollTop || 0;
+    const focused = shade.contains(document.activeElement) ? document.activeElement.dataset : null;
+    const supported = window.isSecureContext && 'serviceWorker' in navigator &&
+      'PushManager' in window && 'Notification' in window;
+    const unread = state.rows.filter(note => !note.read_at).length;
 
     shade.innerHTML = `
-      <div class="pn-panel" role="dialog"
-           aria-modal="true" aria-label="Papalita notifications">
-        <div style="display:flex;align-items:center;
-                    justify-content:space-between">
-          <h2 style="margin:0">🔔 Notifications</h2>
-          <button class="pn-btn alt" data-pn="close">
-            Close ✕
-          </button>
+      <section class="pn-panel" role="dialog" aria-modal="true" aria-labelledby="pn-heading" tabindex="-1">
+        <header class="pn-header">
+          ${messageAvatar()}
+          <div class="pn-heading"><h2 id="pn-heading">Messages</h2><p>Order updates from Papalita</p></div>
+          <button type="button" class="pn-icon-button" data-pn="close" aria-label="Close messages">×</button>
+        </header>
+        <div class="pn-toolbar">
+          <span>${unread ? `${unread} unread` : 'You’re all caught up'}</span>
+          <button type="button" class="pn-text-button" data-pn="readall" ${unread ? '' : 'disabled'}>Mark all read</button>
         </div>
-
-        <div class="pn-actions">
-          <button class="pn-btn" data-pn="enable"
-            ${!state.user || !supported || state.enabling ? 'disabled' : ''}>
-            ${state.enabling ? 'Enabling…' : state.pushReady ? 'Reconnect phone notifications' : 'Enable phone notifications'}
-          </button>
-          <button class="pn-btn alt" data-pn="readall"
-            ${!state.user ? 'disabled' : ''}>
-            Mark all read
-          </button>
+        <div class="pn-messages">
+          ${state.error ? `<div class="pn-error" role="alert">${esc(state.error)} <button type="button" class="pn-text-button" data-pn="refresh">Try again</button></div>` : ''}
+          ${state.rows.length ? `<ul class="pn-thread">${state.rows.map(messageRow).join('')}</ul>`
+            : `<div class="pn-empty">${messageAvatar()}<b>${state.user ? 'No messages yet' : 'Sign in to see your messages'}</b><p>${state.user ? 'Updates about your orders will appear here.' : 'Your order updates are linked to your account.'}</p></div>`}
         </div>
-
-        <small>
-          ${!state.user
-            ? 'Sign in to sync notifications across devices.'
-            : !supported
-              ? 'Phone notifications need HTTPS and a supported browser. On iPhone, open the installed home-screen app.'
-              : Notification.permission === 'granted'
-                ? state.pushReady ? 'This browser’s subscription is registered with Papalita.' : 'Permission allowed. Tap Enable to register this phone.'
-                : 'Tap Enable to request permission.'}
-        </small>
-
-        ${state.error ? `<p class="pn-error" role="alert">${esc(state.error)}</p><button class="pn-btn alt" data-pn="refresh">Try again</button>` : ''}
-        ${state.rows.length
-          ? state.rows.map(n => `
-            <div class="pn-row ${n.read_at ? '' : 'unread'}">
-              <strong>${esc(n.title)}</strong>
-              <p style="margin:6px 0">${esc(n.body)}</p>
-              <small>${new Date(n.created_at)
-                .toLocaleString('en-PH',{timeZone:'Asia/Manila'})}</small>
-              <div class="pn-actions">
-                ${!n.read_at ? `
-                  <button class="pn-btn alt"
-                    data-pn="read" data-id="${esc(n.id)}">
-                    Mark read
-                  </button>` : ''}
-                ${n.url ? `
-                  <button class="pn-btn"
-                    data-pn="open" data-id="${esc(n.id)}">
-                    View
-                  </button>` : ''}
-              </div>
-            </div>
-          `).join('')
-          : '<p style="padding:20px 0">No new notifications yet.</p>'}
-      </div>
-    `;
-    const panel=shade.querySelector('.pn-panel'); panel.tabIndex=-1;
-    if(opening)panel.focus();
+        ${state.feedback ? `<p class="pn-feedback${state.feedback.error ? ' is-error' : ''}" role="${state.feedback.error ? 'alert' : 'status'}">${esc(state.feedback.text)}</p>` : ''}
+        <footer class="pn-settings">
+          <span>${state.pushReady ? 'Phone alerts on' : 'Get updates on your phone'}</span>
+          <button type="button" class="pn-text-button" data-pn="enable" ${!state.user || !supported || state.enabling ? 'disabled' : ''}>
+            ${state.enabling ? 'Connecting…' : state.pushReady ? 'Reconnect' : 'Enable alerts'}
+          </button>
+        </footer>
+      </section>`;
+    shade.querySelector('.pn-messages').scrollTop = scroll;
+    const panel = shade.querySelector('.pn-panel');
+    if (focused?.pn) {
+      const next = [...panel.querySelectorAll('[data-pn]')].find(button =>
+        button.dataset.pn === focused.pn && button.dataset.id === focused.id && !button.disabled);
+      (next || panel).focus({preventScroll:true});
+    } else if (opening) panel.focus();
   }
 
   function close() {
@@ -399,26 +347,32 @@
     }
   }
 
+  function report(text, error = false) {
+    state.feedback = {text, error};
+    if (state.panel) draw();
+  }
+
   async function enable() {
     if (state.enabling) return;
-    if (!window.isSecureContext || !('Notification' in window) || !navigator.serviceWorker || !('PushManager' in window)) { alert('Open Papalita through HTTPS in Chrome, or use the installed app on iPhone.'); return; }
+    if (!window.isSecureContext || !('Notification' in window) || !navigator.serviceWorker || !('PushManager' in window)) { report('Open Papalita in Chrome, or use the installed app on iPhone.', true); return; }
     if (!state.user) {
-      alert('Please sign in first.');
+      report('Please sign in first.', true);
       return;
     }
 
     if (!vapidPublicKey) {
-      alert('Push notifications need the VAPID public key configured.');
+      report('Phone alerts need a notification key.', true);
       return;
     }
 
-    state.enabling=true;state.pushReady=false;
+    state.enabling=true;state.pushReady=false;state.feedback=null;
+    if (state.panel) draw();
     const enablingUserId = state.user.id;
     try {
       const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
 
       if (permission !== 'granted') {
-        alert('Notifications were not allowed. Enable Papalita notifications in your browser’s site settings, then try again.');
+        report('Notifications were not allowed. Enable them in Chrome site settings and try again.', true);
         return;
       }
 
@@ -434,13 +388,14 @@
           tag:'papalita-phone-registered',icon:'./images/papalita-icon-192-v2.png',
           data:{url:'./#/notifications'}
         });
-        alert('Phone notifications enabled. Check your phone notification panel.');
+        report('Phone alerts are on. Check your Android notification panel.');
       } catch(displayError) {
-        alert('Phone registered, but Android could not display the notification. Check Chrome/Papalita notification settings: '+displayError.message);
+        console.warn('[Papalita] Phone alert preview:', displayError.message);
+        report('Phone registered. Check that Android allows Chrome or Papalita notifications.', true);
       }
     } catch (err) {
       console.error(err);
-      alert('Could not enable notifications: ' + err.message);
+      report('Could not enable alerts. ' + err.message, true);
     } finally { state.enabling = false; if (state.panel) draw(); }
   }
 
@@ -456,7 +411,7 @@
       .update({ read_at: new Date().toISOString() })
       .eq('user_id',state.user.id).in('id', ids);
 
-    if (error) alert(error.message);
+    if (error) { report('Could not mark messages as read. Try again.', true); return; }
     await refresh();
   }
 
