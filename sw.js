@@ -1,7 +1,7 @@
 /* Only public static files are cached. Supabase requests always use the network. */
-const CACHE = 'papalita-customer-ui-20261106-v1';
+const CACHE = 'papalita-customer-ui-20261107-notifications-v2';
 const ASSETS = ['./index.html','./customer-polish.css','./manifest.webmanifest',
- './js/app.js','./js/config.js','./js/supabase.js','./js/images.js','./js/data.js',
+ './js/notifications.js','./js/app.js','./js/config.js','./js/supabase.js','./js/images.js','./js/data.js',
  './js/customer-motion.js','./js/customer-install.js','./js/customer-legal.js',
  './images/papalita_mark_color.png','./images/papalita_full_white.png',
  './images/papalita-icon-192-v2.png','./images/papalita-icon-512-v2.png'];
@@ -34,8 +34,8 @@ self.addEventListener('push', event => {
   const orderId = typeof data.order_id === 'string' && /^[0-9a-f-]{36}$/i.test(data.order_id)
     ? data.order_id : null;
   const safeUrl = orderId ? './#/track/' + orderId :
-    typeof data.url === 'string' && /^\.\/#\/(orders|notifications|track\/[0-9a-f-]{36})$/i.test(data.url)
-      ? data.url : './#/orders';
+    typeof data.url === 'string' && /^(?:\.\/)?#\/[a-z0-9/?=&_-]*$/i.test(data.url)
+      ? './'+data.url.replace(/^\.\//,'') : './#/orders';
   const options = {
     body: String(data.body || 'You have an order update.'),
     icon: './images/papalita-icon-192-v2.png',
