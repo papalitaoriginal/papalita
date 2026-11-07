@@ -256,7 +256,10 @@ const fillPopular = () => {
 };
 
 const foodVisual = () => {
-  const choices = ALL().filter(x=>x.item.available && window.photoUrl(x.item.img)).slice(0,3);
+  const choices = RS.flatMap(rest => {
+    const item = rest.items.find(item => item.available && window.photoUrl(item.img));
+    return item ? [{item, rest}] : [];
+  });
   if (!choices.length) return `<div class="pp-hero-logo"><img src="images/papalita_mark_color.png" alt="Papalita"></div>`;
   return `<div class="pp-food-slides" data-food-slideshow aria-label="Food from the Papalita menu">${choices.map(({item,rest},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(item.img,`${item.name} from ${rest.name}`,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(item.name)}</b><small>${esc(rest.name)}</small></div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Food photos">${choices.map(({item},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(item.name)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
 };
