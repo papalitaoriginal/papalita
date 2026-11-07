@@ -5,18 +5,37 @@ const C=window.FOODIE_CONFIG,RS=window.RESTAURANTS,CATS=window.CATEGORIES;
 const orderStatus = window.PapalitaOrderStatus;
 let catalogueError='',commercialError='';
 const deliveryFees=new Map();
+let promoRequest=null;
+function refreshPromotions(){
+  if(promoRequest)return promoRequest;
+  promoRequest=(async()=>{
+    try{
+      const {data,error}=await window.PAPALITA_DB.from('papalita_promo_codes')
+        .select('code,title,type,value,cap,min_order,expires_at,status')
+        .eq('status','active').gte('expires_at',new Date().toISOString());
+      if(error)throw error;
+      const now=Date.now();
+      window.PROMOS=(data||[]).filter(p=>p.status==='active'&&['flat','percent','ship'].includes(p.type)&&Date.parse(p.expires_at)>now)
+        .map(p=>({code:p.code,title:p.title,desc:'',type:p.type,value:Number(p.value),cap:p.cap==null?null:Number(p.cap),min:Number(p.min_order),exp:p.expires_at.slice(0,10),expires_at:p.expires_at,active:true}));
+      return true;
+    }catch{
+      window.PROMOS=[];
+      return false;
+    }
+  })().finally(()=>{promoRequest=null;});
+  return promoRequest;
+}
 async function refreshCommercialData(){
-  const client=window.PAPALITA_DB;deliveryFees.clear();window.PROMOS=[];
-  if(!client){commercialError='Supabase is not configured.';return;}
+  const client=window.PAPALITA_DB;deliveryFees.clear();
+  if(!client){window.PROMOS=[];commercialError='Supabase is not configured.';return;}
   const [fees,promos]=await Promise.allSettled([
     client.from('papalita_delivery_fees').select('barangay,fee,extra_minutes,distance_km'),
-    client.from('papalita_promo_codes').select('code,title,type,value,cap,min_order,expires_at,status').eq('status','active').gte('expires_at',new Date().toISOString())
+    refreshPromotions()
   ]);
   const errors=[];
   if(fees.status==='fulfilled'&&!fees.value.error){for(const f of fees.value.data||[])if(Number.isFinite(Number(f.fee))&&Number(f.fee)>=0)deliveryFees.set(f.barangay,Number(f.fee));}
   else errors.push('Delivery charges could not load.');
-  if(promos.status==='fulfilled'&&!promos.value.error)window.PROMOS=(promos.value.data||[]).filter(p=>['flat','percent','ship'].includes(p.type)&&Date.parse(p.expires_at)>=Date.now()).map(p=>({code:p.code,title:p.title,desc:'',type:p.type,value:Number(p.value),cap:p.cap==null?null:Number(p.cap),min:Number(p.min_order),exp:p.expires_at.slice(0,10),expires_at:p.expires_at,active:true}));
-  else errors.push('Promotions could not load.');
+  if(promos.status!=='fulfilled'||!promos.value)errors.push('Promotions could not load.');
   commercialError=errors.join(' ');
 }
 try{
@@ -256,13 +275,60 @@ const fillPopular = () => {
 };
 
 const foodVisual = () => {
+  const seen = new Set();
   const choices = RS.flatMap(rest => {
-    const item = rest.items.find(item => item.available && window.photoUrl(item.img));
-    return item ? [{item, rest}] : [];
+    for(const item of rest.items){
+      if(!item.available)continue;
+      const url=window.photoUrl(item.img);
+      if(!url||seen.has(url))continue;
+      seen.add(url);
+      return [{item, rest}];
+    }
+    return [];
   });
   if (!choices.length) return `<div class="pp-hero-logo"><img src="images/papalita_mark_color.png" alt="Papalita"></div>`;
   return `<div class="pp-food-slides" data-food-slideshow aria-label="Food from the Papalita menu">${choices.map(({item,rest},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(item.img,`${item.name} from ${rest.name}`,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(item.name)}</b><small>${esc(rest.name)}</small></div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Food photos">${choices.map(({item},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(item.name)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
 };
+const voucherMoney = n => '₱' + n.toLocaleString('en-PH', {maximumFractionDigits:2});
+function updateHomeVoucher(slot){
+  const now=Date.now();
+  const promo=window.PROMOS.filter(p=>p.active&&Date.parse(p.expires_at)>now)
+    .sort((a,b)=>Date.parse(a.expires_at)-Date.parse(b.expires_at)||a.code.localeCompare(b.code))[0];
+  if(!promo){
+    if(!slot.hidden)slot.innerHTML='';
+    slot.hidden=true;
+    return;
+  }
+  const title=promo.type==='ship'?'Free delivery':promo.type==='percent'?`${promo.value}% off your order`:`${voucherMoney(promo.value)} off your order`;
+  const terms=[promo.min>0?`Min. order ${voucherMoney(promo.min)}`:'No minimum order'];
+  if(promo.type==='percent'&&promo.cap!==null)terms.push(`Up to ${voucherMoney(promo.cap)} off`);
+  const details=terms.join(' · ');
+  const key=JSON.stringify([promo.code,title,details,promo.expires_at]);
+  if(slot.hidden||slot.dataset.voucher!==key){
+    slot.innerHTML=`<section class="pp-home-voucher" aria-labelledby="pp-voucher-title">
+      <div class="pp-voucher-top"><span class="pp-voucher-label">Limited-time offer</span><span class="pp-voucher-timer">${ic('clock',15)} Ends in <span data-voucher-clock></span></span></div>
+      <h2 id="pp-voucher-title">${esc(title)}</h2><p>${esc(details)}</p>
+      <div class="pp-voucher-code"><code>${esc(promo.code)}</code><button type="button" class="btn p" data-a="copy" data-id="${esc(promo.code)}" aria-label="Copy code ${esc(promo.code)}">Copy code</button></div>
+    </section>`;
+    slot.dataset.voucher=key;
+    slot.hidden=false;
+  }
+  const seconds=Math.ceil((Date.parse(promo.expires_at)-now)/1000);
+  const hours=Math.floor(seconds/3600), minutes=Math.floor(seconds/60)%60;
+  $('[data-voucher-clock]',slot).textContent=[hours,minutes,seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
+}
+function watchHomeVoucher(){
+  const slot=$('#pp-home-voucher');
+  if(!slot)return;
+  const refresh=async()=>{
+    if(document.hidden)return;
+    await refreshPromotions();
+    if(slot.isConnected)updateHomeVoucher(slot);
+  };
+  updateHomeVoucher(slot);
+  void refresh();
+  timers.push(setInterval(()=>updateHomeVoucher(slot),1000),setInterval(refresh,60000));
+}
 const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita · Good Food, Good Mood.</span><nav aria-label="Footer"><button type="button" data-a="about-papalita">About</button><a href="#/support">Contact</a><button type="button" data-papalita-legal>Terms & Privacy</button></nav></footer>`;
 V.home = () => {
   const act = myOrders().find(isCurrent);
@@ -276,13 +342,14 @@ V.home = () => {
     </aside>` : ''}
     ${catalogueError?`<div class="pp-catalog-error" role="alert">${esc(catalogueError)} <button class="link gl" data-a="retry-catalogue">Refresh</button></div>`:''}
     <div class="pp-hero"><div class="pp-hero-copy"><span class="pp-kicker">Made for your everyday</span><h1>Your local favorites,<br><em>delivered.</em></h1><p>Find your next coffee, comfort meal, or something worth sharing in Alegria.</p><button class="btn p" data-a="qa" data-id="rests">Explore stores ${ic('arrow',17)}</button></div><div class="pp-hero-visual">${foodVisual()}<div class="pp-float-note">${ic('store',23)}<span><b>From around the neighborhood</b><small>Alegria, Surigao del Norte</small></span></div></div></div>
+    <div id="pp-home-voucher" hidden></div>
     <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
     ${CATS.length?`<div class="pp-categories" role="group" aria-label="Menu categories"><button class="chipc on" data-a="hcat" data-id="all" aria-pressed="true">${ic('grid',16)}All food</button>${CATS.map(c=>`<button class="chipc" data-a="hcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div>`:''}
     ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic(orderStatus.mode(act)==='pickup'?'store':'orders',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(orderStatus.copy(act)[0])}</span></span>${ic('chev',18)}</a>`:''}
     <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Stores carousel"></div></div>
     <div class="sec"><div class="sec-h"><h2>On the menu</h2><button class="link gl" data-a="qa" data-id="order">See all ${ic('arrow',16)}</button></div><div class="chips popular-chips" role="group" aria-label="Filter menu"><button class="chip on" data-a="pcat" data-id="all" aria-pressed="true">All food</button>${CATS.map(c=>`<button class="chip" data-a="pcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="popular-grid" id="popular-dishes"></div></div>
     ${RS.some(r=>r.catering)?`<a class="mint row home-promo-card" href="#/catering">${ic('box',24)}<span class="grow"><b>Bring everyone to the table.</b><br><span class="sm mu">Ask participating stores about catering.</span></span>${ic('arrow',19)}</a>`:''}
-    ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();}};
+    ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();watchHomeVoucher();}};
 };
 function authLayout(){return `<div class="pp-auth-layout"><aside class="pp-auth-pitch" aria-label="About Papalita"><div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><span><b>Papalita</b><small>GOOD FOOD, GOOD MOOD.</small></span></div><div><span class="pp-kicker">Alegria, Surigao del Norte</span><h2>A good mood<br>is <em>on the menu.</em></h2><p>Cafés, comfort food, and local favorites. Find your next delicious moment with Papalita.</p></div><div class="pp-auth-photo">${foodVisual()}</div></aside><div class="pp-auth-form">${authScreen()}</div></div>`;}
 
@@ -845,7 +912,7 @@ const A = {
   jump: b => { $$('.chips.solid .chip').forEach(x => x.classList.toggle('on', x === b)); const e = document.getElementById(b.dataset.id); e && e.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   usepromo: b => setPromo(b.dataset.id), rmpromo: () => { S.promo = null; save(); render(); },
   applypromo: () => { const v = $('#pc').value.trim().toUpperCase(); if (!v) return ($('#pcerr').textContent = 'Enter a promo code.'); if (!window.PROMOS.find(p => p.code === v && p.active !== false)) return ($('#pcerr').textContent = 'That code is not valid.'); setPromo(v); },
-  copy: b => { try { navigator.clipboard.writeText(b.dataset.id); toast(`Copied ${b.dataset.id}.`); } catch (e) { toast('Copy is not available here.'); } },
+  copy: async b => { try { await navigator.clipboard.writeText(b.dataset.id); toast(`Copied ${b.dataset.id}.`); } catch { toast('Could not copy the code. You can enter it manually at checkout.'); } },
   qty: b => { const l = S.cart.lines.find(x => x.key === b.dataset.k); l.qty += +b.dataset.d; if (l.qty < 1) return A.rmline(b); if (l.qty > 99) l.qty = 99; save(); updateChrome(); render(); },
   editline: b => openItem(b.dataset.id, b.dataset.k),
   rmline: b => { const i = S.cart.lines.findIndex(x => x.key === b.dataset.k), l = S.cart.lines[i], rid = S.cart.rid; S.cart.lines.splice(i, 1); S.cart.rid = S.cart.lines[0]?.rid || null; save(); updateChrome(); render(); toast(`${l.name} removed.`, 'Undo', () => { S.cart.lines.splice(i, 0, l); S.cart.rid = rid; save(); updateChrome(); render(); }); },

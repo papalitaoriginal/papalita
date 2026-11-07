@@ -9,7 +9,6 @@
     carousel?.toggle();
   }
   function refresh(root = document) {
-    carousel?.destroy(); carousel = null;
     revealObserver?.disconnect();
     const nodes = root.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window && !stopped()) {
@@ -22,6 +21,8 @@
       });
     }
     const host = root.querySelector('[data-food-slideshow]');
+    if (carousel?.host === host) return;
+    carousel?.destroy(); carousel = null;
     if (host) {
       const slides = [...host.querySelectorAll('[data-food-slide]')];
       const dots = [...host.querySelectorAll('[data-slide-index]')];
@@ -31,13 +32,17 @@
         slides.forEach((el, i) => { el.classList.toggle('pp-slide-active', i === current); el.inert = i !== current; el.setAttribute('aria-hidden', String(i !== current)); });
         dots.forEach((b, i) => b.setAttribute('aria-pressed', String(i === current)));
       };
-      const toggle = () => { clearInterval(timer); timer = null; if (slides.length > 1 && !stopped() && !held) timer = setInterval(() => show(current + 1), 5500); };
+      const toggle = () => { clearInterval(timer); timer = null; if (host.isConnected && slides.length > 1 && !stopped() && !held) timer = setInterval(() => show(current + 1), 5500); };
       dots.forEach(b => b.onclick = () => { show(Number(b.dataset.slideIndex)); toggle(); });
       const hold = () => { held = true; toggle(); };
       const release = () => { held = host.contains(document.activeElement); toggle(); };
       host.onfocusin = hold;
       host.onfocusout = () => setTimeout(release, 0);
-      show(0); carousel = {toggle, destroy: () => clearInterval(timer)};
+      show(0); carousel = {host, toggle, destroy: () => {
+        held = true;
+        clearInterval(timer);
+        host.onfocusin = host.onfocusout = null;
+      }};
     }
     apply();
   }
