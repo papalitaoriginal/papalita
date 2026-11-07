@@ -356,6 +356,7 @@ function chrome() {
 const defAddr = () => S.addrs.find(a => a.def) || S.addrs[0];
 let holdCart = false;
 function updateChrome(bump) {
+  setTimeout(()=>window.dispatchEvent(new Event('papalita-ui-rendered')),0);
   const a = activeNav(), d = deskNav(); $$('[data-p]').forEach(el => { const on = el.dataset.p === a; el.classList.toggle('on', on); on ? el.setAttribute('aria-current', 'page') : el.removeAttribute('aria-current'); });
   $$('[data-d]').forEach(el => el.classList.toggle('on', el.dataset.d === d));
   if (!holdCart) $$('[data-cc]').forEach(el => { const n = cartCount(); el.hidden = !n; el.textContent = n; if (bump) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } });
@@ -413,7 +414,7 @@ const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita 
 V.home = () => {
   const act = myOrders().find(isCurrent);
   return {html:`<section class="view pp-customer-home">
-    <header class="pp-home-header"><a href="#/" class="pp-mini-brand" aria-label="Papalita home"><img src="images/papalita_mark_color.png" alt="">Papalita</a><button class="loc" data-a="loc" aria-label="Change delivery location"><span class="lab">Deliver to</span><span class="locv">${esc(S.loc.label)}${ic('chevd',14)}</span></button><a class="pp-home-cart" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a></header>
+    <header class="pp-home-header"><a href="#/" class="pp-mini-brand" aria-label="Papalita home"><img src="images/papalita_mark_color.png" alt="">Papalita</a><button class="loc" data-a="loc" aria-label="Change delivery location"><span class="lab">Deliver to</span><span class="locv">${esc(S.loc.label)}${ic('chevd',14)}</span></button><a class="pp-home-bell pp-home-cart" href="#/notifications" aria-label="Notifications">${ic('bell',21)}</a><a class="pp-home-cart" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a></header>
     ${catalogueError?`<div class="pp-catalog-error" role="alert">${esc(catalogueError)} <button class="link gl" data-a="retry-catalogue">Refresh</button></div>`:''}
     <div class="pp-hero"><div class="pp-hero-copy"><span class="pp-kicker">Made for your everyday</span><h1>Your local favorites,<br><em>delivered.</em></h1><p>Find your next coffee, comfort meal, or something worth sharing in Alegria.</p><button class="btn p" data-a="qa" data-id="rests">Explore stores ${ic('arrow',17)}</button></div><div class="pp-hero-visual">${foodVisual()}<div class="pp-float-note">${ic('store',23)}<span><b>From around the neighborhood</b><small>Alegria, Surigao del Norte</small></span></div></div></div>
     <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
@@ -630,7 +631,7 @@ function rateSheet(oid) { const o = ORD(oid), r = R(o.rid), st = { store: 0, rid
   $('form', el).onsubmit = e => { e.preventDefault(); if (!st.store) return ($('#re', el).textContent = 'Please rate the restaurant (1 to 5 stars).'); o.review = { store: st.store, rider: o.rider ? st.rider : 0, tags: st.tags, comment: $('#rc', el).value.trim(), at: Date.now() }; o.upd = Date.now(); save(); closeSheet(); toast('Thanks for your review!'); render(); }; }
 /* ---------- motion: fly to cart ---------- */
 const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function cartTarget() { for (const el of [$('.pp-home-cart'), $('.pp-cart-anchor'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
+function cartTarget() { for (const el of [$('.pp-home-cart:not(.pp-home-bell)'), $('.pp-cart-anchor'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
 function pulseCart() { holdCart = false; updateChrome(true); const t = cartTarget(); if (t) { t.el.classList.remove('cshake'); void t.el.offsetWidth; t.el.classList.add('cshake'); } }
 function flyTo(fx) { if (!fx || !document.body.animate || calmMotion()) return pulseCart(); const t = cartTarget(); if (!t || !fx.rect || !fx.rect.width) return pulseCart();
   const size = 58, x0 = fx.rect.left + fx.rect.width / 2 - size / 2, y0 = fx.rect.top + fx.rect.height / 2 - size / 2, x1 = t.r.left + t.r.width / 2 - size / 2, y1 = t.r.top + t.r.height / 2 - size / 2, dx = x1 - x0, dy = y1 - y0;
@@ -644,7 +645,38 @@ function printReceipt(id) { const o = ORD(id); if (!o) return; const old = $('#p
 
 /* ---------- tracking ---------- */
 const PATH = 'M60 210 L60 130 L210 130 L210 70 L340 70';
-V.track = id => { let o = ORD(id); if (!o) return V.notFound(); const r = R(o.rid);
+// A push link can refer to a real order that has not been cached on this device.
+function linkedOrderView(id) {
+  return {html:`<section class="view"><div class="panel" id="linked-order-state" role="status"><h2>Loading your order…</h2><p class="mu sm">Checking the latest details with Papalita.</p></div></section>`,after:async()=>{
+    try {
+      const auth=await authDB().auth.getUser();
+      if(auth.error||!auth.data?.user)throw Error('Please sign in to view this order.');
+      const uid=auth.data.user.id;
+      const result=await authDB().from('orders').select('*').eq('id',id).eq('customer_id',uid).maybeSingle();
+      if(result.error)throw result.error;
+      const row=result.data;if(!row||row.customer_id!==uid)throw Error('This order is unavailable for your account.');
+      const items=await authDB().from('order_items').select('product_id,product_name,quantity,unit_price,selected_options,special_instructions').eq('order_id',id);
+      if(items.error)throw items.error;
+      if(S.user.id!==uid||!S.user.in)return;
+      const order={id:row.id,rid:row.store_id,total:Number(row.total_amount)||0,
+        status:row.status,demo:false,uid,createdAt:Date.parse(row.created_at)||Date.now(),
+        upd:Date.parse(row.updated_at)||Date.now(),addr:row.delivery_address||'',
+        contact:{name:row.customer_name||S.user.name,phone:row.contact_number||''},
+        pay:{method:row.payment_method||'cod',status:row.payment_status||'unpaid',demo:false},
+        items:(items.data||[]).map(i=>({itemId:i.product_id,name:i.product_name,qty:Number(i.quantity)||0,
+          unit:Number(i.unit_price)||0,sel:i.selected_options||{},note:i.special_instructions||'',
+          img:ITEM(i.product_id)?.item.img||''}))};
+      const old=S.orders.findIndex(o=>String(o.id)===String(row.id));
+      if(old<0)S.orders.push(order);else S.orders[old]=order;save();
+      if(curPath()==='/track/'+id)render();
+    } catch(error) {
+      const target=document.getElementById('linked-order-state');
+      if(target&&curPath()==='/track/'+id)target.innerHTML=`<h2>Could not load this order</h2><p class="mu sm">${esc(error.message||'Check your connection and try again.')}</p><button class="btn s" data-a="reload" style="margin-top:16px">Try again</button>`;
+    }
+  }};
+}
+
+V.track = id => { let o = ORD(id); if (!o) return linkedOrderView(id); const r = R(o.rid);
   if (o.demo === false) {
     const statuses = [
       ['pending','Order received','Waiting for the store to accept your order.'],
@@ -836,6 +868,7 @@ function useAuthUser(user) {
   if (S.user.id !== acc.id) { stashUser(); adoptUser(acc); }
   S.user.in = true;
   S.user.email = acc.email;
+  setTimeout(()=>window.dispatchEvent(new Event('papalita-session-ready')),0);
   save();
 }
 async function doLogin(f) {
@@ -1136,6 +1169,12 @@ document.addEventListener('submit', async e => { e.preventDefault(); const f = e
   if (f.id === 'sf') { if (v('sm').length < 10) er.sm = 'Tell us a bit more (at least 10 characters).'; if (show()) return; f.reset(); toast('Message recorded (demo). We will reply once support is connected.'); } });
 
 /* ---------- boot ---------- */
+window.addEventListener('papalita-order-status', event => {
+  const change=event.detail,order=S.orders.find(o=>String(o.id)===String(change?.order_id)&&o.demo===false&&o.uid===S.user.id);
+  if(!order||!['confirmed','preparing','ready','out_for_delivery','completed','cancelled'].includes(change.status))return;
+  order.status=change.status;order.upd=Date.now();save();updateChrome();
+  if(/^\/(orders|order\/|track\/)/.test(curPath())&&!sheetEl&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName||''))render();
+});
 document.body.insertAdjacentHTML('afterbegin', '<div id="chrome"></div><div id="app"><main id="view" tabindex="-1"></main></div><div id="toasts" role="status" aria-live="polite"></div>');
 let PAPALITA_INSTALLED = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('appinstalled', () => { PAPALITA_INSTALLED = true; window.PAPALITA_INSTALL_PROMPT = null; if (S.user.in && curPath() === '/') render(); });
