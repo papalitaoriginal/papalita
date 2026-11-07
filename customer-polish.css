@@ -222,3 +222,30 @@ body.authing{background:var(--bg)}body.authing main#view{max-width:1170px;paddin
 body:has(.pn-shade){overflow:hidden}
 .pn-feedback{margin:0;padding:10px 16px;background:#e9f4e7;color:#24553b;border-top:1px solid #d8e8d5;font-size:12px;line-height:1.45;max-height:92px;overflow:auto}
 .pn-feedback.is-error{background:#fff2e9;color:#873d2d;border-color:#f1dfd1}
+
+/* Papalita full-screen delivery tracking */
+.papa-live-map-dialog{position:fixed;inset:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:100dvh;border:0;margin:0;padding:0;overflow:hidden;background:#e7ece8;color:#17352a}
+.papa-live-map-dialog[open]{display:grid;grid-template-rows:minmax(0,1fr) auto}
+.papa-live-map-dialog::backdrop{background:#fff}
+.papa-live-map{position:absolute;inset:0;background:#e7ece8}
+.papa-live-map .leaflet-top.leaflet-right{margin-top:calc(58px + env(safe-area-inset-top))}
+.papa-live-map .leaflet-control-attribution{max-width:100%;font-size:10px}
+.papa-map-marker{background:none;border:0;filter:drop-shadow(0 3px 4px #16302646)}
+.papa-map-back,.papa-map-center{position:absolute;z-index:800;background:#fff!important;box-shadow:0 3px 12px #193e2324!important;min-height:44px;border:1px solid #e1eae4;border-radius:13px;font-size:14px}
+.papa-map-back{top:calc(14px + env(safe-area-inset-top));left:14px}
+.papa-map-center{top:calc(14px + env(safe-area-inset-top));right:14px;width:44px;padding:0}
+.papa-map-sheet{position:relative;z-index:700;background:#fff;border-radius:22px 22px 0 0;padding:12px 20px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px #16302614;max-height:55dvh;overflow:auto}
+.papa-map-brand{font-weight:800;color:#087f32;margin-bottom:4px}
+.papa-map-sheet h2{font-size:clamp(20px,5.5vw,28px)}
+.papa-map-sheet p{font-size:14px;line-height:1.4;margin-top:6px}
+.papa-map-guide{color:#4b6357;font-size:12px!important}
+.papa-map-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.papa-live-map-dialog [hidden]{display:none!important}
+.papa-map-stage{position:relative;min-height:0}
+.papa-live-map .leaflet-tile-pane{filter:saturate(.28) contrast(.94) brightness(1.025)}
+.papa-map-pin-label{position:absolute;top:11px;left:31px;background:#fff;color:#16372a;border:1px solid #d9e9df;border-radius:7px;padding:2px 6px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none}
+.papa-map-crosshair{position:absolute;z-index:680;top:50%;left:50%;width:20px;height:20px;border:2px solid #075839;border-radius:50%;background:#fff8;box-shadow:0 0 0 2px #fff;transform:translate(-50%,-50%);pointer-events:none}
+.papa-map-sheet::before{content:'';display:block;width:32px;height:4px;margin:0 auto 10px;background:#d2ded5;border-radius:4px}
+.papa-map-actions:has(> :not([hidden])){margin-top:12px}
+.papa-map-actions:not(:has(> :not([hidden]))){margin-top:0}
+.papa-map-actions .btn{min-height:44px}

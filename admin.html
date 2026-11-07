@@ -864,7 +864,7 @@ function paAppearance(){
 }
 function paDialog(title,content){
  const previousFocus=document.activeElement;
- const dialog=document.createElement('dialog');dialog.className='pa-dialog';dialog.setAttribute('aria-labelledby','pa-dialog-title');dialog.innerHTML=`<div class="pa-dialog-head"><h2 id="pa-dialog-title">${title}</h2><form method="dialog"><button class="pa-icon-button" aria-label="Close dialog">${paIcon('close')}</button></form></div><div class="pa-dialog-body">${content}</div>`;$('#root').append(dialog);dialog.addEventListener('close',()=>{dialog.remove();if(previousFocus?.isConnected)previousFocus.focus();});dialog.showModal();
+ const dialog=document.createElement('dialog');dialog.className='pa-dialog';dialog.setAttribute('aria-labelledby','pa-dialog-title');dialog.innerHTML=`<div class="pa-dialog-head"><h2 id="pa-dialog-title">${title}</h2><form method="dialog"><button class="pa-icon-button" aria-label="Close dialog">${paIcon('close')}</button></form></div><div class="pa-dialog-body">${content}</div>`;$('#root').append(dialog);dialog.addEventListener('close',()=>{dialog.remove();if(previousFocus?.isConnected)previousFocus.focus();});dialog.showModal();return dialog;
 }
 draw=function(){
  if(!sess)return gate();
@@ -1043,7 +1043,39 @@ async function paLiveOverview(){
 }
 async function paShowOrder(order){
  const items=await paRows(getAuthClient().from('order_items').select('*').eq('order_id',order.id));
- paDialog('Order #'+esc(order.id.slice(0,8)),`<p>${esc(order.customer_name||'Customer')}<br>${esc(order.contact_number||'')}<br>${esc(order.delivery_address||order.fulfillment_type||'')}</p>${paPill(order.status)}<p>${paDate(order.created_at)}</p>${items.map(i=>`<div class="row sp" style="padding:10px 0;border-bottom:1px solid var(--pa-line)"><span>${Number(i.quantity||i.qty||1)} × ${esc(i.product_name||i.name||'Product')}</span><b>${paMoney(i.line_total??Number(i.quantity||1)*Number(i.unit_price||0))}</b></div>`).join('')||'<p>No saved line items.</p>'}<div class="row sp" style="margin-top:20px;font-size:17px"><b>Total</b><b>${paMoney(paAmount(order))}</b></div><p>Payment: ${esc(order.payment_method||'—')} · ${esc(order.payment_status||'—')}</p>`);
+ const assignable=sess.role==='platform'&&order.fulfillment_type==='delivery'
+  &&['pending','confirmed','preparing','ready','out_for_delivery'].includes(order.status);
+ const dialog=paDialog('Order #'+esc(order.id.slice(0,8)),`<p>${esc(order.customer_name||'Customer')}<br>${esc(order.contact_number||'')}<br>${esc(order.delivery_address||order.fulfillment_type||'')}</p>${paPill(order.status)}<p>${paDate(order.created_at)}</p>${items.map(i=>`<div class="row sp" style="padding:10px 0;border-bottom:1px solid var(--pa-line)"><span>${Number(i.quantity||i.qty||1)} × ${esc(i.product_name||i.name||'Product')}</span><b>${paMoney(i.line_total??Number(i.quantity||1)*Number(i.unit_price||0))}</b></div>`).join('')||'<p>No saved line items.</p>'}<div class="row sp" style="margin-top:20px;font-size:17px"><b>Total</b><b>${paMoney(paAmount(order))}</b></div><p>Payment: ${esc(order.payment_method||'—')} · ${esc(order.payment_status||'—')}</p>${assignable?'<section data-pa-rider-assignment class="panel" style="margin-top:14px"><p role="status">Loading rider assignment…</p></section>':''}`);
+ if(assignable)void paLoadRiderAssignment(dialog,order.id);
+}
+async function paLoadRiderAssignment(dialog,orderId){
+ const panel=dialog.querySelector('[data-pa-rider-assignment]'),client=getAuthClient();
+ try {
+  const {data,error}=await client.rpc('papalita_tracking_admin',{p_order_id:orderId});
+  if(!dialog.open)return;
+  if(error||!Array.isArray(data?.riders))throw Error('Rider assignment is unavailable. Check the live delivery setup.');
+  const current=data.rider_id;
+  const missing=current&&!data.riders.some(rider=>rider.id===current);
+  panel.innerHTML=`<h3>Live delivery rider</h3>
+    <p class="mu sm">Only this rider can share GPS once the order is out for delivery.</p>
+    <div class="field"><label for="pa-live-rider">Assigned rider</label>
+    <select class="in" id="pa-live-rider"><option value="">Unassigned</option>
+    ${missing?`<option value="${esc(current)}" selected>Current rider (access removed)</option>`:''}
+    ${data.riders.map(rider=>`<option value="${esc(rider.id)}" ${rider.id===current?'selected':''}>${esc(rider.label)}</option>`).join('')}
+    </select></div>
+    <button class="btn p sm" data-pa-save-rider>Save assignment</button> <span role="status"></span>`;
+  const select=panel.querySelector('select'), button=panel.querySelector('button'), status=panel.querySelector('[role=status]');
+  button.onclick=async()=>{
+   const selected=select.value;
+   button.disabled=true; select.disabled=true; status.textContent='Saving…';
+   try{
+    const {error}=await client.rpc('papalita_tracking_assign',{p_order_id:orderId,p_rider_id:selected||null});
+    if(error)throw error;
+    status.textContent=selected?'Rider assigned.':'Rider unassigned.';
+   }catch(error){status.textContent=error.message||'Could not save the rider.';}
+   finally{button.disabled=false;select.disabled=false;}
+  };
+ }catch(error){panel.querySelector('p').textContent=error.message||'Could not load rider assignment.';}
 }
 function paBindOrderViews(target,rows){$$('[data-pa-live-order]',target).forEach(b=>b.onclick=async()=>{b.disabled=true;try{await paShowOrder(rows.find(o=>o.id===b.dataset.paLiveOrder));}catch(e){toast('Could not open order: '+e.message);}finally{b.disabled=false;}});}
 async function paLiveOrderView(){
