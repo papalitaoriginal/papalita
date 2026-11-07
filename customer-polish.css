@@ -53,6 +53,15 @@ main{max-width:1320px;padding-inline:20px}
 @keyframes pp-float{50%{transform:translateY(-7px) rotate(-1deg)}}
 .pp-hero-logo{display:grid;place-items:center;height:100%;border-radius:20px;background:#dfe8d8}
 .pp-hero-logo img{width:110px;max-height:150px;object-fit:contain}
+.pp-home-voucher{display:grid;gap:6px;margin-top:14px;padding:16px 18px;border:1px solid #a7d1b4;border-radius:17px;background:#eaf7ee;color:#123b27}
+.pp-voucher-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
+.pp-voucher-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.pp-voucher-timer{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:#d5efdd;color:#175334;font-size:12px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pp-home-voucher h2{color:inherit;font-size:clamp(20px,4.5vw,26px);line-height:1.2}
+.pp-home-voucher p{font-size:13px;color:#385d48}
+.pp-voucher-code{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:5px;padding:4px 5px 4px 12px;border:1px dashed #77a988;border-radius:12px}
+.pp-voucher-code code{font-family:inherit;line-height:1.3;font-size:14px;font-weight:800;letter-spacing:.035em;overflow-wrap:anywhere}
+.pp-voucher-code .btn{min-height:44px;padding:0 14px;border-radius:8px;font-size:13px;white-space:nowrap;box-shadow:none}
 .pp-home-search{margin-top:22px}
 .pp-home-search .sbox{border-radius:14px;background:#fff;border:1px solid var(--ln);height:54px;box-shadow:var(--sh)}
 .pp-home-search .sbox input{font-size:14px}.pp-home-search .sbox>.ib{background:var(--or-s);border-radius:10px;color:var(--or)}
