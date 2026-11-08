@@ -2,6 +2,7 @@
 (async () => {
 'use strict';
 const C=window.FOODIE_CONFIG,RS=window.RESTAURANTS,CATS=window.CATEGORIES;
+const APP_VERSION = '1.0';
 const orderStatus = window.PapalitaOrderStatus;
 let catalogueError='',commercialError='';
 const deliveryFees=new Map();
@@ -368,7 +369,7 @@ const customerFooter = () => `<footer class="pp-customer-footer"><span>Papalita 
 V.home = () => {
   const act = myOrders().find(isCurrent);
   return {html:`<section class="view pp-customer-home">
-    <header class="pp-home-header"><a href="#/" class="pp-mini-brand" aria-label="Papalita home"><img src="images/papalita_mark_color.png" alt="">Papalita</a><button class="loc" data-a="loc" aria-label="Change delivery location"><span class="lab">Deliver to</span><span class="locv">${esc(S.loc.label)}${ic('chevd',14)}</span></button><a class="pp-home-bell pp-home-cart" href="#/notifications" aria-label="Notifications">${ic('bell',21)}</a><a class="pp-home-cart" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a></header>
+    <header class="pp-home-header"><a href="#/" class="pp-mini-brand" aria-label="Papalita home"><img src="images/papalita_mark_color.png" alt="">Papalita</a><button class="loc" data-a="loc" aria-label="Change delivery location"><span class="lab">Deliver to</span><span class="locv">${esc(S.loc.label)}${ic('chevd',14)}</span></button><a class="pp-home-bell pp-home-cart" href="#/notifications" aria-label="Notifications">${ic('bell',21)}</a></header>
     ${window.PapalitaInstall?.canOffer() ? `<aside class="pp-install-strip" aria-label="Install Papalita">
       <img src="images/papalita-icon-192-v2.png" width="40" height="40" alt="">
       <span class="grow"><b>Papalita on your phone</b><small>Open straight from your home screen.</small></span>
@@ -646,7 +647,7 @@ V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r
   <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic(orderStatus.mode(o)==='pickup'?'store':'orders',18)}${orderStatus.mode(o)==='pickup'?'Track pickup':'Track order'}</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
 /* ---------- motion: fly to cart ---------- */
 const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function cartTarget() { for (const el of [$('.pp-home-cart:not(.pp-home-bell)'), $('.bnav a[href="#/cart"]'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
+function cartTarget() { for (const el of [$('.bnav a[href="#/cart"]'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
 function pulseCart() { holdCart = false; updateChrome(true); const t = cartTarget(); if (t) { t.el.classList.remove('cshake'); void t.el.offsetWidth; t.el.classList.add('cshake'); } }
 function flyTo(fx) { if (!fx || !document.body.animate || calmMotion()) return pulseCart(); const t = cartTarget(); if (!t || !fx.rect || !fx.rect.width) return pulseCart();
   const size = 58, x0 = fx.rect.left + fx.rect.width / 2 - size / 2, y0 = fx.rect.top + fx.rect.height / 2 - size / 2, x1 = t.r.left + t.r.width / 2 - size / 2, y1 = t.r.top + t.r.height / 2 - size / 2, dx = x1 - x0, dy = y1 - y0;
@@ -766,7 +767,7 @@ V.promos = () => ({ html: `<section class="view" style="max-width:760px;margin:0
 const row = (i, t, s, a, extra = '') => `<button class="li" data-a="${a}"><span class="ic">${ic(i, 20)}</span><span class="grow"><b>${t}</b>${s ? `<br><span class="sm mu">${s}</span>` : ''}</span>${extra}${ic('chev', 18, 'mu')}</button>`;
 V.profile = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Profile', false)}<div class="panel row">${avatar()}<div class="grow"><h2>${esc(S.user.name)}</h2><p class="mu sm">${esc(S.user.email)}${S.user.phone ? ' \u00B7 ' + esc(S.user.phone) : ''}</p></div><button class="btn s sm" data-a="go" data-id="/profile/edit">Edit</button></div>
   <div class="panel" style="padding:4px 16px">${row('pin', 'Saved addresses', S.addrs.length + ' saved', 'go2', '').replace('data-a="go2"', 'data-a="go" data-id="/addresses"')}${[['orders', 'My orders', myOrders().filter(isCurrent).length + ' active', '/orders'], ['box', 'Catering requests', myCater().length + ' sent', '/orders?t=catering'], ['nav', 'Store locations', 'Supplied store addresses', '/nearby'], ['card', 'Payment methods', 'Cash payment', '/payments'], ['heart', 'Favorites', S.fav.items.length + S.fav.rests.length + ' saved', '/favorites'], ['ticket', 'Promotions', 'Discounts and codes', '/promos'], ['bell', 'Notifications', unread() ? unread() + ' unread' : 'All caught up', '/notifications'], ['help', 'Support', 'FAQs and contact', '/support']].map(([i, t, s, p]) => row(i, t, s, 'go').replace('data-a="go"', `data-a="go" data-id="${p}"`)).join('')}</div>
-  <div class="panel" style="padding:4px 16px"><div class="li"><span class="ic">${ic('bike',20)}</span><span class="grow"><b>Order updates</b><br><span class="sm mu">Open an order to check its recorded status.</span></span></div><button class="li" data-a="pwchange"><span class="ic">${ic('shield', 20)}</span><span class="grow"><b>Change password</b></span>${ic('chev', 18, 'mu')}</button><button class="li" data-a="delacct" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('trash', 20)}</span><b>Delete account</b></button><button class="li" data-a="logout" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('logout', 20)}</span><b>Log out</b></button></div></section>` });
+  <div class="panel" style="padding:4px 16px"><div class="li"><span class="ic">${ic('bike',20)}</span><span class="grow"><b>Order updates</b><br><span class="sm mu">Open an order to check its recorded status.</span></span></div><button class="li" data-a="pwchange"><span class="ic">${ic('shield', 20)}</span><span class="grow"><b>Change password</b></span>${ic('chev', 18, 'mu')}</button><button class="li" data-a="delacct" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('trash', 20)}</span><b>Delete account</b></button><button class="li" data-a="logout" style="color:var(--er)"><span class="ic" style="background:#FEECEA;color:var(--er)">${ic('logout', 20)}</span><b>Log out</b></button></div><footer class="sm mu" style="margin-top:20px;text-align:center">Papalita &middot; Version ${APP_VERSION}</footer></section>` });
 V.editProfile = () => ({ html: `<section class="view" style="max-width:560px;margin:0 auto">${pageHead('Edit profile')}<form id="pf" class="panel" novalidate><div class="row" style="margin-bottom:16px">${avatar()}<label class="btn s sm" style="cursor:pointer">Change photo (this device)<input type="file" id="pimg" accept="image/*" class="sr"></label></div><div class="field"><label for="pn">Name</label><input class="in" id="pn" value="${esc(S.user.name)}"><p class="err" data-e="pn"></p></div><div class="field"><label for="pe">Email</label><input class="in" id="pe" type="email" value="${esc(S.user.email)}"><p class="err" data-e="pe"></p></div><div class="field"><label for="pp">Mobile number</label><input class="in" id="pp" value="${esc(S.user.phone || '')}"><p class="err" data-e="pp"></p></div><button class="btn p blk">Save changes</button></form></section>` });
 V.addresses = () => ({ html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead('Saved addresses', true, `<button class="btn p sm" data-a="addrform">${ic('plus', 16)}Add</button>`)}${S.addrs.length ? S.addrs.map(a => `<div class="panel"><div class="row sp"><div><h3>${esc(a.label)} ${a.def ? '<span class="status open">Default</span>' : ''}</h3><p class="mu sm">${esc(a.line)}, ${esc(a.city)}</p></div></div><div class="row" style="margin-top:10px"><button class="btn s sm" data-a="addrform" data-id="${a.id}">Edit</button>${a.def ? '' : `<button class="btn s sm" data-a="addrdef" data-id="${a.id}">Make default</button>`}<button class="btn d sm" data-a="addrdel" data-id="${a.id}">Delete</button></div></div>`).join('') : emptyState('pin', 'No saved addresses', 'Add one for faster checkout.', 'Add address', 'addrform')}</section>` });
 function addrForm(id) { const a = S.addrs.find(x => x.id === id) || { label: '', line: '', city: '' };
@@ -1077,7 +1078,16 @@ hideagain: b => {
   clrrecent: () => { S.recent = []; save(); const g = $('#sg'); g && (g.innerHTML = ''); },
   install: () => window.PapalitaInstall?.open(), noinstall: () => window.PapalitaInstall?.dismiss(),
   'retry-catalogue': () => location.reload(),
-  'about-papalita': () => openSheet(`<div class="pd" style="padding-top:40px"><h2>Papalita</h2><p class="mu" style="margin-top:12px;line-height:1.8">Good Food, Good Mood. Discover participating local food businesses in Alegria, Surigao del Norte. Menu items and availability come from the stores on Papalita.</p></div>`, {label:'About Papalita'})
+  'about-papalita': () => openSheet(`<div class="pd" style="padding-top:40px">
+    <h2 tabindex="-1" autofocus>About Papalita</h2>
+    <p class="mu sm" style="margin-top:4px">Good Food, Good Mood.</p>
+    <div style="line-height:1.65;margin-top:14px">
+      <p>Papalita brings local food businesses in Alegria, Surigao del Norte, together in one app. You can find a familiar favorite, discover a nearby store, or see what is on the menu before you order.</p>
+      <p style="margin-top:12px">Stores share their menus, prices, and availability through Papalita. Choose delivery or pickup where available, then follow your order in the Orders tab.</p>
+      <p style="margin-top:12px">Planning a fiesta or family gathering? Send a catering inquiry to a participating store to discuss the menu, date, and number of guests.</p>
+      <p style="margin-top:12px">We built Papalita to make local food easier to find and give Alegria's food businesses a place to share what they make.</p>
+    </div>
+  </div>`, {label:'About Papalita'})
 };
 
 document.addEventListener('click', function (e) {
