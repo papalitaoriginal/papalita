@@ -983,7 +983,7 @@ function locSheet(){const el=openSheet(`<div class="pd" style="padding-top:36px"
 async function cancelRealOrder(id){
   const o=ORD(id);if(!o||!await confirmDlg('Request cancellation of this order?','Cancel order',true))return;
   try{const verified=await authDB().auth.getUser();if(verified.error)throw verified.error;const uid=verified.data?.user?.id;if(!uid||uid!==S.user.id)throw Error('Please sign in again.');
-    const q=await authDB().from('orders').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',id).eq('customer_id',uid).in('status',['pending','confirmed']).select('id,status,updated_at').maybeSingle();
+    const q = await authDB().rpc('papalita_customer_cancel_order', { p_order_id: id });
     if(q.error)throw q.error;if(q.data?.status!=='cancelled')throw Error('Cancellation was not permitted or the order status has changed.');o.status=q.data.status;o.upd=Date.parse(q.data.updated_at)||Date.now();save();toast('Order cancellation confirmed.');render();
   }catch(error){toast('Order not cancelled: '+error.message);}
 }
