@@ -379,7 +379,7 @@ V.home = () => {
     </aside>` : ''}
     ${catalogueError?`<div class="pp-catalog-error" role="alert">${esc(catalogueError)} <button class="link gl" data-a="retry-catalogue">Refresh</button></div>`:''}
     <div class="pp-hero"><div class="pp-hero-copy"><span class="pp-kicker">Made for your everyday</span><h1>Your local favorites,<br><em>delivered.</em></h1><p>Find your next coffee, comfort meal, or something worth sharing in Alegria.</p><button class="btn p" data-a="qa" data-id="rests">Explore stores ${ic('arrow',17)}</button></div><div class="pp-hero-visual">${foodVisual()}</div></div>
-    <div id="pp-home-voucher" hidden><section class="pp-home-voucher" aria-label="Limited-time vouchers">
+    <div id="pp-home-voucher" hidden><section class="pp-home-voucher pp-paper-ticket" aria-label="Limited-time vouchers">
       <div data-voucher-slide></div>
       <div class="pp-voucher-controls" data-voucher-controls hidden><button type="button" data-voucher-step="-1" aria-label="Previous voucher">${ic('back',17)}</button><span data-voucher-position></span><button type="button" data-voucher-step="1" aria-label="Next voucher">${ic('chev',17)}</button></div>
     </section></div>
@@ -480,7 +480,7 @@ function voucherOptions(){
   const vouchers=activeVouchers();
   return vouchers.length?vouchers.map(p=>{
     const quote=calc(S.cart,p.code),selected=S.promo===p.code&&!quote.perr;
-    return `<button type="button" class="pp-voucher-option" data-a="usepromo" data-id="${esc(p.code)}" aria-pressed="${selected}" ${quote.perr?'disabled':''}>
+    return `<button type="button" class="pp-voucher-option pp-paper-ticket" data-a="usepromo" data-id="${esc(p.code)}" aria-pressed="${selected}" ${quote.perr?'disabled':''}>
       <span>${esc(voucherTitle(p))}<small>${esc(p.code)} · ${esc(voucherTerms(p))}</small></span>
       <small>${esc(quote.perr||(selected?`Selected · Save ${peso(quote.disc)}`:`Save ${peso(quote.disc)}`))}</small>
     </button>`;
@@ -757,13 +757,21 @@ V.ordersView = (_, p) => { if (p && p.get('t')) OT = p.get('t'); const cur = myO
   ${OT === 'current' && cur.some(canCancelOrder) ? '<p class="sm mu" style="margin-bottom:12px">Press and hold an order or tap &hellip; for order options.</p>' : ''}
   ${OT === 'catering' ? cateringList() : list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">${list.map(card).join('')}</div>` : emptyState('orders', OT === 'current' ? 'No active orders' : 'No past orders yet', 'Your orders will appear here.', 'Order food', 'browse')}</section>` }; };
 V.orderDetail = id => { const o = ORD(id); if (!o) return V.notFound(); const s = stageOf(o), r=R(o.rid)||{name:'Store'};
-  return { html: `<section class="view" style="max-width:680px;margin:0 auto">${pageHead(o.id)}<div class="panel"><div class="row sp"><h3>${esc(r.name)}</h3><span class="status ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${orderStatus.copy(o)[0]}</span></div><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p>${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:4px">${esc(o.cancelReason)}</p>` : ''}</div>
-  <div class="panel">${orderLines(o)}<div style="margin-top:10px">${sumHTML({ ...o, promo: o.promo && window.PROMOS.find(p => p.code === o.promo), perr: '', vat: (o.total - (o.tip || 0)) * 12 / 112 })}</div></div><div class="panel sm"><div class="row sp"><span class="mu">${orderLocationLabel(o)}</span><span style="text-align:right">${esc(orderLocation(o))}</span></div><div class="row sp" style="margin-top:8px"><span class="mu">Payment</span><span>${payTag(o)}</span></div></div>
-  <button class="btn s blk" data-a="receipt" data-id="${o.id}" style="margin-bottom:10px">${ic('copy', 16)}View receipt</button><div class="row">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${o.id}">Track order</button>` : `<button class="btn p grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}${canCancelOrder(o) ? `<button class="btn d grow" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}</div></section>` }; };
+  return { html: `<section class="view pp-order-detail">${pageHead('Order details')}
+  <article class="panel pp-order-paper" aria-label="Order summary">
+    <header class="pp-order-paper-head">
+      <div><p class="pp-paper-label">Order summary</p><h2>${esc(r.name)}</h2><p class="pp-order-ref">${esc(o.id)}</p><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p></div>
+      <span class="status pp-ink-stamp ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${esc(orderStatus.copy(o)[0])}</span>
+    </header>
+    ${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:8px">${esc(o.cancelReason)}</p>` : ''}
+    <div class="pp-order-paper-lines">${orderLines(o)}<div style="margin-top:10px">${sumHTML({ ...o, promo: o.promo && window.PROMOS.find(p => p.code === o.promo), perr: '', vat: (o.total - (o.tip || 0)) * 12 / 112 })}</div></div>
+    <dl class="pp-order-paper-meta sm"><div><dt>${orderLocationLabel(o)}</dt><dd>${esc(orderLocation(o))}</dd></div><div><dt>Payment</dt><dd>${payTag(o)}</dd></div></dl>
+  </article>
+  <div class="row pp-order-actions">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${o.id}">Track order</button>` : `<button class="btn p grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}${canCancelOrder(o) ? `<button class="btn d grow" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}</div><button class="btn s blk" data-a="receipt" data-id="${o.id}">${ic('copy', 16)}View receipt</button></section>` }; };
 
 /* ---------- promos ---------- */
-V.promos = () => ({ html: `<section class="view" style="max-width:760px;margin:0 auto">${pageHead('Promotions')}${!window.PROMOS.length?emptyState('ticket','No current offers','Approved promotions will appear here when available.'):''}${window.PROMOS.filter(p => p.active !== false).map(p => { const exp=p.expires_at&&Date.parse(p.expires_at)<=Date.now(), on = S.promo === p.code;
-  return `<div class="panel"><div class="row sp"><div><h3>${esc(p.title)}</h3><p class="mu sm" style="margin-top:2px">${esc(p.desc)}</p></div><span class="chip" style="border:1.5px dashed var(--or);color:var(--or-d)">${esc(p.code)}</span></div>
+V.promos = () => ({ html: `<section class="view pp-promotions" style="max-width:680px;margin:0 auto">${pageHead('Promotions')}${!window.PROMOS.length?emptyState('ticket','No current offers','Approved promotions will appear here when available.'):''}${window.PROMOS.filter(p => p.active !== false).map(p => { const exp=p.expires_at&&Date.parse(p.expires_at)<=Date.now(), on = S.promo === p.code;
+  return `<div class="panel pp-paper-ticket pp-promo-ticket"><div class="row sp wrap pp-promo-ticket-head"><div class="grow"><p class="pp-paper-label">${esc(p.title)}</p><h3>${esc(voucherTitle(p))}</h3>${p.desc ? `<p class="mu sm">${esc(p.desc)}</p>` : ''}</div><span class="pp-promo-code">${ic('ticket',16)}${esc(p.code)}</span></div>
   <ul class="sm mu" style="margin:10px 0 12px 18px"><li>Minimum order ${peso(p.min)}</li><li>${p.rid ? 'Valid at ' + esc(R(p.rid).name) + ' only' : 'Valid at all restaurants'}</li><li>${exp ? 'Expired' : 'Expires ' + new Date(p.exp + 'T00:00:00+08:00').toLocaleDateString('en-PH', { dateStyle: 'long' })}</li></ul>
   <div class="row"><button class="btn ${on ? 's' : 'p'} sm grow" data-a="usepromo" data-id="${p.code}" ${exp ? 'disabled' : ''}>${on ? 'Applied ✓' : 'Apply promo'}</button><button class="btn o sm" data-a="copy" data-id="${p.code}" aria-label="Copy code ${esc(p.code)}">${ic('copy', 16)}Copy</button></div></div>`; }).join('')}</section>` });
 
