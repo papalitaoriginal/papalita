@@ -1705,6 +1705,60 @@ main {
   #view .card[data-a="item"] .pr { color: var(--or-d); }
   #view .card[data-a="item"] .add { border-radius: 10px; }
 
+  .pp-store-delivery {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    color: var(--or-d);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .pp-cart-summary { display: none; }
+  @media (max-width: 1023px) {
+    body:has(.pp-cart-summary:not([hidden])) main#view {
+      padding-bottom: calc(var(--nav) + var(--sb) + 106px);
+    }
+    body:has(.pp-cart-summary:not([hidden])) #toasts {
+      bottom: calc(var(--nav) + var(--sb) + 86px);
+    }
+    .pp-cart-summary:not([hidden]) {
+      position: fixed;
+      z-index: 59;
+      inset: auto 12px calc(var(--nav) + var(--sb) + 8px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 510px;
+      min-height: 58px;
+      margin-inline: auto;
+      padding: 8px 9px 8px 13px;
+      border: 1px solid var(--pp-paper-edge);
+      border-radius: 16px;
+      background: var(--pp-grain) var(--pp-paper);
+      color: var(--or-d);
+      box-shadow: 0 4px 18px #2a322629;
+    }
+    .pp-cart-summary-copy { flex: 1; min-width: 0; line-height: 1.25; }
+    .pp-cart-summary-copy b, .pp-cart-summary-copy small { display: block; }
+    .pp-cart-summary-copy b { font-size: 14px; }
+    .pp-cart-summary-copy small { color: var(--ink); font-size: 12px; overflow-wrap: anywhere; }
+    .pp-cart-summary-cta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 42px;
+      padding-inline: 12px;
+      border-radius: 11px;
+      background: var(--or);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+  }
+
   .pp-paper-ticket {
     position: relative;
     overflow: hidden;
@@ -1739,6 +1793,18 @@ main {
     border-radius: 0;
   }
   .pp-voucher-code .btn { min-height: 44px; }
+  .pp-home-voucher .pp-voucher-progress, .pp-promo-ticket .pp-voucher-progress {
+    padding: 7px 9px;
+    border-radius: 7px;
+    background: #f9faeb;
+    color: var(--or-d);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .pp-home-voucher .pp-voucher-progress { grid-area: 4 / 1 / 5 / -1; }
+  .pp-promo-ticket .pp-voucher-progress { margin-bottom: 10px; }
   .pp-promotions .pp-promo-ticket { margin-bottom: 16px; }
   .pp-promo-ticket:nth-of-type(even) {
     --pp-ticket: #faedcf;
@@ -1845,7 +1911,7 @@ main {
 <script src="js/customer-data.js?v=20261107-customer-v5"></script>
 <script src="js/order-status.js?v=20261107-customer-v5"></script>
 <script src="js/live-delivery-map.js?v=1"></script>
-<script src="js/app.js?v=20261108-paper-v1"></script>
+<script src="js/app.js?v=20261108-cart-v1"></script>
 
 <script>
 (function () {
