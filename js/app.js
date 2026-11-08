@@ -619,6 +619,8 @@ const orderLocationLabel = o => ({pickup: 'Pickup at', delivery: 'Deliver to'})[
 const orderLocation = o => orderStatus.mode(o) === 'pickup'
   ? R(o.rid)?.addr || R(o.rid)?.name || 'Collect at the store'
   : o.addr || 'Address on order';
+const localMapAddress = address => /\bSurigao del Norte\b/i.test(address) ? address
+  : address + (/\bAlegria\b/i.test(address) ? '' : ', Alegria') + ', Surigao del Norte';
 function orderMapLink(order, fulfillment) {
   if (order.status === 'cancelled' || !['pickup','delivery'].includes(fulfillment)) return '';
   const store = R(order.rid);
@@ -626,8 +628,7 @@ function orderMapLink(order, fulfillment) {
     ? [store?.name?.trim(),store?.addr?.trim()].filter(Boolean).join(', ')
     : String(order.addr || '').replace(/^.*? \u2014 /, '').trim();
   if (!place || place.toLowerCase() === 'pickup at store') return '';
-  const destination = /\bSurigao del Norte\b/i.test(place) ? place
-    : place + (/\bAlegria\b/i.test(place) ? '' : ', Alegria') + ', Surigao del Norte';
+  const destination = localMapAddress(place);
   const action = fulfillment === 'pickup' ? 'dir/?api=1&destination=' : 'search/?api=1&query=';
   const url = 'https://www.google.com/maps/' + action + encodeURIComponent(destination);
   return `<a class="btn s sm" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ic('pin',16)}${fulfillment === 'pickup' ? 'Directions to store' : 'View drop-off map'}</a>`;
@@ -949,7 +950,11 @@ function cateringList() { const l = myCater(); if (!l.length) return emptyState(
   return `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">${l.map(q => { const [lb, cl] = CSTAT[q.status] || CSTAT.sent;
     return `<div class="panel" style="margin:0"><div class="row sp"><h3>${esc(R(q.rid)?.name||'Store')}</h3><span class="status ${cl}">${lb}</span></div><p class="mu sm">${q.id} \u00B7 ${q.kind === 'inquiry' ? 'Resort inquiry \u00B7 ' : ''}${esc(q.type)}${q.date ? ' \u00B7 ' + q.date : ''}${q.guests ? ' \u00B7 ' + q.guests + ' guests' : ''}</p>${q.pkg ? `<p class="sm" style="margin-top:4px">${esc(q.pkg)}</p>` : ''}
     <div class="row" style="margin-top:12px"><button class="btn s sm grow" data-a="contact" data-k="call" data-id="${q.rid}">${ic('phone', 16)}Call store</button></div></div>`; }).join('')}</div>`; }
-V.nearby=()=>({html:`<section class="view">${pageHead('Store locations')}${RS.length?`<div class="grid">${RS.map(r=>`<article class="panel"><h2>${esc(r.name)}</h2><p class="mu sm" style="margin:10px 0">${esc(r.addr||'Address not supplied by the store.')}</p><button class="btn s sm" data-a="rest" data-id="${esc(r.id)}">Open menu</button>${r.addr?` <a class="btn s sm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr+', Alegria, Surigao del Norte')}" target="_blank" rel="noopener">Open map</a>`:''}</article>`).join('')}</div>`:emptyState('store','No stores available','Please check again later.')}</section>`});
+V.nearby=()=>({html:`<section class="view">${pageHead('Store locations')}${RS.length?`<div class="grid">${RS.map(r=>{
+  const address = r.addr.trim();
+  const query = address && encodeURIComponent([r.name, localMapAddress(address)].filter(Boolean).join(', '));
+  return `<article class="panel"><h2>${esc(r.name)}</h2><p class="mu sm" style="margin:10px 0">${esc(address||'Address not supplied by the store.')}</p><button class="btn s sm" data-a="rest" data-id="${esc(r.id)}">Open menu</button>${query?` <a class="btn s sm" href="https://www.google.com/maps/search/?api=1&query=${query}" target="_blank" rel="noopener">Open map</a>`:''}</article>`;
+}).join('')}</div>`:emptyState('store','No stores available','Please check again later.')}</section>`});
 V.payments=()=>({html:`<section class="view" style="max-width:680px;margin:auto">${pageHead('Payment methods')}<div class="panel"><h2>Cash payment</h2><p class="mu" style="margin-top:10px">Pay cash on delivery or at pickup. Online wallet and card processing are not connected.</p></div></section>`});
 const SUPPORT_EMAIL = 'papalitaoriginal@gmail.com';
 const SUPPORT_PHONE = '09243873785';
