@@ -34,7 +34,7 @@ async function refreshCommercialData(){
     refreshPromotions()
   ]);
   const errors=[];
-  if(fees.status==='fulfilled'&&!fees.value.error){for(const f of fees.value.data||[])if(Number.isFinite(Number(f.fee))&&Number(f.fee)>=0)deliveryFees.set(f.barangay,Number(f.fee));}
+  if(fees.status==='fulfilled'&&!fees.value.error){for(const f of fees.value.data||[])if(f.fee!=null&&Number.isFinite(Number(f.fee))&&Number(f.fee)>=0)deliveryFees.set(f.barangay,Number(f.fee));}
   else errors.push('Delivery charges could not load.');
   if(promos.status!=='fulfilled'||!promos.value)errors.push('Promotions could not load.');
   commercialError=errors.join(' ');
@@ -96,7 +96,7 @@ const R = id => RS.find(r => String(r.id) === String(id));
 const ITEM = id => { for (const r of RS) { const i = r.items.find(i => i.id === id); if (i) return { item: i, rest: r }; } return null; };
 const ALL = () => RS.flatMap(r => r.items.map(i => ({ item: i, rest: r })));
 const brg = () => window.BRGYS.find(b => b.n === (S.loc || {}).brgy) || window.BRGYS[0];
-const feeOf = () => deliveryFees.has(S.loc.brgy)?deliveryFees.get(S.loc.brgy):null;
+const feeOf = (barangay = S.loc.brgy) => deliveryFees.get(barangay) ?? null;
 const iso = d => new Date(d).toISOString();
 function seed(){return {v:1,user:{id:null,name:'',email:'',phone:'',photo:'',in:false},users:{},recent:[],cart:{rid:null,lines:[]},fav:{items:[],rests:[]},promo:null,orders:[],cater:[],notes:[],addrs:[],pay:[],loc:{label:C.location?.label||'Poblacion, Alegria',brgy:'Poblacion',perm:'unknown'}};}
 let S; try { S = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!S || S.v !== 1) S = seed();
@@ -128,31 +128,37 @@ const selText = l => Object.values(l.sel || {}).flat().join(', ');
 const activeVouchers = (now = Date.now()) => window.PROMOS.filter(p => p.active !== false && Date.parse(p.expires_at) > now)
   .sort((a,b) => Date.parse(a.expires_at) - Date.parse(b.expires_at) || a.code.localeCompare(b.code));
 const promoMatchesStore = (promo, rid) => !promo?.rid || String(promo.rid) === String(rid);
-const validPromo = (p, sub, rid) => { if (!p || p.active === false) return 'This code is no longer active.'; if(p.expires_at&&Date.parse(p.expires_at)<=Date.now()) return 'This code has expired.'; if (p.rid && p.rid !== rid) return `Only valid for ${R(p.rid)?.name || "another store"} orders.`; if (sub < p.min) return `Add ${peso(p.min - sub)} more to use ${p.code}.`; return ''; };
-function calc(cart = S.cart, code = S.promo) {
+const validPromo = p => { if (p.active === false) return 'This code is no longer active.'; if(p.expires_at&&Date.parse(p.expires_at)<=Date.now()) return 'This code has expired.'; return ''; };
+function calc(cart = S.cart, code = S.promo, barangay = onCheckout() ? addressBarangay(checkoutAddress()) : S.loc.brgy) {
   const groups = cartGroups(cart);
   const sub = groups.reduce((n, g) => n + g.sub, 0);
   const pickup = CK.fulfillment === 'pickup';
-  const feeKnown=pickup||Number.isFinite(feeOf());
-  const fee=pickup?0:groups.reduce((n,g)=>n+(Number(feeOf(g.rest))||0),0);
+  const feePerStore = pickup ? 0 : feeOf(barangay);
+  const feeKnown = feePerStore !== null;
+  const fee = groups.length * (feePerStore ?? 0);
   const p = code && window.PROMOS.find(x => x.code === code);
   // Store-specific codes apply only to the matching store, never another store.
   const eligible = groups.filter(g => promoMatchesStore(p, g.rid));
   const eligibleSub = eligible.reduce((n, g) => n + g.sub, 0);
-  const eligibleFee = pickup ? 0 : eligible.reduce((n, g) => n + (g.rest ? feeOf(g.rest) : 0), 0);
+  const eligibleFee = eligible.filter(g => g.rest).length * (feePerStore ?? 0);
+  let promoShortfall = 0;
   let perr = code && !p ? 'This promotion is no longer available.' : '';
   if (p) {
-    perr = eligible.length ? validPromo(p, eligibleSub, p.rid || eligible[0].rid) : 'This voucher is not valid for the stores in your cart.';
+    perr = eligible.length ? validPromo(p) : 'This voucher is not valid for the stores in your cart.';
     if (!perr && p.type === 'ship') {
       if (pickup) perr = 'This voucher is for delivery orders only.';
       else if (!feeKnown) perr = 'Delivery charges are unavailable for this barangay.';
       else if (eligibleFee === 0) perr = 'There is no delivery fee to discount.';
     }
+    if (!perr) {
+      promoShortfall = Math.max(0, Math.round(p.min * 100) - Math.round(eligibleSub * 100)) / 100;
+      if (promoShortfall) perr = `Add ${peso(promoShortfall)} more to use ${p.code}.`;
+    }
   }
   let disc = 0;
   if (p && !perr) disc = p.type === 'flat' ? Math.min(p.value, eligibleSub) : p.type === 'percent' ? Math.min(Math.round(eligibleSub * p.value / 100), p.cap ?? Infinity, eligibleSub) : eligibleFee;
   const total = Math.max(0, sub + fee - disc);
-  return { r: groups[0]?.rest, groups, sub, fee, feeKnown, disc, perr, promo: p, eligibleSub, total,
+  return { r: groups[0]?.rest, groups, sub, fee, feeKnown, feePerStore, disc, perr, promo: p, promoShortfall, eligibleSub, total,
     minOk: pickup || groups.every(g => g.rest && g.sub >= (g.rest.min || 0)), pickup };
 }
 
@@ -202,7 +208,9 @@ function dishCard({item:i,rest:r}) {
 }
 function restCard(r) {
   const op = isOpen(r);
-  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}">${hrt('rests',r.id)}<span class="pp-store-state ${op?'':'pp-store-closed'}">${op?'Open':'Closed'}</span>${photo(r.cover, `${r.name} store photo`)}<div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div></div></article>`;
+  const fee = feeOf();
+  const delivery = fee === null ? 'Check delivery fee at checkout' : `${peso(fee)} delivery to ${S.loc.brgy}`;
+  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}">${hrt('rests',r.id)}<span class="pp-store-state ${op?'':'pp-store-closed'}">${op?'Open':'Closed'}</span>${photo(r.cover, `${r.name} store photo`)}<div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div><p class="pp-store-delivery">${ic('bike',15)}<span>${esc(delivery)}</span></p></div></article>`;
 }
 
 /* ---------- router ---------- */
@@ -237,17 +245,32 @@ function chrome() {
   <button class="locpill" data-a="loc" style="margin:0">${ic('pin', 15)}<span data-loc></span>${ic('chevd', 14)}</button>
   <a class="ib" href="#/notifications" aria-label="Notifications">${ic('bell')}<span class="badge" data-un hidden></span></a>
   <a class="ib pp-desktop-cart" href="#/cart" aria-label="Cart">${ic('cart')}<span class="badge" data-cc hidden></span></a><a href="#/profile" aria-label="Profile">${avatar()}</a></header>
+  <a class="pp-cart-summary" href="#/cart" hidden>${ic('cart',20)}<span class="pp-cart-summary-copy"><b data-cart-summary-count></b><small data-cart-summary-subtotal></small></span><span class="pp-cart-summary-cta">View cart ${ic('chev',16)}</span></a>
   <nav class="bnav" aria-label="Main" style="grid-template-columns:repeat(${NAVS.length},minmax(0,1fr))">${NAVS.map(([i, l, p]) => `<a href="#${p}" data-p="${p}">${i === 'cart' ? `<span class="icw">${ic(i, 26)}<span class="badge" data-cc hidden></span></span>` : ic(i, 26)}<span>${l}</span></a>`).join('')}</nav>`;
 }
 const defAddr = () => S.addrs.find(a => a.def) || S.addrs[0];
+const checkoutAddress = () => S.addrs.find(a => a.id === CK.addr) || defAddr();
+const addressBarangay = a => a?.city?.split(',')[0].trim() || S.loc.brgy;
 let holdCart = false;
 function updateChrome(bump) {
   setTimeout(()=>window.dispatchEvent(new Event('papalita-ui-rendered')),0);
+  const count = cartCount();
   const a = activeNav(), d = deskNav(); $$('[data-p]').forEach(el => { const on = el.dataset.p === a; el.classList.toggle('on', on); on ? el.setAttribute('aria-current', 'page') : el.removeAttribute('aria-current'); });
   $$('[data-d]').forEach(el => el.classList.toggle('on', el.dataset.d === d));
-  if (!holdCart) $$('[data-cc]').forEach(el => { const n = cartCount(); el.hidden = !n; el.textContent = n; if (bump) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } });
+  if (!holdCart) $$('[data-cc]').forEach(el => { el.hidden = !count; el.textContent = count; if (bump) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } });
   $$('[data-un]').forEach(el => { const n = unread(); el.hidden = !n; el.textContent = n; });
   $$('[data-loc]').forEach(el => el.textContent = S.loc.label);
+  const bar = $('.pp-cart-summary');
+  bar.hidden = !S.user.in || AU.view === 'reset' || !count || !/^\/(?:$|(?:discover|categories|favorites|promos)$|restaurant\/)/.test(curPath());
+  if (!bar.hidden) {
+    $('[data-cart-summary-count]', bar).textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+    $('[data-cart-summary-subtotal]', bar).textContent = `${peso(calc().sub)} subtotal`;
+  }
+  const progress = $('[data-voucher-progress]');
+  if (progress) {
+    const promo = activeVouchers().find(p => p.code === progress.dataset.voucherProgress);
+    if (promo) progress.textContent = voucherProgress(promo);
+  }
 }
 
 /* ---------- home ---------- */
@@ -307,6 +330,12 @@ const foodVisual = () => {
 };
 const voucherMoney = n => Number.isInteger(n) ? '₱' + n.toLocaleString('en-PH') : peso(n);
 const voucherTitle = promo => promo.type==='ship'?'Free delivery':promo.type==='percent'?`${promo.value}% off your order`:`${voucherMoney(promo.value)} off your order`;
+function voucherProgress(promo) {
+  if (!S.cart.lines.length) return 'Add items to check voucher eligibility.';
+  const quote = calc(S.cart, promo.code);
+  if (quote.promoShortfall) return `Add ${voucherMoney(quote.promoShortfall)} to unlock ${voucherTitle(promo).toLowerCase()}.`;
+  return quote.perr || (S.promo === promo.code ? 'Applied to your cart' : 'Ready to use');
+}
 function voucherTerms(promo){
   const terms=[promo.min>0?`Min. order ${voucherMoney(promo.min)}`:'No minimum order'];
   if(promo.type==='percent'&&promo.cap!==null)terms.push(`Up to ${voucherMoney(promo.cap)} off`);
@@ -337,6 +366,7 @@ function watchHomeVoucher(){
       <div class="pp-voucher-top"><span class="pp-voucher-label">Limited-time offer</span><span class="pp-voucher-timer">${ic('clock',15)} Ends in <span data-voucher-clock></span></span></div>
       <h2>${esc(title)}</h2><p>${esc(details)}</p>
       <div class="pp-voucher-code"><code>${esc(promo.code)}</code><button type="button" class="btn p" data-a="copy" data-id="${esc(promo.code)}" aria-label="Copy code ${esc(promo.code)}">Copy code</button></div>
+      <p class="pp-voucher-progress" data-voucher-progress="${esc(promo.code)}"></p>
       </div>`;
       key=nextKey;
     }
@@ -344,6 +374,8 @@ function watchHomeVoucher(){
     $('[data-voucher-position]',controls).textContent=`${index+1} / ${promos.length}`;
     const seconds=Math.ceil((Date.parse(promo.expires_at)-now)/1000);
     $('[data-voucher-clock]',slide).textContent=[Math.floor(seconds/3600),Math.floor(seconds/60)%60,seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
+    const progress = $('[data-voucher-progress]', slide), message = voucherProgress(promo);
+    if (progress.textContent !== message) progress.textContent = message;
   }
   slot.addEventListener('click',event=>{
     const arrow=event.target.closest('[data-voucher-step]');
@@ -504,7 +536,7 @@ function renderVoucherCheckout(){
 }
 V.cartView = () => { const c = calc();
   if (!S.cart.lines.length) return { html: `<section class="view">${pageHead('Your cart')}${emptyState('cart', 'Your cart is empty', 'Add something delicious and it will show up here.', 'Browse food', 'browse')}</section>` };
-  const a = S.addrs.find(x => x.id === CK.addr) || defAddr(); if (a) CK.addr = a.id; const r=c.r;
+  const a = checkoutAddress(); if (a) CK.addr = a.id; const r=c.r;
   const pl = payLabel(), tip = CK.tip || 0; const fee = c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="gl">Free</b>` : c.feeKnown?peso(c.fee):'Not configured';
   return { html: `<section class="view pp-cart-view" style="max-width:640px;margin:0 auto"><div class="rv-h"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><h1>ORDER REVIEW</h1><span style="width:44px"></span></div>
   <div class="rv-lab"><span>Order type</span></div><div class="chips"><button class="chip ${CK.fulfillment === 'delivery' ? 'on' : ''}" data-a="fulfillment" data-v="delivery">Delivery</button><button class="chip ${CK.fulfillment === 'pickup' ? 'on' : ''}" data-a="fulfillment" data-v="pickup">Pickup at store</button></div><div class="rv-lab"><span>${CK.fulfillment === 'pickup' ? 'Pickup locations' : 'Delivery address'}</span>${CK.fulfillment === 'pickup' ? '' : '<button data-a="addrpick">EDIT</button>'}</div>
@@ -529,10 +561,11 @@ V.cartView = () => { const c = calc();
 let CK = { addr: null, pay: 'cod', det: {}, fulfillment: 'delivery', tip: 0 };
 const PH = /^(09|\+639)\d{9}$/;
 const payLabel=()=>[CK.fulfillment==='pickup'?'Cash on Pickup':'Cash on Delivery',CK.fulfillment==='pickup'?'PAY AT THE STORE':'PAY ON ARRIVAL'];
-function addrPick() { const el = openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:12px">Deliver to</h2>${S.addrs.map(a => `<label class="opt"><input type="radio" name="ap" value="${a.id}" ${(CK.addr || (defAddr() || {}).id) === a.id ? 'checked' : ''}><span class="grow"><b>${esc(a.label)}</b><br><span class="mu sm">${esc(a.line)}, ${esc(a.city)}</span></span></label>`).join('')}<button class="btn s blk" data-a="addrform" style="margin-top:6px">${ic('plus', 18)}Add new address</button><button class="btn o blk" data-a="loc" style="margin-top:8px">${ic('pin', 18)}Change barangay</button></div>`, { label: 'Delivery address' });
+function addrPick() { const current = checkoutAddress(); const el = openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:12px">Deliver to</h2>${S.addrs.map(a => `<label class="opt"><input type="radio" name="ap" value="${a.id}" ${current?.id === a.id ? 'checked' : ''}><span class="grow"><b>${esc(a.label)}</b><br><span class="mu sm">${esc(a.line)}, ${esc(a.city)}</span></span></label>`).join('')}<button class="btn s blk" data-a="addrform" style="margin-top:6px">${ic('plus', 18)}Add new address</button>${current ? `<button class="btn o blk" data-a="addrform" data-id="${esc(current.id)}" style="margin-top:8px">${ic('edit', 18)}Edit delivery address</button>` : ''}</div>`, { label: 'Delivery address' });
   el.addEventListener('change', e => { if (e.target.name === 'ap') { CK.addr = e.target.value; S.addrs.forEach(a => a.def = a.id === CK.addr); syncLoc(S.addrs.find(a => a.id === CK.addr)); save(); closeSheet(); updateChrome(); render(); } }); }
 async function placeOrder() {
-  let c=calc();const a=S.addrs.find(x=>x.id===CK.addr)||defAddr();
+  const a = checkoutAddress(), barangay = addressBarangay(a);
+  let c = calc(S.cart, S.promo, barangay);
   if (!S.cart.lines.length) return;
   const phoneField = $('#cp'), phone = (phoneField.value || '').trim().replace(/\s/g, '');
   $('#cpe').textContent = ''; phoneField.classList.remove('bad');
@@ -551,7 +584,8 @@ async function placeOrder() {
     if (!auth?.user) throw new Error('Please sign in again before ordering.');
     const address = CK.fulfillment === 'pickup' ? 'Pickup at store' : `${a.label} — ${a.line}${a.landmark ? ' (' + a.landmark + ')' : ''}, ${a.city}`;
     await refreshCommercialData();
-    c=calc();
+    if (!btn.isConnected) throw Error('Checkout changed. Review your order and try again.');
+    c=calc(S.cart, S.promo, barangay);
     if(c.perr||reviewedPromo!==S.promo||Math.abs(reviewedTotal-c.total-CK.tip)>.009){
       renderVoucherCheckout();
       throw Error(c.perr||'Charges or promotions changed. Review the updated total before ordering.');
@@ -560,7 +594,7 @@ async function placeOrder() {
     let eligibleRunning=0, allocatedCents=0;
     const groups = c.groups.map((g, index) => {
       if (!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(g.rid))) throw new Error('Invalid store ID. Refresh the menu and retry.');
-      const storeFee = CK.fulfillment === 'pickup' ? 0 : feeOf(g.rest);
+      const storeFee = c.feePerStore;
       let discount=0;
       if(c.disc&&promoMatchesStore(c.promo,g.rid)){
         if(c.promo.type==='ship')discount=storeFee;
@@ -773,6 +807,7 @@ V.orderDetail = id => { const o = ORD(id); if (!o) return V.notFound(); const s 
 V.promos = () => ({ html: `<section class="view pp-promotions" style="max-width:680px;margin:0 auto">${pageHead('Promotions')}${!window.PROMOS.length?emptyState('ticket','No current offers','Approved promotions will appear here when available.'):''}${window.PROMOS.filter(p => p.active !== false).map(p => { const exp=p.expires_at&&Date.parse(p.expires_at)<=Date.now(), on = S.promo === p.code;
   return `<div class="panel pp-paper-ticket pp-promo-ticket"><div class="row sp wrap pp-promo-ticket-head"><div class="grow"><p class="pp-paper-label">${esc(p.title)}</p><h3>${esc(voucherTitle(p))}</h3>${p.desc ? `<p class="mu sm">${esc(p.desc)}</p>` : ''}</div><span class="pp-promo-code">${ic('ticket',16)}${esc(p.code)}</span></div>
   <ul class="sm mu" style="margin:10px 0 12px 18px"><li>Minimum order ${peso(p.min)}</li><li>${p.rid ? 'Valid at ' + esc(R(p.rid).name) + ' only' : 'Valid at all restaurants'}</li><li>${exp ? 'Expired' : 'Expires ' + new Date(p.exp + 'T00:00:00+08:00').toLocaleDateString('en-PH', { dateStyle: 'long' })}</li></ul>
+  ${exp ? '' : `<p class="pp-voucher-progress">${esc(voucherProgress(p))}</p>`}
   <div class="row"><button class="btn ${on ? 's' : 'p'} sm grow" data-a="usepromo" data-id="${p.code}" ${exp ? 'disabled' : ''}>${on ? 'Applied ✓' : 'Apply promo'}</button><button class="btn o sm" data-a="copy" data-id="${p.code}" aria-label="Copy code ${esc(p.code)}">${ic('copy', 16)}Copy</button></div></div>`; }).join('')}</section>` });
 
 /* ---------- profile & account ---------- */
