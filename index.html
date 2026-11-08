@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -1659,6 +1660,167 @@ main {
 }
 </style>
 <link rel="stylesheet" href="customer-polish.css?v=20261107-customer-v11">
+<style id="papalita-paper-theme">
+  body {
+    --pp-paper: #fff8eb;
+    --pp-canvas: #faf2e3;
+    --pp-paper-edge: #e3d4ba;
+    --pp-ticket: #eaf0d9;
+    --pp-paper-shadow: 0 2px 3px #513c2314, 0 8px 18px #513c2310;
+    --pp-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.13' filter='url(%23grain)'/%3E%3C/svg%3E");
+  }
+
+  body:not(.authing) {
+    --bg: var(--pp-canvas);
+    --ln: var(--pp-paper-edge);
+    --sf: #f1eadb;
+    background: var(--pp-grain) var(--bg);
+  }
+  body:not(.authing) :is(.topbar, .bnav) { background: #fff9ef; }
+  .bnav a.on { position: relative; isolation: isolate; font-weight: 800; }
+  .bnav a.on::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    width: 44px;
+    height: 34px;
+    border-radius: 12px;
+    background: #e5eed8;
+    transform: translateX(-50%);
+    z-index: -1;
+  }
+  .pp-hero, .pp-auth-pitch {
+    background: var(--pp-grain) linear-gradient(135deg, #fff8eb, #f0e9d5);
+  }
+  .pp-hero { border-color: var(--pp-paper-edge); box-shadow: var(--pp-paper-shadow); }
+  .pp-hero .pp-food-slides { box-shadow: 0 3px 8px #382b201f; }
+  #view .card[data-reveal] {
+    background: var(--pp-grain) var(--pp-paper);
+    border-color: var(--pp-paper-edge);
+    box-shadow: var(--pp-paper-shadow);
+  }
+  #view .card[data-reveal] .bd { min-width: 0; overflow-wrap: anywhere; }
+  #view .card[data-a="item"] .ft { border-top: 1px dashed #d9cbb3; }
+  #view .card[data-a="item"] .pr { color: var(--or-d); }
+  #view .card[data-a="item"] .add { border-radius: 10px; }
+
+  .pp-paper-ticket {
+    position: relative;
+    overflow: hidden;
+    padding-inline: 17px;
+    border-color: #b8c6a0;
+    background: var(--pp-grain) var(--pp-ticket);
+    box-shadow: var(--pp-paper-shadow);
+  }
+  .pp-paper-ticket::before, .pp-paper-ticket::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--pp-notch, var(--pp-canvas));
+    border: 1px solid #b8c6a0;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .pp-paper-ticket::before { left: -10px; }
+  .pp-paper-ticket::after { right: -10px; }
+  .pp-home-voucher.pp-paper-ticket {
+    margin-top: 16px;
+    padding-block: 13px;
+    row-gap: 7px;
+  }
+  .pp-home-voucher .pp-voucher-code {
+    padding: 8px 0 0;
+    border: 0;
+    border-top: 1px dashed #9ba988;
+    border-radius: 0;
+  }
+  .pp-voucher-code .btn { min-height: 44px; }
+  .pp-promotions .pp-promo-ticket { margin-bottom: 16px; }
+  .pp-promo-ticket:nth-of-type(even) {
+    --pp-ticket: #faedcf;
+    border-color: #d7c396;
+  }
+  .pp-promo-ticket-head { padding-bottom: 12px; border-bottom: 1px dashed #81926b; }
+  .pp-promo-ticket-head h3 { font-size: clamp(20px, 4vw, 27px); line-height: 1.2; overflow-wrap: anywhere; }
+  .pp-promo-ticket li { overflow-wrap: anywhere; }
+  .pp-promo-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 6px 8px;
+    border: 1px dashed #8c9a76;
+    border-radius: 6px;
+    color: var(--or-d);
+    font-weight: 800;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .pp-voucher-picker .pp-paper-ticket { --pp-notch: #fff; }
+  .pp-voucher-picker .pp-paper-ticket:hover:not(:disabled),
+  .pp-voucher-picker .pp-paper-ticket[aria-pressed="true"] { background: var(--pp-grain) #e1efd8; }
+  .pp-voucher-picker .pp-paper-ticket:disabled { box-shadow: none; }
+
+  .pp-order-detail { max-width: 620px; margin-inline: auto; }
+  .pp-order-actions { margin-bottom: 10px; }
+  .pp-order-detail .pp-order-paper {
+    position: relative;
+    margin-bottom: 22px;
+    padding: clamp(16px, 4vw, 26px);
+    background: var(--pp-grain) var(--pp-paper);
+    border: 1px solid var(--pp-paper-edge);
+    border-bottom: 0;
+    border-radius: 16px 16px 0 0;
+    box-shadow: var(--pp-paper-shadow);
+  }
+  .pp-order-paper::after {
+    content: "";
+    position: absolute;
+    inset: 100% 0 auto;
+    height: 8px;
+    background: conic-gradient(from -45deg at 50% 100%, var(--pp-paper) 90deg, transparent 0) 0 0 / 16px 8px repeat-x;
+    pointer-events: none;
+  }
+  .pp-order-paper-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+  }
+  .pp-order-paper-head > div { flex: 1 1 200px; min-width: 0; }
+  .pp-paper-label { color: #526247; font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; margin-bottom: 4px; overflow-wrap: anywhere; }
+  .pp-order-ref { color: #465947; margin: 4px 0; font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .status.pp-ink-stamp {
+    max-width: 100%;
+    padding: 5px 9px;
+    border: 2px solid currentColor;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--or-d);
+    font-weight: 800;
+    letter-spacing: .02em;
+    transform: rotate(-3deg);
+  }
+  .status.pp-ink-stamp.closed { color: #9a2b2b; }
+  .pp-order-paper-lines, .pp-order-paper-meta { border-top: 1px dashed #b7a98e; margin-top: 15px; padding-top: 12px; }
+  .pp-order-paper-lines .row { align-items: flex-start; gap: 12px; }
+  .pp-order-paper-lines .row span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .pp-order-paper-lines .row span:last-child, .pp-order-paper-lines .sum .r > :last-child { flex: none; }
+  .pp-order-paper-lines .sum .tot { border-color: #b7a98e; }
+  .pp-order-paper-meta > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+  .pp-order-paper-meta > div + div { margin-top: 6px; }
+  .pp-order-paper-meta dt { color: var(--mu); }
+  .pp-order-paper-meta dd { text-align: right; overflow-wrap: anywhere; }
+  @media (forced-colors: active) {
+    body:not(.authing), .pp-paper-ticket, .pp-order-paper { background-image: none; }
+    .pp-paper-ticket::before, .pp-paper-ticket::after, .pp-order-paper::after { display: none; }
+  }
+</style>
 <script src="js/customer-motion.js?v=20261107-customer-v8"></script>
 </head>
 <body>
@@ -1683,7 +1845,7 @@ main {
 <script src="js/customer-data.js?v=20261107-customer-v5"></script>
 <script src="js/order-status.js?v=20261107-customer-v5"></script>
 <script src="js/live-delivery-map.js?v=1"></script>
-<script src="js/app.js?v=20261107-customer-v11"></script>
+<script src="js/app.js?v=20261108-paper-v1"></script>
 
 <script>
 (function () {
