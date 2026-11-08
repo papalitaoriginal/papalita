@@ -224,10 +224,10 @@ function render() {
   first = false; run();
 }
 V.notFound = () => ({ html: `<div class="view">${emptyState('map', 'Page not found', 'That screen does not exist.', 'Go home', 'home')}</div>` });
-const NAVS = [['home', 'Home', '/'], ['search', 'Search', '/discover'], ['orders', 'Orders', '/orders'], ['usercircle', 'Profile', '/profile']];
+const NAVS = [['home', 'Home', '/'], ['search', 'Search', '/discover'], ['cart', 'Cart', '/cart'], ['orders', 'Orders', '/orders'], ['usercircle', 'Profile', '/profile']];
 const DNAV = [['Home', '/'], ['Browse', '/discover'], ['Catering', '/catering'], ['Orders', '/orders'], ['Nearby', '/nearby'], ['Favorites', '/favorites']];
 const curPath = () => (location.hash.slice(1) || '/').split('?')[0];
-const activeNav = () => { const p=curPath(); return /^\/(discover|restaurant|categories)/.test(p)?'/discover':/^\/(orders|order\/|track|confirmation)/.test(p)?'/orders':/^\/(profile|addresses|payments|notifications|support|promos|favorites)/.test(p)?'/profile':'/'; };
+const activeNav = () => { const p=curPath(); return p==='/cart'||p==='/checkout'?'/cart':/^\/(discover|restaurant|categories)/.test(p)?'/discover':/^\/(orders|order\/|track|confirmation)/.test(p)?'/orders':/^\/(profile|addresses|payments|notifications|support|promos|favorites)/.test(p)?'/profile':'/'; };
 const deskNav = () => { const p = curPath(); return p === '/' ? '/' : /^\/catering/.test(p) ? '/catering' : /^\/(discover|restaurant|categories)/.test(p) ? '/discover' : /^\/(orders|order\/|track|confirmation)/.test(p) ? '/orders' : /^\/nearby/.test(p) ? '/nearby' : /^\/favorites/.test(p) ? '/favorites' : ''; };
 function chrome() {
   $('#chrome').innerHTML = `<header class="topbar"><a class="logo" href="#/" aria-label="Papalita home"><i><img src="images/papalita_mark_color.png" alt="" style="width:34px;height:34px;object-fit:contain"></i>Papalita</a>
@@ -235,7 +235,7 @@ function chrome() {
   <button class="locpill" data-a="loc" style="margin:0">${ic('pin', 15)}<span data-loc></span>${ic('chevd', 14)}</button>
   <a class="ib" href="#/notifications" aria-label="Notifications">${ic('bell')}<span class="badge" data-un hidden></span></a>
   <a class="ib pp-desktop-cart" href="#/cart" aria-label="Cart">${ic('cart')}<span class="badge" data-cc hidden></span></a><a href="#/profile" aria-label="Profile">${avatar()}</a></header>
-  <a class="pp-cart-anchor" href="#/cart" aria-label="View cart">${ic('cart',21)}<span class="badge" data-cc hidden></span></a><nav class="bnav" aria-label="Main">${NAVS.map(([i, l, p]) => `<a href="#${p}" data-p="${p}">${i === 'cart' ? `<span class="icw">${ic(i, 26)}<span class="badge" data-cc hidden></span></span>` : ic(i, 26)}<span>${l}</span></a>`).join('')}</nav>`;
+  <nav class="bnav" aria-label="Main" style="grid-template-columns:repeat(${NAVS.length},minmax(0,1fr))">${NAVS.map(([i, l, p]) => `<a href="#${p}" data-p="${p}">${i === 'cart' ? `<span class="icw">${ic(i, 26)}<span class="badge" data-cc hidden></span></span>` : ic(i, 26)}<span>${l}</span></a>`).join('')}</nav>`;
 }
 const defAddr = () => S.addrs.find(a => a.def) || S.addrs[0];
 let holdCart = false;
@@ -646,7 +646,7 @@ V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r
   <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic(orderStatus.mode(o)==='pickup'?'store':'orders',18)}${orderStatus.mode(o)==='pickup'?'Track pickup':'Track order'}</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
 /* ---------- motion: fly to cart ---------- */
 const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function cartTarget() { for (const el of [$('.pp-home-cart:not(.pp-home-bell)'), $('.pp-cart-anchor'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
+function cartTarget() { for (const el of [$('.pp-home-cart:not(.pp-home-bell)'), $('.bnav a[href="#/cart"]'), $('.topbar a[href="#/cart"]')]) { if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) return { r, el }; } } return null; }
 function pulseCart() { holdCart = false; updateChrome(true); const t = cartTarget(); if (t) { t.el.classList.remove('cshake'); void t.el.offsetWidth; t.el.classList.add('cshake'); } }
 function flyTo(fx) { if (!fx || !document.body.animate || calmMotion()) return pulseCart(); const t = cartTarget(); if (!t || !fx.rect || !fx.rect.width) return pulseCart();
   const size = 58, x0 = fx.rect.left + fx.rect.width / 2 - size / 2, y0 = fx.rect.top + fx.rect.height / 2 - size / 2, x1 = t.r.left + t.r.width / 2 - size / 2, y1 = t.r.top + t.r.height / 2 - size / 2, dx = x1 - x0, dy = y1 - y0;
@@ -950,8 +950,21 @@ function cateringList() { const l = myCater(); if (!l.length) return emptyState(
     <div class="row" style="margin-top:12px"><button class="btn s sm grow" data-a="contact" data-k="call" data-id="${q.rid}">${ic('phone', 16)}Call store</button></div></div>`; }).join('')}</div>`; }
 V.nearby=()=>({html:`<section class="view">${pageHead('Store locations')}${RS.length?`<div class="grid">${RS.map(r=>`<article class="panel"><h2>${esc(r.name)}</h2><p class="mu sm" style="margin:10px 0">${esc(r.addr||'Address not supplied by the store.')}</p><button class="btn s sm" data-a="rest" data-id="${esc(r.id)}">Open menu</button>${r.addr?` <a class="btn s sm" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.addr+', Alegria, Surigao del Norte')}" target="_blank" rel="noopener">Open map</a>`:''}</article>`).join('')}</div>`:emptyState('store','No stores available','Please check again later.')}</section>`});
 V.payments=()=>({html:`<section class="view" style="max-width:680px;margin:auto">${pageHead('Payment methods')}<div class="panel"><h2>Cash payment</h2><p class="mu" style="margin-top:10px">Pay cash on delivery or at pickup. Online wallet and card processing are not connected.</p></div></section>`});
-const FAQ=[['How do I check an order?','Open Orders, select your order and view its recorded status. Timing is confirmed by the store.'],['How do I cancel?','Open the order before preparation and request cancellation. The database must confirm the change.'],['How can I pay?','Cash payment is supported. Online payments are not connected.'],['I need help with an order.','Contact the store shown on your order. Include your order reference when discussing a problem.']];
-V.support=()=>({html:`<section class="view" style="max-width:680px;margin:auto">${pageHead('Support')}<div class="panel">${FAQ.map(([q,a])=>`<details style="padding:12px 0"><summary style="font-weight:700;cursor:pointer">${esc(q)}</summary><p class="mu sm" style="margin-top:10px">${esc(a)}</p></details>`).join('')}</div><div class="panel"><h2>Contact a store</h2><p class="mu sm" style="margin:10px 0">Papalita\u2019s central support messaging service is not connected. Use the store\u2019s supplied contact number for order questions.</p>${RS.filter(r=>r.phone).map(r=>`<p style="margin-top:12px"><b>${esc(r.name)}</b><br><a class="link gl" href="tel:${esc(r.phone.replace(/[^+\d]/g,''))}">Call ${esc(r.phone)}</a></p>`).join('')||'<p class="mu sm">No store contact numbers are available yet.</p>'}</div></section>`});
+const SUPPORT_EMAIL = 'papalitaoriginal@gmail.com';
+const SUPPORT_PHONE = '09243873785';
+const SUPPORT_DIAL = '+63' + SUPPORT_PHONE.slice(1);
+const FAQ=[['How do I check an order?','Open Orders, select your order and view its recorded status. Timing is confirmed by the store.'],['How do I cancel?','Open the order before preparation and request cancellation. The database must confirm the change.'],['How can I pay?','Cash payment is supported. Online payments are not connected.'],['I need help with an order.','Contact Papalita Support and include your order reference so we can look it up.']];
+V.support = () => ({html:`<section class="view" style="max-width:680px;margin:auto">
+  ${pageHead('Support')}
+  <div class="panel">
+    <h2>Contact Papalita</h2>
+    <p class="mu sm" style="margin:8px 0">Get help with your order, account, or the app. For order concerns, include your order reference.</p>
+    <a class="li" href="mailto:${SUPPORT_EMAIL}"><span class="ic">${ic('send',20)}</span><span class="grow"><b>Email Papalita</b><br><span class="sm mu" style="overflow-wrap:anywhere">${SUPPORT_EMAIL}</span></span>${ic('chev',18,'mu')}</a>
+    <a class="li" href="tel:${SUPPORT_DIAL}"><span class="ic">${ic('phone',20)}</span><span class="grow"><b>Call Papalita</b><br><span class="sm mu">${SUPPORT_PHONE}</span></span>${ic('chev',18,'mu')}</a>
+    <a class="li" href="sms:${SUPPORT_DIAL}"><span class="ic">${ic('chat',20)}</span><span class="grow"><b>Text Papalita</b><br><span class="sm mu">${SUPPORT_PHONE}</span></span>${ic('chev',18,'mu')}</a>
+  </div>
+  <div class="panel"><h2>Frequently asked questions</h2>${FAQ.map(([q,a])=>`<details style="padding:12px 0"><summary style="font-weight:700;cursor:pointer">${esc(q)}</summary><p class="mu sm" style="margin-top:10px">${esc(a)}</p></details>`).join('')}</div>
+</section>`});
 function payPick(){const el=openSheet(`<form class="pd" style="padding-top:34px"><h2>Payment method</h2><label class="opt" style="margin-top:16px"><input type="radio" checked name="cash"><span>Cash on delivery or pickup</span></label><p class="mu sm" style="margin:12px 0">No online payment is processed by this app.</p><button class="btn p blk">Use cash payment</button></form>`,{label:'Payment method'});$('form',el).onsubmit=e=>{e.preventDefault();CK.pay='cod';CK.det={};closeSheet();render();};}
 function deleteAcctSheet(){openSheet(`<div class="pd" style="padding-top:38px"><h2>Account deletion</h2><p class="mu" style="margin-top:12px">Account deletion needs Papalita\u2019s authenticated server support. This app cannot delete an account directly. Your account has not been deleted.</p><button class="btn s blk" style="margin-top:18px" data-a="close">Close</button></div>`,{label:'Account deletion'});}
 const contactBtns=r=>r.phone?`<div class="contact"><a class="cbtn" href="tel:${esc(r.phone.replace(/[^+\d]/g,''))}">${ic('phone',20)}Call store</a><a class="cbtn" href="sms:${esc(r.phone.replace(/[^+\d]/g,''))}">${ic('send',20)}Text store</a></div><p class="sm mu" style="margin-top:10px">${esc(r.phone)}</p>`:'<p class="mu sm">The store has not supplied a contact number.</p>';
@@ -978,7 +991,7 @@ async function saveProfile(f){
 /* ---------- actions ---------- */
 const go = p => nav(p), browse = () => nav('/discover?tab=dishes&reset=1');
 function toggleFav(k, id) { const a = S.fav[k], i = a.indexOf(id); i >= 0 ? a.splice(i, 1) : a.push(id); save(); const on = i < 0;
-  $$(`[data-a=fav][data-k=${k}][data-id="${id}"]`).forEach(b => { b.setAttribute('aria-pressed', on); $('svg', b).classList.toggle('on', on); }); toast(on ? 'Saved to favorites.' : 'Removed from favorites.'); if (/favorites/.test(location.hash)) render(); }
+  $$(`[data-a=fav][data-k=${k}][data-id="${id}"]`).forEach(b => { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Remove from favorites' : 'Add to favorites'); $('svg', b).classList.toggle('on', on); }); toast(on ? 'Saved to favorites.' : 'Removed from favorites.'); if (/favorites/.test(location.hash)) render(); }
 const onCheckout = () => /^\/(?:cart|checkout)$/.test(curPath());
 function setPromo(code, onError=toast){
   if(!activeVouchers().some(p=>p.code===code))return onError('This voucher is no longer available.');
@@ -1009,7 +1022,9 @@ const A = {
   hcat: b => { if (b.dataset.id === 'catering') return go('/catering'); HC = HC === b.dataset.id ? 'all' : b.dataset.id; fillCurated(); },
   share: b => { const r = R(b.dataset.id), u = location.href; if (navigator.share) navigator.share({ title: r.name + ' on Papalita', url: u }).catch(() => {}); else { try { navigator.clipboard.writeText(u); toast('Link copied.'); } catch (e) { toast('Sharing is not available here.'); } } },
   close: closeSheet, reload: () => render(), home: () => go('/'), browse, back: () => history.length > 1 ? history.back() : go('/'), go: (b) => { closeSheet(); go(b.dataset.id); },
-  fav: b => toggleFav(b.dataset.k, b.dataset.id), item: b => openItem(b.dataset.id), rest: b => go('/restaurant/' + b.dataset.id), restmenu: b => go('/restaurant/' + b.dataset.id),
+  fav: b => toggleFav(b.dataset.k, b.dataset.id), item: b => openItem(b.dataset.id),
+  rest: b => { const restaurant = R(b.dataset.id); if (restaurant) go('/restaurant/' + encodeURIComponent(restaurant.id)); },
+  restmenu: b => go('/restaurant/' + b.dataset.id),
   quick: b => { const x = ITEM(b.dataset.id); if ((x.item.opts||[]).length) { openItem(x.item.id); return; } const host = b.closest('.card,.mi'), src = (host && $('.ph', host)) || b; addToCart(x.item, x.rest, defSel(x.item), 1, '', null, { rect: src.getBoundingClientRect(), img: x.item.img }); tickBtn(b); },
   loc: locSheet, askloc:locSheet,
   qa: b => { const id = b.dataset.id; if (id === 'rests') go('/discover?tab=rests&reset=1' + (HC !== 'all' ? '&cat=' + HC : '')); else if (id === 'order') go('/discover?tab=dishes&reset=1'); else if (id === 'track') { const o = myOrders().find(isCurrent); o ? go('/track/' + o.id) : (toast('No active orders to track.'), go('/orders')); } else if (id === 'promo') go('/promos'); else moreSheet(); },
@@ -1017,7 +1032,8 @@ const A = {
   sugg: b => { const t = b.dataset.t, id = b.dataset.id; if (t === 'cat') go('/discover?tab=dishes&reset=1&cat=' + id); else if (t === 'rest') go('/restaurant/' + id); else if (t === 'item') { $('#sg').innerHTML = ''; openItem(id); } else { S.recent = [id, ...(S.recent || []).filter(x => x !== id)].slice(0, 6); save(); go('/discover?tab=dishes&reset=1&q=' + encodeURIComponent(id)); } },
   clearq: () => { const q = $('#q'); q.value = ''; $('#sg').innerHTML = ''; $('[data-a=clearq]').hidden = true; q.focus(); },
   dclear: () => { F.q = ''; $('#dq').value = ''; $('[data-a=dclear]').hidden = true; fillResults(); $('#dq').focus(); },
-  ftoggle: () => { F.open = !F.open; fillDiscover(); }, ftab: b => { F.tab = b.dataset.v; render(); },
+  ftoggle: () => { F.open = !F.open; fillDiscover(); },
+  ftab: b => { const tab = b.dataset.v; if (tab === 'dishes' || tab === 'rests') { F.tab = tab; nav('/discover?tab=' + tab); } },
   flt: b => { const k = b.dataset.k, v = b.dataset.v; if (k === 'cat' && v === 'catering') return go('/catering'); F[k] = k === 'cat' ? v : +v; fillDiscover(); }, fpromo: () => { F.promo = !F.promo; fillDiscover(); },
   fclear: () => { F = { ...F, q: '', cat: 'all', price: 0, rating: 0, eta: 0, promo: false }; render(); },
   jump: b => { $$('.chips.solid .chip').forEach(x => x.classList.toggle('on', x === b)); const e = document.getElementById(b.dataset.id); e && e.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
@@ -1065,59 +1081,10 @@ hideagain: b => {
 };
 
 document.addEventListener('click', function (e) {
-  const target = e.target;
-
-  // Preserve favorites and quick-add actions.
-  const button = target.closest('[data-a]');
-
-  if (button && button.disabled) return;
-
-  // Dishes and Restaurants tabs.
-  const tab = target.closest('[data-a="ftab"]');
-
-  if (tab) {
-    e.preventDefault();
-
-    const selected = tab.dataset.v;
-
-    if (selected === 'dishes' || selected === 'rests') {
-      F.tab = selected;
-      nav('/discover?tab=' + selected);
-    }
-
-    return;
-  }
-
-  // Restaurant cards, including Curated for You.
-  const restaurantCard = target.closest('[data-a="rest"]');
-
-  if (restaurantCard) {
-    e.preventDefault();
-
-    const id = restaurantCard.dataset.id;
-    const restaurant = RS.find(r => String(r.id) === String(id));
-
-    if (restaurant) {
-      nav('/restaurant/' + encodeURIComponent(restaurant.id));
-    }
-
-    return;
-  }
-
-  // Food cards.
-  const foodCard = target.closest('[data-a="item"]');
-
-  if (foodCard) {
-    e.preventDefault();
-    openItem(foodCard.dataset.id);
-    return;
-  }
-
-  // All other existing app actions.
-  if (!button) return;
-
+  // A control inside a card takes precedence over the card action.
+  const button = e.target.closest('[data-a]');
+  if (!button || button.disabled) return;
   const action = A[button.dataset.a];
-
   if (typeof action === 'function') {
     e.preventDefault();
     action(button, e);
