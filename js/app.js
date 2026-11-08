@@ -954,13 +954,17 @@ V.payments=()=>({html:`<section class="view" style="max-width:680px;margin:auto"
 const SUPPORT_EMAIL = 'papalitaoriginal@gmail.com';
 const SUPPORT_PHONE = '09243873785';
 const SUPPORT_DIAL = '+63' + SUPPORT_PHONE.slice(1);
+const GMAIL_COMPOSE_URL = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(SUPPORT_EMAIL);
+const SUPPORT_EMAIL_URL = /Android.*Chrome\//.test(navigator.userAgent)
+  ? `intent:${SUPPORT_EMAIL}#Intent;scheme=mailto;action=android.intent.action.SENDTO;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(GMAIL_COMPOSE_URL)};end`
+  : GMAIL_COMPOSE_URL;
 const FAQ=[['How do I check an order?','Open Orders, select your order and view its recorded status. Timing is confirmed by the store.'],['How do I cancel?','Open the order before preparation and request cancellation. The database must confirm the change.'],['How can I pay?','Cash payment is supported. Online payments are not connected.'],['I need help with an order.','Contact Papalita Support and include your order reference so we can look it up.']];
 V.support = () => ({html:`<section class="view" style="max-width:680px;margin:auto">
   ${pageHead('Support')}
   <div class="panel">
     <h2>Contact Papalita</h2>
     <p class="mu sm" style="margin:8px 0">Get help with your order, account, or the app. For order concerns, include your order reference.</p>
-    <a class="li" href="mailto:${SUPPORT_EMAIL}"><span class="ic">${ic('send',20)}</span><span class="grow"><b>Email Papalita</b><br><span class="sm mu" style="overflow-wrap:anywhere">${SUPPORT_EMAIL}</span></span>${ic('chev',18,'mu')}</a>
+    <a class="li" href="${esc(SUPPORT_EMAIL_URL)}"><span class="ic">${ic('send',20)}</span><span class="grow"><b>Email Papalita</b><br><span class="sm mu" style="overflow-wrap:anywhere">${SUPPORT_EMAIL}</span></span>${ic('chev',18,'mu')}</a>
     <a class="li" href="tel:${SUPPORT_DIAL}"><span class="ic">${ic('phone',20)}</span><span class="grow"><b>Call Papalita</b><br><span class="sm mu">${SUPPORT_PHONE}</span></span>${ic('chev',18,'mu')}</a>
     <a class="li" href="sms:${SUPPORT_DIAL}"><span class="ic">${ic('chat',20)}</span><span class="grow"><b>Text Papalita</b><br><span class="sm mu">${SUPPORT_PHONE}</span></span>${ic('chev',18,'mu')}</a>
   </div>
