@@ -10,7 +10,7 @@ self.addEventListener('fetch', event => {
   if (request.mode !== 'navigate' || request.method !== 'GET' ||
       url.origin !== riderPage.origin || url.pathname !== riderPage.pathname) return;
 
-  event.respondWith(fetch(request).catch(() => new Response(`<!doctype html>
+  event.respondWith(fetch(request, {cache:'no-cache'}).catch(() => new Response(`<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,6 +22,6 @@ self.addEventListener('fetch', event => {
   h1{margin:0 0 10px;font-size:24px}
   a{display:inline-block;padding:10px 16px;border-radius:8px;background:#087f32;color:white;text-decoration:none;font-weight:650}
 </style>
-<main><h1>You’re offline</h1><p>Reconnect to open Papalita Rider and view live deliveries.</p><a href="./rider.html">Try again</a></main>
+<main><h1>You’re offline</h1><p>Reconnect to open Papalita Rider and view live deliveries.</p><a href="">Try again</a></main>
 </html>`, {headers:{'Content-Type':'text/html; charset=utf-8'}})));
 });

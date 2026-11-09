@@ -3,7 +3,7 @@
   "name": "Papalita Rider",
   "short_name": "Papalita Rider",
   "description": "Papalita's rider workspace for deliveries in Alegria.",
-  "start_url": "./rider.html",
+  "start_url": "./rider.html?launch=rider",
   "scope": "./rider.html",
   "display": "standalone",
   "background_color": "#f8f8f4",
