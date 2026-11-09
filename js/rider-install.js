@@ -4,13 +4,17 @@
   const displayMode = matchMedia('(display-mode: standalone)');
   let offer, installing = false, installed = false;
   const isStandalone = () => installed || displayMode.matches || navigator.standalone === true;
-  const update = () => document.documentElement.classList.toggle('pr-rider-installed', isStandalone());
+  const update = () => {
+    document.documentElement.classList.toggle('pr-rider-installed', isStandalone());
+    document.documentElement.classList.toggle('pr-rider-install-ready', !!offer && !installing);
+  };
   update();
   displayMode.addEventListener?.('change', update);
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
     offer = event;
+    update();
   });
   window.addEventListener('appinstalled', () => {
     offer = null;
@@ -43,6 +47,7 @@
       showHelp(instructions());
     } finally {
       installing = false;
+      update();
     }
   }
 
