@@ -60,7 +60,13 @@ self.addEventListener('notificationclick', event => {
   event.waitUntil((async () => {
     const target = new URL(event.notification.data?.url || './#/orders', self.registration.scope).href;
     const openClients = await clients.matchAll({type:'window',includeUncontrolled:true});
-    const existing = openClients.find(c => c.url.startsWith(self.registration.scope));
+    const customerRoot = new URL('./', self.registration.scope);
+    const customerPage = new URL('./index.html', customerRoot);
+    const existing = openClients.find(client => {
+      const url = new URL(client.url);
+      return url.origin === customerRoot.origin &&
+        (url.pathname === customerRoot.pathname || url.pathname === customerPage.pathname);
+    });
     if (existing) { await existing.navigate(target); return existing.focus(); }
     return clients.openWindow(target);
   })());
