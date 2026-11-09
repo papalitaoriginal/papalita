@@ -29,7 +29,7 @@
     if (type === 'pickup' && key === 'ready') return ['Ready for pickup', 'You can collect your order at the store.', 'store'];
     if (type === 'pickup' && key === 'completed') return ['Picked up', 'The store has marked your pickup complete.', 'check'];
     if (type === 'delivery' && key === 'ready') return ['Ready for rider', 'Your order is ready for rider pickup.', 'store'];
-    if (type === 'delivery' && key === 'completed') return ['Delivered', 'The store has marked your delivery complete.', 'check'];
+    if (type === 'delivery' && key === 'completed') return ['Delivered', 'Your delivery is complete.', 'check'];
     if (!type && key === 'out_for_delivery') return ['Order update', 'Open tracking for the latest status.', 'orders'];
     return Object.hasOwn(base, key) ? base[key] : ['Order update', 'Open tracking for the latest status.', 'orders'];
   }
