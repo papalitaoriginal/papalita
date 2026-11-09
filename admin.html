@@ -265,7 +265,8 @@ html[data-pa-theme=dark]{--pa-bg:#121a15;--pa-surface:#1c271f;--pa-soft:#253128;
 <script src="js/supabase.js"></script>
 <script src="js/images.js"></script>
 <script src="js/data.js"></script>
-<script src="js/ops.js"></script><script src="js/product-options.js"></script>
+<script src="js/ops.js"></script>
+<script src="js/product-options.js?v=1"></script>
 <script src="js/partner-admin.js"></script>
 
 <script>
@@ -741,12 +742,67 @@ const V={
     const el=$('#c');el.textContent='Loading...';
     try{
       const db=getAuthClient();const [st,pr]=await Promise.all([db.from('stores').select('id,name').eq('status','approved'),db.from('products').select('*').order('created_at',{ascending:false})]);if(st.error)throw st.error;if(pr.error)throw pr.error;
+      if(!el.isConnected)return;
       const stores=st.data||[],rows=pr.data||[];
-      el.innerHTML=`<div class="panel"><h3>Add or edit product</h3><form id="admin-product-form"><input type="hidden" id="ap-id"><div class="two"><div class="field"><label>Store</label><select class="in" id="ap-store" required>${stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div><div class="field"><label>Product name</label><input class="in" id="ap-name" required></div><div class="field"><label>Category</label><input class="in" id="ap-category" required></div><div class="field"><label>Price ₱</label><input class="in" id="ap-price" type="number" min="0.01" step="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="ap-stock" type="number" min="0" step="1" value="0" required></div><div class="field"><label>Status</label><select class="in" id="ap-status"><option value="active">Active</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div></div><div class="field"><label>Description</label><textarea class="in" id="ap-description"></textarea></div><div class="field"><label>Image URL</label><input class="in" type="url" id="ap-image"></div><button class="btn p">Save product</button> <button class="btn s" type="reset" id="ap-reset">Clear</button></form></div><div class="tw"><table><thead><tr><th>Product</th><th>Store</th><th>Price</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(stores.find(s=>s.id===p.store_id)?.name||p.store_id)}</td><td>${peso(p.price)}</td><td>${p.stock}</td><td>${esc(p.status)}</td><td><button class="btn s sm" data-ap-edit="${p.id}">Edit</button> <button class="btn d sm" data-ap-delete="${p.id}">Delete</button></td></tr>`).join('')}</tbody></table></div>`;
-      const productOptions=window.PapalitaOptions.mount($('#admin-product-form'));$('#ap-reset').onclick=()=>{$('#ap-id').value='';productOptions.set([]);};
-      $$('[data-ap-edit]').forEach(b=>b.onclick=()=>{const p=rows.find(x=>x.id===b.dataset.apEdit);if(!p)return;$('#ap-id').value=p.id;$('#ap-store').value=p.store_id;$('#ap-name').value=p.name;$('#ap-category').value=p.category||'';$('#ap-price').value=p.price;$('#ap-stock').value=p.stock;$('#ap-status').value=p.status;$('#ap-description').value=p.description||'';$('#ap-image').value=p.image_url||'';productOptions.set(p.options||[]);$('#admin-product-form').scrollIntoView({behavior:'smooth'});});
-      $$('[data-ap-delete]').forEach(b=>b.onclick=async()=>{if(!confirm('Delete product permanently?'))return;const r=await db.from('products').delete().eq('id',b.dataset.apDelete).select('id');if(r.error)return toast(r.error.message);V.inventory();});
-      $('#admin-product-form').onsubmit=async e=>{e.preventDefault();const row={store_id:$('#ap-store').value,name:$('#ap-name').value.trim(),category:$('#ap-category').value.trim(),price:Number($('#ap-price').value),stock:Number($('#ap-stock').value),status:$('#ap-status').value,description:$('#ap-description').value.trim(),image_url:$('#ap-image').value.trim()||null,options:productOptions.get(),updated_at:new Date().toISOString()};if(!Number.isInteger(row.stock)||row.stock<0||row.price<=0)return toast('Invalid stock or price');const id=$('#ap-id').value;const r=id?await db.from('products').update(row).eq('id',id).select('id'):await db.from('products').insert(row).select('id');if(r.error)return toast(r.error.message);toast('Product saved');V.inventory();};
+      el.innerHTML=`<div class="panel"><h3>Add or edit product</h3><form id="admin-product-form"><input type="hidden" id="ap-id"><div class="two"><div class="field"><label>Store</label><select class="in" id="ap-store" required>${stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div><div class="field"><label>Product name</label><input class="in" id="ap-name" required></div><div class="field"><label>Category</label><input class="in" id="ap-category" required></div><div class="field"><label>Price ₱</label><input class="in" id="ap-price" type="number" min="0.01" step="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="ap-stock" type="number" min="0" step="1" value="0" required></div><div class="field"><label>Status</label><select class="in" id="ap-status"><option value="active">Active</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div></div><div class="field"><label>Description</label><textarea class="in" id="ap-description"></textarea></div><div class="field"><label>Image URL</label><input class="in" type="url" id="ap-image"></div><div class="field" data-product-options></div><button type="submit" class="btn p">Save product</button> <button class="btn s" type="reset">Clear</button></form></div><div class="tw"><table><thead><tr><th>Product</th><th>Store</th><th>Price</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(stores.find(s=>s.id===p.store_id)?.name||p.store_id)}</td><td>${peso(p.price)}</td><td>${p.stock}</td><td>${esc(p.status)}</td><td><button class="btn s sm" data-ap-edit="${p.id}">Edit</button> <button class="btn d sm" data-ap-delete="${p.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No products found.</td></tr>'}</tbody></table></div>`;
+      const form=$('#admin-product-form',el);
+      const optionsHost=form.querySelector('[data-product-options]');
+      let productOptions;
+      try {
+        productOptions=window.PapalitaOptions?.mount(form);
+      } catch(error) {
+        console.error('Could not start the product options editor',error);
+      }
+      if(!productOptions) {
+        optionsHost.textContent='The options editor could not load. Existing options will be kept when you save.';
+      }
+      form.onreset=()=>{$('#ap-id',form).value='';productOptions?.set([]);};
+      $$('[data-ap-edit]',el).forEach(button=>button.onclick=()=>{
+        const product=rows.find(row=>row.id===button.dataset.apEdit);
+        if(!product)return;
+        $('#ap-id',form).value=product.id;
+        $('#ap-store',form).value=product.store_id;
+        $('#ap-name',form).value=product.name;
+        $('#ap-category',form).value=product.category||'';
+        $('#ap-price',form).value=product.price;
+        $('#ap-stock',form).value=product.stock;
+        $('#ap-status',form).value=product.status;
+        $('#ap-description',form).value=product.description||'';
+        $('#ap-image',form).value=product.image_url||'';
+        productOptions?.set(product.options);
+        form.scrollIntoView({behavior:'smooth'});
+      });
+      $$('[data-ap-delete]',el).forEach(b=>b.onclick=async()=>{if(!confirm('Delete product permanently?'))return;const r=await db.from('products').delete().eq('id',b.dataset.apDelete).select('id');if(r.error)return toast(r.error.message);V.inventory();});
+      form.onsubmit=async event=>{
+        event.preventDefault();
+        const button=form.querySelector('button[type=submit]');
+        const id=$('#ap-id',form).value;
+        const row={
+          store_id:$('#ap-store',form).value,
+          name:$('#ap-name',form).value.trim(),
+          category:$('#ap-category',form).value.trim(),
+          price:Number($('#ap-price',form).value),
+          stock:Number($('#ap-stock',form).value),
+          status:$('#ap-status',form).value,
+          description:$('#ap-description',form).value.trim(),
+          image_url:$('#ap-image',form).value.trim()||null,
+          updated_at:new Date().toISOString()
+        };
+        if(!Number.isInteger(row.stock)||row.stock<0||!Number.isFinite(row.price)||row.price<=0)return toast('Invalid stock or price');
+        button.disabled=true;
+        try {
+          if(productOptions)row.options=productOptions.get();
+          else if(!id)row.options=[];
+          const query=id?db.from('products').update(row).eq('id',id):db.from('products').insert(row);
+          await paSaved(query.select('id'));
+          toast('Product saved');
+          if(el.isConnected)await V.inventory();
+        } catch(error) {
+          toast(error.message);
+        } finally {
+          button.disabled=false;
+        }
+      };
     }catch(e){el.textContent=e.message;}
   },
   async applications(){
