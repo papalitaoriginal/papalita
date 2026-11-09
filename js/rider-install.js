@@ -2,10 +2,13 @@
   'use strict';
 
   const displayMode = matchMedia('(display-mode: standalone)');
+  const launchedFromRider = new URLSearchParams(location.search).get('launch') === 'rider';
   let offer, installing = false, installed = false;
-  const isStandalone = () => installed || displayMode.matches || navigator.standalone === true;
+  const isStandalone = () => displayMode.matches || navigator.standalone === true;
+  // A standalone window can also belong to the customer app on this site.
+  const isRiderInstalled = () => installed || launchedFromRider && isStandalone();
   const update = () => {
-    document.documentElement.classList.toggle('pr-rider-installed', isStandalone());
+    document.documentElement.classList.toggle('pr-rider-installed', isRiderInstalled());
     document.documentElement.classList.toggle('pr-rider-install-ready', !!offer && !installing);
   };
   update();
@@ -26,13 +29,13 @@
     const ua = navigator.userAgent;
     const appleMobile = /iPhone|iPad|iPod/i.test(ua) || /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
     if (appleMobile) return 'Open this page in Safari. Tap Share, then Add to Home Screen. Turn on Open as Web App if shown, then tap Add.';
-    if (/FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua)) return 'Open this page in Chrome, then use the browser menu to install it or add it to your home screen.';
+    if (isStandalone() || /FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua)) return 'Open the Rider Portal in a new Chrome tab. In Chrome’s three-dot menu, choose Install or Add to Home screen.';
     if (/Android/i.test(ua)) return 'In Chrome, tap the three-dot menu, then Add to Home screen. Choose Install if offered, or Create shortcut for one-tap access.';
     return 'Open the browser menu and look for Install page as app. If you already installed Papalita Rider, open it from your apps.';
   }
 
   async function open(showHelp) {
-    if (isStandalone() || installing) return;
+    if (isRiderInstalled() || installing) return;
     if (!offer) {
       showHelp(instructions());
       return;
