@@ -1169,10 +1169,14 @@ async function paLoadRiderAssignment(dialog,orderId){
   const {data,error}=await client.rpc('papalita_tracking_admin',{p_order_id:orderId});
   if(!dialog.open)return;
   if(error||!Array.isArray(data?.riders))throw Error('Rider assignment is unavailable. Check the live delivery setup.');
-  const current=data.rider_id;
+  let current=data.rider_id;
   const missing=current&&!data.riders.some(rider=>rider.id===current);
+  const progressAvailable=Object.hasOwn(data,'rider_accepted_at');
+  const progressText=!current?'No rider assigned.':data.rider_picked_up_at?'Pickup confirmed.':
+    data.rider_accepted_at?'Assignment accepted. Waiting for pickup confirmation.':'Waiting for rider acceptance.';
   panel.innerHTML=`<h3>Live delivery rider</h3>
     <p class="mu sm">Only this rider can share GPS once the order is out for delivery.</p>
+    ${progressAvailable?`<p class="sm" data-pa-rider-progress><b>${esc(progressText)}</b></p>`:''}
     <div class="field"><label for="pa-live-rider">Assigned rider</label>
     <select class="in" id="pa-live-rider"><option value="">Unassigned</option>
     ${missing?`<option value="${esc(current)}" selected>Current rider (access removed)</option>`:''}
@@ -1180,12 +1184,17 @@ async function paLoadRiderAssignment(dialog,orderId){
     </select></div>
     <button class="btn p sm" data-pa-save-rider>Save assignment</button> <span role="status"></span>`;
   const select=panel.querySelector('select'), button=panel.querySelector('button'), status=panel.querySelector('[role=status]');
+  const progress=panel.querySelector('[data-pa-rider-progress]');
   button.onclick=async()=>{
    const selected=select.value;
    button.disabled=true; select.disabled=true; status.textContent='Saving…';
    try{
     const {error}=await client.rpc('papalita_tracking_assign',{p_order_id:orderId,p_rider_id:selected||null});
     if(error)throw error;
+    if(progress&&selected!==(current||'')){
+     progress.textContent=selected?'Waiting for rider acceptance.':'No rider assigned.';
+    }
+    current=selected||null;
     status.textContent=selected?'Rider assigned.':'Rider unassigned.';
    }catch(error){status.textContent=error.message||'Could not save the rider.';}
    finally{button.disabled=false;select.disabled=false;}
