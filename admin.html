@@ -317,11 +317,11 @@ function getAuthClient(){
   const cfg=window.FOODIE_CONFIG?.supabase||{};
 
   if(!cfg.url||!cfg.anonKey){
-    throw new Error('Kulang ang Supabase URL o publishable key sa js/config.js.');
+    throw new Error('The Supabase URL or publishable key is missing from js/config.js.');
   }
 
   if(!window.supabase?.createClient){
-    throw new Error('Dili na-load ang Supabase client. Susiha ang internet connection.');
+    throw new Error('The Supabase client could not load. Check your internet connection.');
   }
 
   authClient=window.supabase.createClient(
@@ -485,11 +485,11 @@ async function authorizeUser(user){
 
   if(!access){
     const details=lookupErrors.length
-      ?' Ang role lookup adunay schema/RLS error: '+lookupErrors.join(' | ')
+      ?' The role lookup encountered a schema or row-level security error: '+lookupErrors.join(' | ')
       :'';
 
     throw new Error(
-      'Na-login ka, pero wala makumpirma ang platform administrator o restaurant-manager role sa user_roles/profiles.'
+      'You are signed in. Ask an administrator to verify your platform administrator or store manager role.'
       +details
     );
   }
