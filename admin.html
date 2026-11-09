@@ -1202,9 +1202,80 @@ async function paLoadRiderAssignment(dialog,orderId){
  }catch(error){panel.querySelector('p').textContent=error.message||'Could not load rider assignment.';}
 }
 function paBindOrderViews(target,rows){$$('[data-pa-live-order]',target).forEach(b=>b.onclick=async()=>{b.disabled=true;try{await paShowOrder(rows.find(o=>o.id===b.dataset.paLiveOrder));}catch(e){toast('Could not open order: '+e.message);}finally{b.disabled=false;}});}
+async function paShowRiderReports(){
+ const dialog=paDialog('Rider reports','<div data-pa-rider-reports role="status">Loading reports…</div>');
+ const panel=dialog.querySelector('[data-pa-rider-reports]');
+ try{
+  const {data,error}=await getAuthClient().rpc('papalita_admin_rider_reports');
+  if(!dialog.open)return;
+  if(error||!Array.isArray(data))throw error||Error('Reports could not load.');
+  const reasons={customer_unreachable:'Customer unreachable',wrong_address:'Wrong address',store_delay:'Store delay',vehicle_issue:'Vehicle issue',other:'Other'};
+  panel.removeAttribute('role');
+  panel.innerHTML=data.length?data.map(report=>`<section class="panel" style="margin-bottom:10px;overflow-wrap:anywhere">
+    <h3>${esc(reasons[report.reason]||'Delivery issue')}</h3>
+    <p class="sm">${esc(report.rider||'Rider')} · #${esc(report.order_id.slice(0,8))} · ${esc(report.store||'Store')}</p>
+    <p class="mu sm">${esc(paDate(report.created_at))}</p>
+    ${report.note?`<p style="white-space:pre-wrap">${esc(report.note)}</p>`:''}
+  </section>`).join(''):'<p>No delivery problems reported.</p>';
+ }catch(error){if(dialog.open)panel.textContent=error.message||'Reports could not load.';}
+}
+async function paShowStorePickupPins(){
+ const dialog=paDialog('Store pickup pins','<div data-pa-pickup-panel role="status">Loading stores…</div>');
+ const panel=dialog.querySelector('[data-pa-pickup-panel]');
+ try{
+  const stores=await paStores();
+  if(!dialog.open)return;
+  if(!stores.length){panel.textContent='No stores found.';return;}
+  panel.removeAttribute('role');
+  panel.innerHTML=`<form>
+    <p class="mu sm">Copy the coordinates for the store entrance from Google Maps and paste them below.</p>
+    <div class="field"><label for="pa-pickup-store">Store</label>
+     <select class="in" id="pa-pickup-store">${stores.map(store=>`<option value="${esc(store.id)}">${esc(store.name)}</option>`).join('')}</select></div>
+    <div class="field"><label for="pa-pickup-coords">Latitude, longitude</label>
+     <input class="in" id="pa-pickup-coords" placeholder="9.4671, 125.5744" required></div>
+    <button class="btn p sm" type="submit">Save pickup pin</button>
+    <p class="sm" role="status"></p>
+  </form>`;
+  const form=panel.querySelector('form'),store=form.querySelector('select'),coords=form.querySelector('input'),
+    save=form.querySelector('button'),status=form.querySelector('[role=status]');
+  let revision=0;
+  const update=async p=>{
+   const current=++revision;
+   coords.disabled=save.disabled=true;
+   store.disabled=!!p;
+   status.textContent=p?'Saving…':'Loading pickup pin…';
+   const storeId=store.value;
+   try{
+    const {data,error}=await getAuthClient().rpc('papalita_admin_pickup_pin',{
+      p_store_id:storeId,...(p?{p_coordinates:p}:{})
+    });
+    if(!dialog.open||current!==revision)return;
+    if(error)throw error;
+    coords.value=Array.isArray(data)?data.join(', '):'';
+    status.textContent=p?'Pickup pin saved.':data?'Pickup pin saved for this store.':'Enter this store’s pickup coordinates.';
+   }catch(error){if(current===revision)status.textContent=error.message||'Could not open the pickup pin.';}
+   finally{if(current===revision){coords.disabled=save.disabled=store.disabled=false;}}
+  };
+  store.onchange=()=>{coords.value='';void update();};
+  form.onsubmit=event=>{
+   event.preventDefault();
+   const parts=coords.value.split(',').map(value=>value.trim());
+   const point=parts.map(Number);
+   if(parts.length!==2||parts.some(part=>!/^[-+]?\d+(?:\.\d+)?$/.test(part))||Math.abs(point[0])>90||Math.abs(point[1])>180){
+    status.textContent='Enter two coordinates separated by a comma.';return;
+   }
+   void update(point);
+  };
+  void update();
+ }catch(error){if(dialog.open)panel.textContent=error.message||'Stores could not load.';}
+}
+
 async function paLiveOrderView(){
  const target=paLoading('Orders');try{const rows=await paLiveOrders();if(!target.isConnected)return;
- target.innerHTML=`<div class="row sp wrap" style="margin-bottom:15px"><p class="mu sm">Saved orders, with existing database permissions enforced.</p><button class="btn s sm" data-pa-nav="orders">Refresh</button></div><p class="err" id="pa-order-error" role="alert"></p>${paTable(['Order','Store','Customer','Total','Payment','Status','Action'],rows.map(o=>`<tr><td><b>#${esc(o.id.slice(0,8))}</b><br><small class="mu">${paDate(o.created_at)}</small></td><td>${esc(paStoreName(o.store_id))}</td><td>${esc(o.customer_name||'Customer')}</td><td>${paMoney(paAmount(o))}</td><td>${esc(o.payment_method||'—')}<br>${esc(o.payment_status||'—')}</td><td><select class="in s" data-pa-status="${esc(o.id)}" aria-label="Status of order ${esc(o.id.slice(0,8))}">${[...new Set([o.status,'pending','confirmed','preparing','ready','out_for_delivery','completed','cancelled'])].filter(Boolean).map(s=>`<option value="${esc(s)}" ${s===o.status?'selected':''}>${esc(s.replaceAll('_',' '))}</option>`).join('')}</select></td><td><button class="btn s sm" data-pa-live-order="${esc(o.id)}">View order</button></td></tr>`),'No orders yet')}<p class="mu sm">Showing up to 500 recent orders. Payment status is read from saved records; changing delivery status does not collect or refund money.</p>`;
+ target.innerHTML=`<div class="row sp wrap" style="margin-bottom:15px"><p class="mu sm">Saved orders, with existing database permissions enforced.</p><div class="row wrap">${sess.role==='platform'?'<button class="btn s sm" data-pa-problems>Rider reports</button><button class="btn s sm" data-pa-pickup-pins>Store pickup pins</button>':''}<button class="btn s sm" data-pa-nav="orders">Refresh</button></div></div><p class="err" id="pa-order-error" role="alert"></p>${paTable(['Order','Store','Customer','Total','Payment','Status','Action'],rows.map(o=>`<tr><td><b>#${esc(o.id.slice(0,8))}</b><br><small class="mu">${paDate(o.created_at)}</small></td><td>${esc(paStoreName(o.store_id))}</td><td>${esc(o.customer_name||'Customer')}</td><td>${paMoney(paAmount(o))}</td><td>${esc(o.payment_method||'—')}<br>${esc(o.payment_status||'—')}</td><td><select class="in s" data-pa-status="${esc(o.id)}" aria-label="Status of order ${esc(o.id.slice(0,8))}">${[...new Set([o.status,'pending','confirmed','preparing','ready','out_for_delivery','completed','cancelled'])].filter(Boolean).map(s=>`<option value="${esc(s)}" ${s===o.status?'selected':''}>${esc(s.replaceAll('_',' '))}</option>`).join('')}</select></td><td><button class="btn s sm" data-pa-live-order="${esc(o.id)}">View order</button></td></tr>`),'No orders yet')}<p class="mu sm">Showing up to 500 recent orders. Payment status is read from saved records; changing delivery status does not collect or refund money.</p>`;
+ const reports=target.querySelector('[data-pa-problems]'),pins=target.querySelector('[data-pa-pickup-pins]');
+ if(reports)reports.onclick=paShowRiderReports;
+ if(pins)pins.onclick=paShowStorePickupPins;
  $$('[data-pa-status]',target).forEach(control=>control.onchange=async()=>{const row=rows.find(o=>o.id===control.dataset.paStatus),previous=row.status,next=control.value;
   if(!await paConfirm('Update order status?','Change order #'+row.id.slice(0,8)+' to '+next.replaceAll('_',' ')+'?','Save status')){control.value=previous;return;}
   control.disabled=true;try{const saved=await paSaved(getAuthClient().from('orders').update({status:next,updated_at:new Date().toISOString()}).eq('id',row.id).select('*'));row.status=saved.status;paUpdateOrderBadge();toast('Order status saved.');}catch(e){control.value=previous;$('#pa-order-error').textContent=e.message;}finally{control.disabled=false;}
