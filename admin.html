@@ -216,6 +216,10 @@ body.pa-active{--ink:var(--pa-ink);--muted:var(--pa-muted);--mu:var(--pa-muted);
 .pa-active .kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:20px 0}.pa-active .kpi,.pa-active .kpi:first-child{background:var(--pa-surface);border:1px solid var(--pa-line);border-radius:10px;box-shadow:none;padding:18px 19px}.pa-active .kpi .mu,.pa-active .kpi:first-child .mu{color:var(--pa-muted)!important;font-size:11px;font-weight:500}.pa-active .kpi b,.pa-active .kpi:first-child b{font-size:27px;color:var(--pa-ink);margin-top:10px;letter-spacing:-1px;line-height:1.25}.pa-data-label{font-size:10px;color:var(--pa-muted);margin:15px 0 -10px;display:flex;gap:6px;align-items:center}
 .pa-welcome{border:1px solid #e5d9a5;background:linear-gradient(115deg,#f2e9bf,#f8f3df);padding:26px 28px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:24px;color:#223823}.pa-welcome-overline{font-size:8px;letter-spacing:1.7px;font-weight:700;text-transform:uppercase;margin-bottom:10px;color:#665f3c}.pa-welcome h2{font-size:25px;line-height:1.3;letter-spacing:-.8px;margin:0;color:#203920}.pa-welcome p{color:#58634c;font-size:11px;margin:9px 0 16px}.pa-welcome .btn{background:#253324;color:#fff;border:0}.pa-welcome .btn:hover{background:#344830}.pa-welcome-brand{border-left:1px solid #d8cfa9;padding-left:26px;display:flex;align-items:center;gap:13px;flex:none}.pa-welcome-brand img{width:55px;height:59px;padding:8px;background:#fff;border:1px solid #e9e8d8;border-radius:14px;object-fit:contain}.pa-welcome-brand strong{font-size:24px;color:#203920;display:block;letter-spacing:-.8px}.pa-welcome-brand small{font-size:9px;color:#58634c;display:block;margin-top:3px}.pa-overview-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(245px,1fr);gap:18px;margin-top:18px}.pa-overview-grid>.panel{margin:0;height:100%}.pa-overview-grid svg[viewBox]{max-height:210px}.pa-quick{display:flex;align-items:center;width:100%;text-align:left;gap:12px;border:0;border-bottom:1px solid var(--pa-line);padding:15px 0;background:transparent;color:var(--pa-ink)}.pa-quick:last-child{border:0}.pa-quick>.pa-icon:first-child{width:33px;height:33px;padding:8px;border-radius:9px;background:var(--pa-accent-soft);color:var(--pa-accent)}.pa-quick span{flex:1}.pa-quick strong{font-size:12px;font-weight:650;display:block}.pa-quick small{font-size:10px;color:var(--pa-muted);display:block;margin-top:2px}.pa-quick:hover strong{color:var(--pa-accent)}.pa-section{margin-top:22px}.pa-panel-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:20px 21px 15px}.pa-panel-heading p{color:var(--pa-muted);font-size:11px;margin:3px 0 0}.pa-table-panel{background:var(--pa-surface);border:1px solid var(--pa-line);border-radius:11px;overflow:hidden}.pa-table-panel .tw{border:0;border-radius:0;margin:0}.pa-table-foot{padding:12px 20px;font-size:10px;color:var(--pa-muted);border-top:1px solid var(--pa-line)}.pa-store-name{display:flex;align-items:center;gap:10px}.pa-initials{width:32px;height:32px;border-radius:9px;background:var(--pa-accent-soft);color:var(--pa-ink);display:grid;place-items:center;font-size:10px;font-weight:650;flex:none}.pa-highlight{outline:2px solid var(--pa-accent);outline-offset:-3px}
 .pa-dialog{position:fixed;inset:0;margin:auto;padding:0;width:min(460px,calc(100% - 28px));max-height:calc(100dvh - 40px);overflow:auto;border:1px solid var(--pa-line);border-radius:16px;background:var(--pa-surface);color:var(--pa-ink);box-shadow:0 24px 80px #10271944}.pa-dialog::backdrop{background:#14271c77;backdrop-filter:blur(4px)}.pa-dialog-head{padding:20px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--pa-line)}.pa-dialog-head h2{font-size:17px;margin:0}.pa-dialog-body{padding:20px 22px}.pa-dialog-body p{color:var(--pa-muted)}.pa-dialog-body .btn{margin-top:10px}.pa-dialog-body ul{padding-left:18px;color:var(--pa-muted);line-height:1.9}.pa-theme-options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.pa-theme-option{background:var(--pa-surface);border:1px solid var(--pa-line);padding:20px 12px;border-radius:10px;display:flex;gap:9px;align-items:center;justify-content:center;color:var(--pa-ink)}.pa-theme-option[aria-pressed=true]{outline:2px solid var(--pa-accent);background:var(--pa-accent-soft);outline-offset:1px}.pa-accent-options{display:flex;gap:12px;flex-wrap:wrap;margin-top:15px}.pa-accent-choice{width:35px;height:35px;border-radius:50%;border:3px solid var(--pa-surface);outline:1px solid var(--pa-line);background:var(--choice)}.pa-accent-choice[aria-pressed=true]{outline:2px solid var(--pa-ink);outline-offset:2px}.pa-menu-shade{display:none}.pa-mobile-brand{display:none}
+.pa-product-dialog{width:min(700px,calc(100% - 28px))}
+.pa-product-dialog .pa-dialog-head{position:sticky;top:0;z-index:1;background:var(--pa-surface)}
+.pa-product-dialog .two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:520px){.pa-product-dialog .two{grid-template-columns:minmax(0,1fr)}}
 .pa-active #gate{background:var(--pa-surface);border-color:var(--pa-line);max-width:430px;box-shadow:0 16px 65px #1a342010;border-radius:20px}.pa-active #gate .gate-brand{background:#1d3325;align-items:flex-start}.pa-active #gate .gate-logo{height:53px;max-width:240px;object-fit:contain;object-position:left}.pa-active #gate h1{font-size:26px!important;margin-top:24px!important}.pa-active #gate .note{font-size:11px}.pa-active #gate .link{font-size:11px;color:var(--pa-accent)}.pa-active #gate .in{font-size:14px;min-height:46px}.pa-active #gate .btn{min-height:44px}.pa-active :where(a,button,input,select,textarea,summary):focus-visible{outline:2px solid #75a875;outline-offset:3px}.pa-active .toast{background:var(--pa-ink);color:var(--pa-surface);border:1px solid var(--pa-line);border-radius:9px;max-width:calc(100vw - 30px);font-size:12px}.pa-active #toasts{z-index:10000}
 html[data-pa-theme=dark]{--pa-bg:#121a15;--pa-surface:#1c271f;--pa-soft:#253128;--pa-ink:#edf1e7;--pa-muted:#b0bbae;--pa-line:#354437;--pa-accent:#81bd85;--pa-accent-soft:#2c4230;--pa-danger:#ffaaa2}.pa-active[data-pa-dark=true] .btn.p{color:#122918}.pa-active[data-pa-dark=true] .btn.p:hover{background:#a0d0a1}.pa-active[data-pa-dark=true] .pa-welcome{background:linear-gradient(115deg,#29412b,#233528);border-color:#4d6044}.pa-active[data-pa-dark=true] .pa-welcome h2,.pa-active[data-pa-dark=true] .pa-welcome-brand strong{color:#f0f2da}.pa-active[data-pa-dark=true] .pa-welcome p,.pa-active[data-pa-dark=true] .pa-welcome-brand small,.pa-active[data-pa-dark=true] .pa-welcome-overline{color:#c8d3b7}.pa-active[data-pa-dark=true] .pa-welcome-brand{border-color:#516247}.pa-active[data-pa-dark=true] .pa-welcome .btn{background:#d9e5bd;color:#1e3422}.pa-active[data-pa-dark=true] .status.n,.pa-active[data-pa-dark=true] .demo{background:#4c4229;color:#f5d889}.pa-active[data-pa-dark=true] .status.closed{background:#492e2d;color:#ffb8ac}.pa-active[data-pa-dark=true] .in::placeholder{color:#9daa9d}
 @media(min-width:1450px){.pa-workspace{padding:34px 45px 12px}.pa-topbar{padding-left:45px;padding-right:45px}}
@@ -266,7 +270,7 @@ html[data-pa-theme=dark]{--pa-bg:#121a15;--pa-surface:#1c271f;--pa-soft:#253128;
 <script src="js/images.js"></script>
 <script src="js/data.js"></script>
 <script src="js/ops.js"></script>
-<script src="js/product-options.js?v=1"></script>
+<script src="js/product-options.js?v=2"></script>
 <script src="js/partner-admin.js"></script>
 
 <script>
@@ -737,72 +741,36 @@ const V={
   },
   async finance(){return paLiveFinance();},
   async inventory(){
-    H('All products · Supabase');
-    if(sess.role!=='platform'){$('#c').textContent='Admin access required';return;}
-    const el=$('#c');el.textContent='Loading...';
+    const canManage=sess.role==='platform';
+    H('All products · Supabase',canManage?'<button type="button" class="btn p" id="ap-add" disabled>Add Product</button>':'');
+    const el=$('#c');
+    if(!canManage){el.textContent='Admin access required';return;}
+    const add=$('#ap-add');
+    el.textContent='Loading...';
     try{
-      const db=getAuthClient();const [st,pr]=await Promise.all([db.from('stores').select('id,name').eq('status','approved'),db.from('products').select('*').order('created_at',{ascending:false})]);if(st.error)throw st.error;if(pr.error)throw pr.error;
+      const db=getAuthClient();
+      const [stores,rows]=await Promise.all([
+        paRows(db.from('stores').select('id,name').eq('status','approved')),
+        paRows(db.from('products').select('*').order('created_at',{ascending:false}))
+      ]);
       if(!el.isConnected)return;
-      const stores=st.data||[],rows=pr.data||[];
-      el.innerHTML=`<div class="panel"><h3>Add or edit product</h3><form id="admin-product-form"><input type="hidden" id="ap-id"><div class="two"><div class="field"><label>Store</label><select class="in" id="ap-store" required>${stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div><div class="field"><label>Product name</label><input class="in" id="ap-name" required></div><div class="field"><label>Category</label><input class="in" id="ap-category" required></div><div class="field"><label>Price ₱</label><input class="in" id="ap-price" type="number" min="0.01" step="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="ap-stock" type="number" min="0" step="1" value="0" required></div><div class="field"><label>Status</label><select class="in" id="ap-status"><option value="active">Active</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div></div><div class="field"><label>Description</label><textarea class="in" id="ap-description"></textarea></div><div class="field"><label>Image URL</label><input class="in" type="url" id="ap-image"></div><div class="field" data-product-options></div><button type="submit" class="btn p">Save product</button> <button class="btn s" type="reset">Clear</button></form></div><div class="tw"><table><thead><tr><th>Product</th><th>Store</th><th>Price</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(stores.find(s=>s.id===p.store_id)?.name||p.store_id)}</td><td>${peso(p.price)}</td><td>${p.stock}</td><td>${esc(p.status)}</td><td><button class="btn s sm" data-ap-edit="${p.id}">Edit</button> <button class="btn d sm" data-ap-delete="${p.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No products found.</td></tr>'}</tbody></table></div>`;
-      const form=$('#admin-product-form',el);
-      const optionsHost=form.querySelector('[data-product-options]');
-      let productOptions;
-      try {
-        productOptions=window.PapalitaOptions?.mount(form);
-      } catch(error) {
-        console.error('Could not start the product options editor',error);
-      }
-      if(!productOptions) {
-        optionsHost.textContent='The options editor could not load. Existing options will be kept when you save.';
-      }
-      form.onreset=()=>{$('#ap-id',form).value='';productOptions?.set([]);};
+      el.innerHTML=`<div class="tw"><table><thead><tr><th>Product</th><th>Store</th><th>Price</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        ${rows.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(stores.find(s=>s.id===p.store_id)?.name||p.store_id)}</td><td>${peso(p.price)}</td><td>${p.stock}</td><td>${esc(p.status)}</td><td><button type="button" class="btn s sm" data-ap-edit="${esc(p.id)}">Edit</button> <button type="button" class="btn d sm" data-ap-delete="${esc(p.id)}">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No products found.</td></tr>'}
+      </tbody></table></div>`;
+      const open=product=>paProductEditor(db,stores,product,async id=>{
+        if(!el.isConnected)return;
+        await V.inventory();
+        if(tab!=='inventory')return;
+        const edit=$$('[data-ap-edit]').find(button=>button.dataset.apEdit===String(id));
+        (edit||$('#ap-add'))?.focus({preventScroll:true});
+      });
+      add.disabled=false;
+      add.onclick=()=>open();
       $$('[data-ap-edit]',el).forEach(button=>button.onclick=()=>{
         const product=rows.find(row=>row.id===button.dataset.apEdit);
-        if(!product)return;
-        $('#ap-id',form).value=product.id;
-        $('#ap-store',form).value=product.store_id;
-        $('#ap-name',form).value=product.name;
-        $('#ap-category',form).value=product.category||'';
-        $('#ap-price',form).value=product.price;
-        $('#ap-stock',form).value=product.stock;
-        $('#ap-status',form).value=product.status;
-        $('#ap-description',form).value=product.description||'';
-        $('#ap-image',form).value=product.image_url||'';
-        productOptions?.set(product.options);
-        form.scrollIntoView({behavior:'smooth'});
+        if(product)open(product);
       });
       $$('[data-ap-delete]',el).forEach(b=>b.onclick=async()=>{if(!confirm('Delete product permanently?'))return;const r=await db.from('products').delete().eq('id',b.dataset.apDelete).select('id');if(r.error)return toast(r.error.message);V.inventory();});
-      form.onsubmit=async event=>{
-        event.preventDefault();
-        const button=form.querySelector('button[type=submit]');
-        const id=$('#ap-id',form).value;
-        const row={
-          store_id:$('#ap-store',form).value,
-          name:$('#ap-name',form).value.trim(),
-          category:$('#ap-category',form).value.trim(),
-          price:Number($('#ap-price',form).value),
-          stock:Number($('#ap-stock',form).value),
-          status:$('#ap-status',form).value,
-          description:$('#ap-description',form).value.trim(),
-          image_url:$('#ap-image',form).value.trim()||null,
-          updated_at:new Date().toISOString()
-        };
-        if(!Number.isInteger(row.stock)||row.stock<0||!Number.isFinite(row.price)||row.price<=0)return toast('Invalid stock or price');
-        button.disabled=true;
-        try {
-          if(productOptions)row.options=productOptions.get();
-          else if(!id)row.options=[];
-          const query=id?db.from('products').update(row).eq('id',id):db.from('products').insert(row);
-          await paSaved(query.select('id'));
-          toast('Product saved');
-          if(el.isConnected)await V.inventory();
-        } catch(error) {
-          toast(error.message);
-        } finally {
-          button.disabled=false;
-        }
-      };
     }catch(e){el.textContent=e.message;}
   },
   async applications(){
@@ -924,6 +892,94 @@ function paAppearance(){
 function paDialog(title,content){
  const previousFocus=document.activeElement;
  const dialog=document.createElement('dialog');dialog.className='pa-dialog';dialog.setAttribute('aria-labelledby','pa-dialog-title');dialog.innerHTML=`<div class="pa-dialog-head"><h2 id="pa-dialog-title">${title}</h2><form method="dialog"><button class="pa-icon-button" aria-label="Close dialog">${paIcon('close')}</button></form></div><div class="pa-dialog-body">${content}</div>`;$('#root').append(dialog);dialog.addEventListener('close',()=>{dialog.remove();if(previousFocus?.isConnected)previousFocus.focus();});dialog.showModal();return dialog;
+}
+function paProductEditor(db,stores,product,onSaved){
+ const storeId=product?.store_id;
+ const storeOptions=stores.map(store=>`<option value="${esc(store.id)}" ${store.id===storeId?'selected':''}>${esc(store.name)}</option>`);
+ if(storeId&&!stores.some(store=>store.id===storeId)){
+  storeOptions.unshift(`<option value="${esc(storeId)}" selected>Current store · ${esc(storeId)}</option>`);
+ }
+ const statuses=[['active','Active'],['draft','Draft'],['inactive','Inactive']];
+ const dialog=paDialog(product?'Edit Product':'Add Product',`
+  <form id="admin-product-form">
+   <div class="two">
+    <div class="field"><label for="ap-store">Store</label><select class="in" id="ap-store" required>${storeOptions.join('')}</select></div>
+    <div class="field"><label for="ap-name">Product name</label><input class="in" id="ap-name" value="${esc(product?.name)}" required autofocus></div>
+    <div class="field"><label for="ap-category">Category</label><input class="in" id="ap-category" value="${esc(product?.category)}" required></div>
+    <div class="field"><label for="ap-price">Price ₱</label><input class="in" id="ap-price" type="number" min="0.01" step="0.01" value="${esc(product?.price)}" required></div>
+    <div class="field"><label for="ap-stock">Stock</label><input class="in" id="ap-stock" type="number" min="0" step="1" value="${esc(product?.stock??0)}" required></div>
+    <div class="field"><label for="ap-status">Status</label><select class="in" id="ap-status">${statuses.map(([value,label])=>`<option value="${value}" ${value===product?.status?'selected':''}>${label}</option>`).join('')}</select></div>
+   </div>
+   <div class="field"><label for="ap-description">Description</label><textarea class="in" id="ap-description">${esc(product?.description)}</textarea></div>
+   <div class="field"><label for="ap-image">Image URL</label><input class="in" type="url" id="ap-image" value="${esc(product?.image_url)}"></div>
+   <div class="field" data-product-options></div>
+   <p class="err" id="ap-error" role="alert"></p>
+   <div class="row wrap" style="justify-content:flex-end;gap:8px;margin-top:12px">
+    <button type="reset" class="btn s">${product?'Reset':'Clear'}</button>
+    <button type="button" class="btn s" data-ap-cancel>Cancel</button>
+    <button type="submit" class="btn p">Save product</button>
+   </div>
+  </form>`);
+ dialog.classList.add('pa-product-dialog');
+ const form=$('#admin-product-form',dialog);
+ const error=$('#ap-error',form);
+ const optionsHost=$('[data-product-options]',form);
+ const close=$('[aria-label="Close dialog"]',dialog);
+ const cancel=$('[data-ap-cancel]',form);
+ const submit=$('button[type=submit]',form);
+ const reset=$('button[type=reset]',form);
+ let productOptions;
+ try{
+  productOptions=window.PapalitaOptions?.mount(form);
+  productOptions?.set(product?.options);
+ }catch(err){
+  productOptions=undefined;
+  console.error('Could not start the product options editor',err);
+ }
+ if(!productOptions){
+  optionsHost.textContent='The options editor could not load. Existing options will be kept when you save.';
+ }
+ cancel.onclick=()=>dialog.close();
+ dialog.addEventListener('cancel',event=>{if(submit.disabled)event.preventDefault();});
+ form.onreset=()=>{error.textContent='';productOptions?.set(product?.options);};
+ form.onsubmit=async event=>{
+  event.preventDefault();
+  if(submit.disabled)return;
+  error.textContent='';
+  const row={
+   store_id:$('#ap-store',form).value,
+   name:$('#ap-name',form).value.trim(),
+   category:$('#ap-category',form).value.trim(),
+   price:Number($('#ap-price',form).value),
+   stock:Number($('#ap-stock',form).value),
+   status:$('#ap-status',form).value,
+   description:$('#ap-description',form).value.trim(),
+   image_url:$('#ap-image',form).value.trim()||null,
+   updated_at:new Date().toISOString()
+  };
+  if(!row.name||!row.category||!Number.isInteger(row.stock)||row.stock<0||!Number.isFinite(row.price)||row.price<=0){
+   error.textContent='Enter a name, category, valid price and stock.';
+   return;
+  }
+  const actions=[close,cancel,reset,submit];
+  actions.forEach(button=>button.disabled=true);
+  let saved;
+  try{
+   if(productOptions)row.options=productOptions.get();
+   else if(!product)row.options=[];
+   const query=product?db.from('products').update(row).eq('id',product.id):db.from('products').insert(row);
+   saved=await paSaved(query.select('id'));
+  }catch(err){
+   error.textContent=err.message;
+  }finally{
+   actions.forEach(button=>button.disabled=false);
+  }
+  if(saved){
+   dialog.close();
+   toast('Product saved');
+   await onSaved(saved.id);
+  }
+ };
 }
 draw=function(){
  if(!sess)return gate();
