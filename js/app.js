@@ -433,7 +433,6 @@ function authLayout() {
   return `<div class="pp-auth-layout">
     <aside class="pp-auth-pitch" aria-label="About Papalita">
       <img class="pp-auth-photo" src="images/papalita-auth-food.webp" alt="" fetchpriority="high">
-      <div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><b>Papalita</b></div>
       <div class="pp-auth-story">
         <span class="pp-auth-kicker">Alegria, Surigao del Norte</span>
         <h2>Good food.<br><em>Good mood.</em></h2>
@@ -1049,7 +1048,13 @@ const own=x=>realId(S.user.id)&&x.uid===S.user.id;
 const myOrders=()=>S.orders.filter(o=>own(o)&&o.source==='supabase'), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
 let AU={view:'login',prefill:'',busy:false};
-const authHead = (title, intro) => `<header class="pp-auth-heading"><span class="pp-auth-kicker">Customer account</span><h1>${title}</h1><p>${intro}</p></header>`;
+const authHead = (title, intro) => `<header class="pp-auth-heading">
+  <div class="pp-auth-lockup">
+    <img src="images/papalita_mark_white.png" alt="" width="256" height="350">
+    <div><b>PAPALITA</b><span>Good Food, Good Mood.</span></div>
+  </div>
+  <h1>${title}</h1><p>${intro}</p>
+</header>`;
 const pwField = (id, label, auto, extra = '') => `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${auto}">${`<button type="button" class="pwt" data-a="pwtoggle" data-id="${id}" aria-label="Show password">${ic('eye', 20)}</button>`}</div>${extra}<p class="err" data-e="${id}"></p></div>`;
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
 function authScreen() {
@@ -1059,7 +1064,10 @@ function authScreen() {
     <form id="rf" novalidate><div class="field"><label for="rn">Full name</label><input class="in" id="rn" autocomplete="name" maxlength="60"><p class="err" data-e="rn"></p></div><div class="field"><label for="rm">Mobile number</label><input class="in" id="rm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="rm"></p></div>
     <div class="field"><label for="re">Email address (required)</label><input class="in" id="re" type="email" autocomplete="email"><p class="err" data-e="re"></p></div><div class="field"><label for="rb">Barangay</label><select class="in" id="rb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option>${b.n}</option>`).join('')}</select><p class="err" data-e="rb"></p></div>
     ${pwField('rpw', 'Password', 'new-password', meterHTML('rpw'))}${pwField('rpc', 'Confirm password', 'new-password')}
-    <label class="row sm" style="align-items:flex-start;margin:4px 0 4px"><input type="checkbox" id="rt" style="accent-color:var(--or);width:20px;height:20px;margin-top:2px"><span>I agree to the <button type="button" class="link gl" style="padding:0" data-a="terms">Terms and Privacy Policy</button></span></label><p class="err" data-e="rt"></p><button class="btn p blk" style="margin-top:10px">Create account</button></form></section>`;
+    <div class="pp-auth-consent">
+      <label class="pp-auth-consent-choice" for="rt"><input type="checkbox" id="rt" aria-describedby="rt-error"><span>I agree to the Terms and Privacy Policy</span></label>
+      <button type="button" class="link gl" data-a="terms">Read policy</button>
+    </div><p class="err" id="rt-error" data-e="rt"></p><button class="btn p blk" style="margin-top:10px">Create account</button></form></section>`;
   return `<section class="view auth">${authHead('Welcome back', 'Log in to order from your local favorites and track your delivery.')}${tabs('login')}
     <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" type="email" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
     <div class="pp-auth-recovery"><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div><button class="btn p blk">Log in</button></form></section>`;
