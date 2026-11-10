@@ -552,7 +552,11 @@ function renderVoucherCheckout(focusVoucher=true){
   if(focusVoucher) $('[data-a=choosevoucher]')?.focus({preventScroll:true});
   window.scrollTo(0,position);
 }
-V.cartView = () => { const c = calc();
+V.cartView = () => {
+  if (pendingCheckout(S.user.id)) return {html: `<section class="view">${pageHead('Order review')}
+    <div class="panel"><h2>Check your order</h2><p class="mu" style="margin:8px 0 16px">We could not confirm your previous checkout. Retrying sends the same order request and returns the original order if it was already saved.</p>
+    <button class="btn p" id="place" data-a="place">Retry checkout</button></div></section>`};
+  const c = calc();
   if (!S.cart.lines.length) return { html: `<section class="view">${pageHead('Your cart')}${emptyState('cart', 'Your cart is empty', 'Add something delicious and it will show up here.', 'Browse food', 'browse')}</section>` };
   const a = checkoutAddress(); if (a) CK.addr = a.id; const r=c.r;
   const pl = payLabel(), tip = CK.tip || 0; const fee = c.promo && !c.perr && c.promo.type === 'ship' ? `<s class="mu">${peso(c.fee)}</s> <b class="gl">Free</b>` : c.feeKnown?peso(c.fee):deliveryConfig?.enabled?'Awaiting quote':deliveryConfig?'Not configured':'Loading…';
@@ -735,7 +739,84 @@ const PH = /^(09|\+639)\d{9}$/;
 const payLabel=()=>[CK.fulfillment==='pickup'?'Cash on Pickup':'Cash on Delivery',CK.fulfillment==='pickup'?'PAY AT THE STORE':'PAY ON ARRIVAL'];
 function addrPick() { const current = checkoutAddress(); const el = openSheet(`<div class="pd" style="padding-top:34px"><h2 style="margin-bottom:12px">Deliver to</h2>${S.addrs.map(a => `<label class="opt"><input type="radio" name="ap" value="${a.id}" ${current?.id === a.id ? 'checked' : ''}><span class="grow"><b>${esc(a.label)}</b><br><span class="mu sm">${esc(a.line)}, ${esc(a.city)}</span></span></label>`).join('')}<button class="btn s blk" data-a="addrform" style="margin-top:6px">${ic('plus', 18)}Add new address</button>${current ? `<button class="btn o blk" data-a="addrform" data-id="${esc(current.id)}" style="margin-top:8px">${ic('edit', 18)}Edit delivery address</button>` : ''}</div>`, { label: 'Delivery address' });
   el.addEventListener('change', e => { if (e.target.name === 'ap') { CK.addr = e.target.value; S.addrs.forEach(a => a.def = a.id === CK.addr); syncLoc(S.addrs.find(a => a.id === CK.addr)); save(); closeSheet(); updateChrome(); render(); } }); }
+let checkoutBusy = false, pendingAttempt = null;
+const checkoutStorageKey = customer => 'papalita.pending-checkout.' + customer;
+const checkoutCartStamp = () => JSON.stringify(S.cart.lines);
+function pendingCheckout(customer) {
+  if (!customer) return null;
+  if (pendingAttempt?.customer === customer) return pendingAttempt;
+  try {
+    const attempt = JSON.parse(sessionStorage.getItem(checkoutStorageKey(customer)));
+    return attempt?.customer === customer && realId(attempt.request?.p_checkout_id) ? attempt : null;
+  } catch { return null; }
+}
+function savePendingCheckout(customer, attempt) {
+  pendingAttempt = attempt;
+  try {
+    if (attempt) sessionStorage.setItem(checkoutStorageKey(customer), JSON.stringify(attempt));
+    else sessionStorage.removeItem(checkoutStorageKey(customer));
+  } catch {}
+}
+async function sendCheckout(db, attempt) {
+  const {data,error} = await db.rpc('papalita_checkout', attempt.request);
+  if (error) {
+    // A database rejection rolled back the submission. Keep the key on a lost response.
+    if (['PT429','P0001','22023','22P02','23514','PGRST202'].includes(error.code)) {
+      savePendingCheckout(attempt.customer, null);
+    }
+    throw error;
+  }
+  if (!Array.isArray(data) || data.length !== attempt.request.p_groups.length || data.some(row => !realId(row?.order_id))) {
+    throw Error('Checkout did not confirm every store order.');
+  }
+  return data;
+}
+function finishCheckout(attempt, orders) {
+  if (S.user.id !== attempt.customer || !S.user.in) return;
+  const newOrders = orders.filter(order => !ORD(order.id));
+  S.orders.unshift(...newOrders);
+  if (checkoutCartStamp() === attempt.cart) {
+    S.user.phone = attempt.request.p_phone;
+    CK.tip = 0;
+    S.cart = {rid:null,lines:[]};
+    S.promo = null;
+  }
+  save();
+  savePendingCheckout(attempt.customer, null);
+  updateChrome();
+  nav('/confirmation/' + orders[0].id);
+  for (const order of newOrders) {
+    try {
+      notify('order', `Order submitted · ${order.id}`, 'Your order was saved.');
+      Promise.resolve(window.PAPALITA_NOTIFICATIONS?.orderPlaced(order.id)).catch(error => console.warn('[Papalita] Order phone alert:', error.message));
+    } catch (error) { console.warn('[Papalita] Order phone alert:', error.message); }
+  }
+  if (orders.length > 1) toast(`${orders.length} store orders submitted successfully.`);
+}
 async function placeOrder() {
+  if (checkoutBusy) return;
+  checkoutBusy = true;
+  const customer = S.user.id, attempt = pendingCheckout(customer), btn = $('#place');
+  try {
+    if (!attempt) return await submitOrder();
+    btn.disabled = true;
+    btn.textContent = 'Retrying checkout…';
+    const db = authDB();
+    const {data: auth, error: authError} = await db.auth.getUser();
+    if (authError) throw authError;
+    if (auth?.user?.id !== customer || S.user.id !== customer) throw Error('Sign in to the account that placed this order.');
+    const receipts = await sendCheckout(db, attempt);
+    const orders = await Promise.all(receipts.map(row => fetchCustomerOrder(db,row.order_id,customer)));
+    finishCheckout(attempt, orders);
+  } catch (error) {
+    console.error('[Papalita] Checkout retry failed:', error);
+    if (S.user.id === customer) toast(pendingCheckout(customer)
+      ? 'Order status is unconfirmed. Retry the same checkout.'
+      : error.message || 'Review your order and try again.');
+    if (btn?.isConnected) render();
+  } finally { checkoutBusy = false; }
+}
+async function submitOrder() {
   const a = checkoutAddress(), barangay = addressBarangay(a);
   let c = calc(S.cart, S.promo, barangay);
   if (!S.cart.lines.length) return;
@@ -752,16 +833,20 @@ async function placeOrder() {
   const db = window.PAPALITA_DB;
   if (!db) return toast('Supabase is unavailable. Please try again.');
   const btn = $('#place'); btn.disabled = true; btn.firstElementChild.textContent = 'Placing orders…';
+  const customer = S.user.id;
   const reviewedTotal=Number(btn.dataset.total??(c.total+CK.tip)), reviewedPromo=S.promo;
+  const reviewedCart = checkoutCartStamp();
   try {
     const { data: auth, error: authError } = await db.auth.getUser();
     if (authError) throw authError;
-    if (!auth?.user) throw new Error('Please sign in again before ordering.');
+    if (!customer || auth?.user?.id !== customer) throw new Error('Please sign in again before ordering.');
     const quote = !c.pickup && deliveryConfig?.enabled ? activeDeliveryQuote(a) : null;
     const address = c.pickup ? 'Pickup at store' : quote?.address ||
       `${a.label} — ${a.line}${a.landmark ? ' (' + a.landmark + ')' : ''}, ${a.city}`;
     await refreshCommercialData();
-    if (!btn.isConnected) throw Error('Checkout changed. Review your order and try again.');
+    if (!btn.isConnected || S.user.id !== customer || checkoutCartStamp() !== reviewedCart) {
+      throw Error('Checkout changed. Review your order and try again.');
+    }
     c=calc(S.cart, S.promo, barangay);
     if(c.perr||reviewedPromo!==S.promo||Math.abs(reviewedTotal-c.total-CK.tip)>.009){
       renderVoucherCheckout();
@@ -790,13 +875,13 @@ async function placeOrder() {
         ...(quote ? {quote_id:quote.byStore.get(g.rid).id} : {}),
         items: g.lines.map(l => ({ product_id: l.itemId, quantity: l.qty, selected_options: l.sel || {}, special_instructions: l.note || '' })) };
     });
-    // Atomic database transaction: do not clear the cart until the server confirms all orders.
-    const { data, error } = await db.rpc(quote?'papalita_place_quoted_orders':'papalita_place_orders', {
-      p_groups: groups, p_address: address, p_phone: phone,
+    const attempt = {customer,cart:reviewedCart,request:{
+      p_checkout_id: crypto.randomUUID(), p_groups: groups, p_address: address, p_phone: phone,
       p_fulfillment: CK.fulfillment, p_payment_method: 'cod'
-    });
-    if (error) throw error;
-    if (!Array.isArray(data) || data.length !== groups.length) throw new Error('Server did not confirm all store orders. Check order history before retrying.');
+    }};
+    const note = ($('#di')?.value || '').trim();
+    savePendingCheckout(customer, attempt);
+    const data = await sendCheckout(db, attempt);
     const createdAt = Date.now();
     const orders = groups.map((g, index) => {
       const group = c.groups[index], result = data[index];
@@ -805,24 +890,20 @@ async function placeOrder() {
         deliveryPricing:quote?.byStore.get(g.rid)?.details || null,
         total: Number(result.total_amount), tip: g.tip, promo: g.discount ? reviewedPromo : null,
         createdAt, source: 'supabase', status: 'pending', stage: 0, upd: createdAt, uid: auth.user.id,
-        fulfillment: CK.fulfillment, addr: address, note: ($('#di').value || '').trim(),
+        fulfillment: attempt.request.p_fulfillment, addr: address, note,
         contact: { name: S.user.name, phone }, pay: { method: 'cod', status: 'unpaid', source: 'supabase' } };
     });
-    S.user.phone = phone; CK.tip = 0; S.orders.unshift(...orders);
-    S.cart = { rid: null, lines: [] }; S.promo = null;
-    orders.forEach(o => notify('order', `Order submitted · ${o.id}`, `${R(o.rid)?.name || 'Store'} order saved to Supabase.`));
-    save(); updateChrome(); nav('/confirmation/' + orders[0].id);
-    // Notification failures must never turn an already saved order into a
-    // checkout failure or invite a second purchase.
-    for(const order of orders){
-      try{Promise.resolve(window.PAPALITA_NOTIFICATIONS?.orderPlaced(order.id)).catch(error=>console.warn('[Papalita] Order phone alert:',error.message));}
-      catch(error){console.warn('[Papalita] Order phone alert:',error.message);}
-    }
-    if (orders.length > 1) toast(`${orders.length} store orders submitted successfully.`);
+    finishCheckout(attempt, orders);
   } catch (error) {
     console.error('[Papalita] Checkout failed:', error);
-    toast('Order not confirmed: ' + (error.message || 'Please try again.'));
-    if(btn.isConnected){btn.disabled=false;btn.firstElementChild.textContent='Place Order';}
+    if (S.user.id !== customer) return;
+    if (pendingCheckout(customer)) {
+      toast('Order status is unconfirmed. Retry the same checkout.');
+      if (onCheckout()) render();
+    } else {
+      toast(error.message || 'Order not confirmed. Try again.');
+      if (btn.isConnected) { btn.disabled = false; btn.firstElementChild.textContent = 'Place Order'; }
+    }
   }
 }
 
@@ -879,6 +960,28 @@ function printReceipt(id) { const o = ORD(id); if (!o) return; const old = $('#p
 
 /* ---------- tracking ---------- */
 
+async function fetchCustomerOrder(db,id,uid) {
+  const result=await db.from('orders').select('*').eq('id',id).eq('customer_id',uid).maybeSingle();
+  if(result.error)throw result.error;
+  const row=result.data;if(!row||row.customer_id!==uid)throw Error('This order is unavailable for your account.');
+  const items=await db.from('order_items').select('product_id,product_name,quantity,unit_price,selected_options,special_instructions').eq('order_id',id);
+  if(items.error)throw items.error;
+  const order={id:row.id,rid:row.store_id,total:Number(row.total_amount)||0,
+    status:row.status,fulfillment:orderStatus.mode(row),source:'supabase',uid,createdAt:Date.parse(row.created_at)||Date.now(),
+    upd:Date.parse(row.updated_at)||Date.now(),addr:row.delivery_address||'',
+    contact:{name:row.customer_name||S.user.name,phone:row.contact_number||''},
+    pay:{method:row.payment_method||'cod',status:row.payment_status||'unpaid',source:'supabase'},
+    items:(items.data||[]).map(i=>({itemId:i.product_id,name:i.product_name,qty:Number(i.quantity)||0,
+      unit:Number(i.unit_price)||0,sel:i.selected_options||{},note:i.special_instructions||'',
+      img:ITEM(i.product_id)?.item.img||''}))};
+  order.sub=order.items.reduce((n,i)=>n+i.unit*i.qty,0);
+  order.fee=row.delivery_fee==null?null:Number(row.delivery_fee);
+  order.deliveryPricing=row.delivery_pricing || null;
+  order.disc=Number(row.discount_amount??row.discount)||0;
+  order.tip=Number(row.tip)||0;
+  return order;
+}
+
 // A push link can refer to a real order that has not been cached on this device.
 function linkedOrderView(id) {
   return {html:`<section class="view"><div class="panel" id="linked-order-state" role="status"><h2>Loading your order…</h2><p class="mu sm">Checking the latest details with Papalita.</p></div></section>`,after:async()=>{
@@ -886,26 +989,9 @@ function linkedOrderView(id) {
       const auth=await authDB().auth.getUser();
       if(auth.error||!auth.data?.user)throw Error('Please sign in to view this order.');
       const uid=auth.data.user.id;
-      const result=await authDB().from('orders').select('*').eq('id',id).eq('customer_id',uid).maybeSingle();
-      if(result.error)throw result.error;
-      const row=result.data;if(!row||row.customer_id!==uid)throw Error('This order is unavailable for your account.');
-      const items=await authDB().from('order_items').select('product_id,product_name,quantity,unit_price,selected_options,special_instructions').eq('order_id',id);
-      if(items.error)throw items.error;
+      const order=await fetchCustomerOrder(authDB(),id,uid);
       if(S.user.id!==uid||!S.user.in)return;
-      const order={id:row.id,rid:row.store_id,total:Number(row.total_amount)||0,
-        status:row.status,fulfillment:orderStatus.mode(row),source:'supabase',uid,createdAt:Date.parse(row.created_at)||Date.now(),
-        upd:Date.parse(row.updated_at)||Date.now(),addr:row.delivery_address||'',
-        contact:{name:row.customer_name||S.user.name,phone:row.contact_number||''},
-        pay:{method:row.payment_method||'cod',status:row.payment_status||'unpaid',source:'supabase'},
-        items:(items.data||[]).map(i=>({itemId:i.product_id,name:i.product_name,qty:Number(i.quantity)||0,
-          unit:Number(i.unit_price)||0,sel:i.selected_options||{},note:i.special_instructions||'',
-          img:ITEM(i.product_id)?.item.img||''}))};
-      order.sub=order.items.reduce((n,i)=>n+i.unit*i.qty,0);
-      order.fee=row.delivery_fee==null?null:Number(row.delivery_fee);
-      order.deliveryPricing=row.delivery_pricing || null;
-      order.disc=Number(row.discount_amount??row.discount)||0;
-      order.tip=Number(row.tip)||0;
-      const old=S.orders.findIndex(o=>String(o.id)===String(row.id));
+      const old=S.orders.findIndex(o=>String(o.id)===String(order.id));
       if(old<0)S.orders.push(order);else S.orders[old]=order;save();
       if(curPath()==='/track/'+id)render();
     } catch(error) {
