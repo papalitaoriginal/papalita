@@ -429,7 +429,20 @@ V.home = () => {
     ${RS.some(r=>r.catering)?`<a class="mint row home-promo-card" href="#/catering">${ic('box',24)}<span class="grow"><b>Bring everyone to the table.</b><br><span class="sm mu">Ask participating stores about catering.</span></span>${ic('arrow',19)}</a>`:''}
     ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();watchHomeVoucher();}};
 };
-function authLayout(){return `<div class="pp-auth-layout"><aside class="pp-auth-pitch" aria-label="About Papalita"><div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><span><b>Papalita</b><small>GOOD FOOD, GOOD MOOD.</small></span></div><div><span class="pp-kicker">Alegria, Surigao del Norte</span><h2>A good mood<br>is <em>on the menu.</em></h2><p>Cafés, comfort food, and local favorites. Find your next delicious moment with Papalita.</p></div><div class="pp-auth-photo">${foodVisual()}</div></aside><div class="pp-auth-form">${authScreen()}</div></div>`;}
+function authLayout() {
+  return `<div class="pp-auth-layout">
+    <aside class="pp-auth-pitch" aria-label="About Papalita">
+      <img class="pp-auth-photo" src="images/papalita-auth-food.webp" alt="" fetchpriority="high">
+      <div class="pp-auth-brand"><img src="images/papalita_mark_color.png" alt=""><b>Papalita</b></div>
+      <div class="pp-auth-story">
+        <span class="pp-auth-kicker">Alegria, Surigao del Norte</span>
+        <h2>Good food.<br><em>Good mood.</em></h2>
+        <p>From your morning coffee to dinner with the family, find your favorites close to home.</p>
+      </div>
+    </aside>
+    <div class="pp-auth-form">${authScreen()}</div>
+  </div>`;
+}
 
 function suggestions(q) {
   q = q.trim().toLowerCase(); if (!q) return ''; const has = s => s.toLowerCase().includes(q), out = [];
@@ -1036,21 +1049,20 @@ const own=x=>realId(S.user.id)&&x.uid===S.user.id;
 const myOrders=()=>S.orders.filter(o=>own(o)&&o.source==='supabase'), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
 let AU={view:'login',prefill:'',busy:false};
-const authHead = () => `<div class="auth-top"><span class="auth-logo papalita-logo-motion"><img src="images/papalita_mark_color.png" alt="Papalita official logo"></span><div><b>PAPALITA</b><span>Good Food, Good Mood.</span></div></div>`;
+const authHead = (title, intro) => `<header class="pp-auth-heading"><span class="pp-auth-kicker">Customer account</span><h1>${title}</h1><p>${intro}</p></header>`;
 const pwField = (id, label, auto, extra = '') => `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${auto}">${`<button type="button" class="pwt" data-a="pwtoggle" data-id="${id}" aria-label="Show password">${ic('eye', 20)}</button>`}</div>${extra}<p class="err" data-e="${id}"></p></div>`;
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
 function authScreen() {
   const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t === 'register'}" class="${t === 'register' ? 'on' : ''}" data-a="authtab" data-v="register">Register</button></div>`;
-  if (AU.view === 'reset') return `<section class="view auth">${authHead()}<h1 style="margin-top:22px">Create a new password</h1><form id="rp" novalidate style="margin-top:16px">${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Save password</button></form></section>`;
-  if (AU.view === 'register') return `<section class="view auth">${authHead()}<h1 style="margin-top:22px">Create your account</h1><p class="mu" style="margin-bottom:14px">Order from local stores in Alegria. Verify your email after registration to activate your account.</p>${tabs('register')}
+  if (AU.view === 'reset') return `<section class="view auth">${authHead('Create a new password', 'Choose a new password for your Papalita account.')}<form id="rp" novalidate>${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Save password</button></form></section>`;
+  if (AU.view === 'register') return `<section class="view auth">${authHead('Create your account', 'Sign up to order from local stores in Alegria. We’ll email you a link to activate your account.')}${tabs('register')}
     <form id="rf" novalidate><div class="field"><label for="rn">Full name</label><input class="in" id="rn" autocomplete="name" maxlength="60"><p class="err" data-e="rn"></p></div><div class="field"><label for="rm">Mobile number</label><input class="in" id="rm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="rm"></p></div>
     <div class="field"><label for="re">Email address (required)</label><input class="in" id="re" type="email" autocomplete="email"><p class="err" data-e="re"></p></div><div class="field"><label for="rb">Barangay</label><select class="in" id="rb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option>${b.n}</option>`).join('')}</select><p class="err" data-e="rb"></p></div>
     ${pwField('rpw', 'Password', 'new-password', meterHTML('rpw'))}${pwField('rpc', 'Confirm password', 'new-password')}
     <label class="row sm" style="align-items:flex-start;margin:4px 0 4px"><input type="checkbox" id="rt" style="accent-color:var(--or);width:20px;height:20px;margin-top:2px"><span>I agree to the <button type="button" class="link gl" style="padding:0" data-a="terms">Terms and Privacy Policy</button></span></label><p class="err" data-e="rt"></p><button class="btn p blk" style="margin-top:10px">Create account</button></form></section>`;
-  return `<section class="view auth">${authHead()}<h1 style="margin-top:22px">Welcome back</h1><p class="mu" style="margin-bottom:14px">Log in to order, track your rider and manage catering requests.</p>${tabs('login')}
-    <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
-    <div class="row sp" style="margin-bottom:12px"><span class="sm mu">Papalita account</span><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div><button class="btn p blk">Log in</button></form>
-    <p class="note" style="margin-top:16px">Secure login powered by Supabase Auth.</p></section>`;
+  return `<section class="view auth">${authHead('Welcome back', 'Log in to order from your local favorites and track your delivery.')}${tabs('login')}
+    <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" type="email" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
+    <div class="pp-auth-recovery"><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div><button class="btn p blk">Log in</button></form></section>`;
 }
 const clearErrs = f => { $$('.in', f).forEach(i => i.classList.remove('bad')); $$('[data-e]', f).forEach(x => x.textContent = ''); };
 const showErrs = (f, er) => { clearErrs(f); const k = Object.keys(er); k.forEach(x => { const i = $('#' + x, f); i && i.classList.add('bad'); const e = $(`[data-e=${x}]`, f); e && (e.textContent = er[x]); }); if (k.length) { const i = $('#' + k[0], f); i && i.focus(); } return k.length; };
