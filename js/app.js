@@ -1514,6 +1514,11 @@ chrome(); window.addEventListener('hashchange', render); render();
 if (S.user.in && !onCheckout()) void prepareDeliveryPricing();
 const bootstrapSkeleton = document.getElementById('papalita-bootstrap-skeleton');
 if (bootstrapSkeleton) bootstrapSkeleton.remove();
-const hideSplash = () => { const sp = $('#splash'); if (!sp) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 600); }; setTimeout(hideSplash, Math.max(400, 1800 - (window.performance && performance.now ? performance.now() : 0)));
+Promise.resolve(window.papalitaSplashReady).then(() => {
+  const splash = $('#splash');
+  if (!splash) return;
+  splash.classList.add('out');
+  setTimeout(() => splash.remove(), 420);
+});
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
