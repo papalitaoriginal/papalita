@@ -12,7 +12,8 @@
     let status='pending', kind='all', page=0, serial=0;
     const count=20;
     target.innerHTML=`<section class="panel"><h3>Rider and store partner applications</h3>
-      <p class="mu sm">Review the required documents before deciding. Application files are private.</p>
+      <p class="mu sm">Applicants appear here after they submit their details and required documents. Application files are private.</p>
+      <button class="btn s sm" type="button" data-pa-nav="users" style="margin-top:8px">View registered accounts</button>
       <div class="row wrap" style="gap:10px;margin-top:10px">
       <label>Status <select class="in" data-application-status><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></label>
       <label>Type <select class="in" data-application-kind><option value="all">All partners</option><option value="rider">Riders</option><option value="store">Stores</option></select></label>
@@ -36,7 +37,9 @@
         const {data,error}=await query;
         if(!ready()||request!==serial)return;
         if(error)throw error;
-        message.textContent=data.length?'':'No applications in this view.';
+        message.textContent=data.length?'':status==='pending'
+          ?'No submitted applications are waiting for review in this view. Check Users for account registrations.'
+          :'No applications in this view.';
         list.innerHTML=data.slice(0,count).map(row=>`<article class="panel" style="margin:12px 0">
           <div class="row sp wrap"><h3>${esc(row.kind==='store'?row.store_name:row.full_name)}</h3><strong>${esc(statuses[row.status])}</strong></div>
           <p class="mu sm">${row.kind==='rider'?'Rider':'Store Partner'} · ${esc(date.format(new Date(row.submitted_at)))}</p>
@@ -51,7 +54,9 @@
         pages.hidden=page===0&&data.length<=count;
         previous.disabled=page===0; next.disabled=data.length<=count;
       }catch(error){
-        if(ready()&&request===serial)message.textContent=error.message || 'Could not load applications.';
+        if(ready()&&request===serial)message.textContent=['42P01','PGRST205'].includes(error.code)
+          ?'Install the Papalita partner applications SQL in Supabase, then refresh.'
+          :error.message || 'Could not load applications.';
       }
     }
 
