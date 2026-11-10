@@ -271,7 +271,7 @@ html[data-pa-theme=dark]{--pa-bg:#121a15;--pa-surface:#1c271f;--pa-soft:#253128;
 <script src="js/data.js"></script>
 <script src="js/ops.js"></script>
 <script src="js/product-options.js?v=2"></script>
-<script src="js/partner-admin.js"></script>
+<script src="js/partner-admin.js?v=20261110-accounts"></script>
 
 <script>
 (()=>{'use strict';
@@ -1150,9 +1150,9 @@ function paLiveChart(rows){
 async function paLiveOverview(){
  const target=paLoading('Dashboard');try{
   const rows=await paLiveOrders();if(!target.isConnected)return;
-  const range=paReportPreset('14'),recent=rows.filter(o=>{const day=paReportDay(o.created_at);return day&&day>=range.from&&day<=range.to;}),complete=recent.filter(o=>['completed','delivered'].includes(paStatus(o))),sales=complete.reduce((n,o)=>n+paAmount(o),0),pending=paLiveState.stores.filter(s=>s.status==='pending');
-  target.innerHTML=`<section class="pa-welcome"><div><div class="pa-welcome-overline">Good food, growing together</div><h2>Welcome back, ${sess.role==='platform'?'Admin':'Manager'}.</h2><p>Your Papalita community, all in one place.</p><button class="btn" data-pa-nav="orders">${paIcon('arrow')}View orders</button></div><div class="pa-welcome-brand"><img src="${LOGO.mark}" alt="Papalita"><div><strong>Papalita</strong><small>Good Food, Good Mood.</small></div></div></section><div class="kpis">${[['Completed sales · 14 days',paMoney(sales)],['Orders · 14 days',recent.length],['Average completed order',paMoney(complete.length?sales/complete.length:0)],['Active orders',rows.filter(paIsActive).length]].map(([label,value])=>`<div class="kpi"><span class="mu">${label}</span><b>${value}</b></div>`).join('')}</div><div class="pa-overview-grid"><section class="panel"><h3>Sales overview</h3>${paLiveChart(rows)}</section><section class="panel"><h2>Quick actions</h2>${[[sess.role==='platform'?'applications':'stores','Review stores',sess.role==='platform'?pending.length+' pending applications':'Store information','store'],['catering','Catering requests','Review event inquiries','catering'],[sess.role==='platform'?'finance':'menu',sess.role==='platform'?'Finance & payouts':'Menu & pricing',sess.role==='platform'?'Actual order payment summary':'Saved product pricing','wallet']].map(([key,title,description,icon])=>`<button class="pa-quick" data-pa-nav="${key}">${paIcon(icon)}<span><strong>${title}</strong><small>${esc(description)}</small></span>${paIcon('right')}</button>`).join('')}</section></div><section class="pa-section"><div class="pa-panel-heading"><div><h2>Recent orders</h2><p>Saved orders visible to your account.</p></div><button class="btn s sm" data-pa-nav="orders">View all</button></div>${paTable(['Order','Store','Amount','Status','Action'],rows.slice(0,5).map(o=>`<tr><td>#${esc(o.id.slice(0,8))}</td><td>${esc(paStoreName(o.store_id))}</td><td>${paMoney(paAmount(o))}</td><td>${paPill(o.status)}</td><td><button class="btn s sm" data-pa-live-order="${esc(o.id)}">View order</button></td></tr>`),'No orders yet')}</section><p class="mu sm">Showing up to 500 recent database orders. Totals use the loaded records.</p>`;
-  if(sess.role==='platform'){const section=document.createElement('section');section.className='pa-table-panel pa-section';section.innerHTML='<div class="pa-panel-heading"><div><h2>Store applications</h2><p>Businesses joining Papalita.</p></div><button class="btn s sm" data-pa-nav="applications">View all</button></div><div class="empty"><p>Loading…</p></div>';target.append(section);await paLoadApplications(section,sess.userId);}
+  const range=paReportPreset('14'),recent=rows.filter(o=>{const day=paReportDay(o.created_at);return day&&day>=range.from&&day<=range.to;}),complete=recent.filter(o=>['completed','delivered'].includes(paStatus(o))),sales=complete.reduce((n,o)=>n+paAmount(o),0);
+  target.innerHTML=`<section class="pa-welcome"><div><div class="pa-welcome-overline">Good food, growing together</div><h2>Welcome back, ${sess.role==='platform'?'Admin':'Manager'}.</h2><p>Your Papalita community, all in one place.</p><button class="btn" data-pa-nav="orders">${paIcon('arrow')}View orders</button></div><div class="pa-welcome-brand"><img src="${LOGO.mark}" alt="Papalita"><div><strong>Papalita</strong><small>Good Food, Good Mood.</small></div></div></section><div class="kpis">${[['Completed sales · 14 days',paMoney(sales)],['Orders · 14 days',recent.length],['Average completed order',paMoney(complete.length?sales/complete.length:0)],['Active orders',rows.filter(paIsActive).length]].map(([label,value])=>`<div class="kpi"><span class="mu">${label}</span><b>${value}</b></div>`).join('')}</div><div class="pa-overview-grid"><section class="panel"><h3>Sales overview</h3>${paLiveChart(rows)}</section><section class="panel"><h2>Quick actions</h2>${[(sess.role==='platform'?['partner-applications','Partner applications','Review submitted rider and store applications','store']:['stores','Store contacts','Store information','store']),['catering','Catering requests','Review event inquiries','catering'],[sess.role==='platform'?'finance':'menu',sess.role==='platform'?'Finance & payouts':'Menu & pricing',sess.role==='platform'?'Actual order payment summary':'Saved product pricing','wallet']].map(([key,title,description,icon])=>`<button class="pa-quick" data-pa-nav="${key}">${paIcon(icon)}<span><strong>${title}</strong><small>${esc(description)}</small></span>${paIcon('right')}</button>`).join('')}</section></div><section class="pa-section"><div class="pa-panel-heading"><div><h2>Recent orders</h2><p>Saved orders visible to your account.</p></div><button class="btn s sm" data-pa-nav="orders">View all</button></div>${paTable(['Order','Store','Amount','Status','Action'],rows.slice(0,5).map(o=>`<tr><td>#${esc(o.id.slice(0,8))}</td><td>${esc(paStoreName(o.store_id))}</td><td>${paMoney(paAmount(o))}</td><td>${paPill(o.status)}</td><td><button class="btn s sm" data-pa-live-order="${esc(o.id)}">View order</button></td></tr>`),'No orders yet')}</section><p class="mu sm">Showing up to 500 recent database orders. Totals use the loaded records.</p>`;
+  if(sess.role==='platform'){const section=document.createElement('section');section.className='pa-table-panel pa-section';section.innerHTML='<div class="pa-panel-heading"><div><h2>Store records awaiting approval</h2><p>Stores already added to the directory.</p></div><button class="btn s sm" data-pa-nav="applications">View all</button></div><div class="empty"><p>Loading…</p></div>';target.append(section);await paLoadApplications(section,sess.userId);}
   paBindOrderViews(target,rows);paViewReady();
  }catch(error){paFailure(target,error,{retry:'overview'});}
 }
@@ -1292,8 +1292,63 @@ async function paLiveCategories(){
  const target=paLoading('Categories');try{const rows=await paRows(getAuthClient().from('products').select('id,category'));if(!target.isConnected)return;const groups=new Map();rows.forEach(p=>groups.set(p.category||'Uncategorized',(groups.get(p.category||'Uncategorized')||0)+1));target.innerHTML='<p class="mu sm">Categories used by saved products. Edit a product to change its category.</p>'+paTable(['Category','Products'],[...groups].map(([name,count])=>`<tr><td>${esc(name)}</td><td>${count}</td></tr>`),'No product categories yet');paViewReady();}catch(error){paFailure(target,error,{retry:'cats'});}
 }
 async function paLiveUsers(){
- const target=paLoading('Users');try{const [profiles,roles]=await Promise.all([paRows(getAuthClient().from('profiles').select('*')),paRows(getAuthClient().from('user_roles').select('*'))]);if(!target.isConnected)return;
- const ids=[...new Set([...profiles.map(p=>p.id||p.user_id),...roles.map(r=>r.user_id)].filter(Boolean))];target.innerHTML='<p class="note">Accounts visible to your authorized session. Role changes require a protected administrator function; this page does not grant access.</p>'+paTable(['Name','Contact','Roles','Account ID'],ids.map(id=>{const p=profiles.find(p=>(p.id||p.user_id)===id)||{};return `<tr><td>${esc(p.full_name||p.name||'—')}</td><td>${esc(p.phone||p.email||'—')}</td><td>${esc(roles.filter(r=>r.user_id===id).map(r=>r.role).join(', ')||'—')}</td><td><small>${esc(id)}</small></td></tr>`;}),'No accounts visible');paViewReady();}catch(error){paFailure(target,error,{retry:'users'});}
+ const target=paLoading('Users');
+ if(sess?.role!=='platform'){target.textContent='Platform administrator access required.';return;}
+ target.innerHTML=`<section class="panel">
+  <h2>Registered accounts</h2>
+  <p class="mu sm">Includes accounts waiting for email confirmation or without a submitted application.</p>
+  <form class="row wrap" style="margin-top:12px" data-account-search>
+   <label for="pa-account-query">Email or user ID</label>
+   <input class="in" id="pa-account-query" name="query" type="search" maxlength="254" style="max-width:300px">
+   <button class="btn p sm" type="submit">Search</button>
+   <button class="btn s sm" type="button" data-account-refresh>Refresh</button>
+  </form>
+ </section>
+ <p class="sm" role="status" data-account-message></p><div data-account-list></div>
+ <div class="row wrap" data-account-pages hidden>
+  <button class="btn s sm" type="button" data-account-prev>Previous</button>
+  <button class="btn s sm" type="button" data-account-next>Next</button>
+ </div>`;
+ const db=getAuthClient(), userId=sess.userId, pageSize=25;
+ const form=$('[data-account-search]',target), message=$('[data-account-message]',target);
+ const list=$('[data-account-list]',target), pages=$('[data-account-pages]',target);
+ const previous=$('[data-account-prev]',target), next=$('[data-account-next]',target);
+ const current=()=>target.isConnected&&tab==='users'&&sess?.userId===userId&&sess.role==='platform';
+ const applicationStatus={draft:'In progress',pending:'Pending review',approved:'Approved',rejected:'Rejected'};
+ let search='',offset=0,sequence=0;
+ async function load(){
+  const request=++sequence;
+  message.textContent='Loading registered accounts…';
+  list.replaceChildren();
+  pages.hidden=true;
+  try{
+   const rows=await paRows(db.rpc('papalita_admin_list_accounts',{p_search:search,p_offset:offset}));
+   if(!current()||request!==sequence)return;
+   if(offset&&rows.length===0){offset=0;return load();}
+   message.textContent=rows.length?'':'No registered accounts match this search.';
+   list.innerHTML=paTable(['Account','Email status','Roles','Partner applications','Registered'],rows.slice(0,pageSize).map(row=>`<tr>
+    <td><b>${esc(row.full_name||row.email||row.phone||'Account')}</b>
+     ${row.full_name&&(row.email||row.phone)?`<br>${esc(row.email||row.phone)}`:''}<br><small>${esc(row.id)}</small></td>
+    <td>${row.email?(row.email_confirmed?'Confirmed':'Awaiting confirmation'):'—'}</td>
+    <td>${esc(row.roles?.join(', ')||'—')}</td>
+    <td>Rider · ${esc(applicationStatus[row.rider_application]||'Not submitted')}<br>Store · ${esc(applicationStatus[row.store_application]||'Not submitted')}</td>
+    <td>${esc(paDate(row.created_at))}</td>
+   </tr>`),'No accounts found');
+   pages.hidden=offset===0&&rows.length<=pageSize;
+   previous.disabled=offset===0;
+   next.disabled=rows.length<=pageSize;
+   paViewReady();
+  }catch(error){
+   if(current()&&request===sequence)message.textContent=error.code==='PGRST202'
+    ?'Run 20261110_admin_accounts_and_store_removal.sql in Supabase to enable the account list.'
+    :error.message||'Could not load registered accounts.';
+  }
+ }
+ form.onsubmit=event=>{event.preventDefault();search=form.elements.query.value.trim();offset=0;void load();};
+ $('[data-account-refresh]',target).onclick=()=>{offset=0;void load();};
+ previous.onclick=()=>{if(offset>0){offset-=pageSize;void load();}};
+ next.onclick=()=>{offset+=pageSize;void load();};
+ await load();
 }
 async function paLiveCatering(){
  const target=paLoading('Catering requests');try{const stores=await paStores();paLiveState.stores=stores;let q=getAuthClient().from('catering_requests').select('*').order('created_at',{ascending:false});if(sess.role!=='platform'){if(!stores.length){target.innerHTML='<div class="empty"><h3>No stores assigned</h3></div>';return;}q=q.in('store_id',stores.map(s=>s.id));}const rows=await paRows(q);if(!target.isConnected)return;
@@ -1315,7 +1370,7 @@ async function paLiveStores(){
   const visible=canManage?rows.filter(store=>Boolean(store.papalita_removed_at)===removed):rows;
   const header=['Store','Description','Address','Contact','Status'];
   const filter=canManage?`<div class="row sp wrap" style="margin-bottom:15px"><p class="mu sm">Manage stores listed on Papalita and restore stores that return.</p><div class="row"><button class="btn ${removed?'s':'p'} sm" type="button" data-store-list="current" aria-pressed="${!removed}">Current</button><button class="btn ${removed?'p':'s'} sm" type="button" data-store-list="removed" aria-pressed="${removed}">Removed (${rows.filter(s=>s.papalita_removed_at).length})</button></div></div>`:'';
-  const setup=platform&&rows.length&&!ready?'<p class="note" style="margin-bottom:15px">To enable Remove from Papalita, run Papalita_Admin_Remove_Store.sql in Supabase, then refresh this page.</p>':'';
+  const setup=platform&&rows.length&&!ready?'<p class="note" style="margin-bottom:15px">To enable Remove from Papalita, run 20261110_admin_accounts_and_store_removal.sql in Supabase, then refresh this page.</p>':'';
   target.innerHTML=setup+filter+'<p class="err" data-store-error role="alert"></p>'+paTable(header,visible.map(s=>{
    const status=s.papalita_removed_at?`<span class="status closed">Removed</span><br><small>${esc(paDate(s.papalita_removed_at))}</small>`:paPill(s.status);
    const action=canManage&&(removed||s.status==='approved')?`<div style="margin-top:8px"><button class="btn ${removed?'s':'d'} sm" type="button" data-store-remove="${esc(s.id)}">${removed?'Restore store':'Remove from Papalita'}</button></div>`:'';
@@ -1342,7 +1397,7 @@ async function paLiveStores(){
     toast(remove?'Store removed from Papalita.':'Store restored. The owner can reopen it.');
     if(currentView())await paLiveStores();
    }catch(e){
-    const message=e.code==='PGRST202'?'Run Papalita_Admin_Remove_Store.sql in Supabase, then refresh.':e.message;
+    const message=e.code==='PGRST202'?'Run 20261110_admin_accounts_and_store_removal.sql in Supabase, then refresh.':e.message;
     if(currentView())error.textContent=message;
    }finally{
     button.disabled=false;
@@ -1438,10 +1493,18 @@ async function paLiveReportView(){
  const target=paLoading('Reports');try{const rows=await paLiveOrders();if(!target.isConnected)return;const selection=paReportSelection||paReportPreset('14');paRenderReports(target,rows,paLiveState.stores,selection);}catch(error){paFailure(target,error,{retry:'analytics'});}
 }
 
-V['partner-applications']=()=>window.PapalitaPartnerAdmin.open({
-  db:getAuthClient(), target:paLoading('Partner Applications'), esc, toast,
-  confirm:paConfirm, active:()=>tab==='partner-applications'&&sess?.role==='platform'
-});
+V['partner-applications']=()=>{
+  const target=paLoading('Partner Applications');
+  if(sess?.role!=='platform'){target.textContent='Platform administrator access required.';return;}
+  if(!window.PapalitaPartnerAdmin){
+    target.textContent='The application review screen could not load. Check that js/partner-admin.js is deployed and refresh.';
+    return;
+  }
+  return window.PapalitaPartnerAdmin.open({
+    db:getAuthClient(), target, esc, toast, confirm:paConfirm,
+    active:()=>tab==='partner-applications'&&sess?.role==='platform'
+  });
+};
 
 bootAuth();
 })();
