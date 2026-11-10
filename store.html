@@ -238,6 +238,65 @@ input[type=checkbox],input[type=radio]{accent-color:var(--g-700)}
 }
 .partner-entry .partner-apply:hover {background:#065f3b}
 .partner-note {margin:12px 0 0;color:var(--partner-muted);font-size:12px}
+.partner-entry .partner-terms-link {
+  display:block;
+  min-height:44px;
+  padding:0;
+  color:var(--partner-green);
+  font-size:13px;
+  font-weight:800;
+  text-align:left;
+  text-decoration:underline;
+  text-underline-offset:4px;
+}
+.partner-entry .partner-terms-link:hover {color:#064b32}
+.partner-entry .partner-terms-dialog {
+  width:min(680px,calc(100% - 32px));
+  max-height:calc(100dvh - 32px);
+  margin:auto;
+  padding:0;
+  overflow:hidden;
+  background:#fbfaf4;
+  border:1px solid var(--partner-line);
+  border-radius:20px;
+  color:var(--partner-ink);
+  box-shadow:0 24px 80px #092b2340;
+}
+.partner-terms-dialog[open] {display:flex;flex-direction:column}
+.partner-terms-dialog::backdrop {background:#092b2399}
+.partner-terms-head {
+  display:flex;
+  flex:none;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:clamp(16px,4vw,26px);
+  background:#103e30;
+  color:#fff;
+}
+.partner-terms-head .partner-kicker {
+  display:block;
+  margin-bottom:6px;
+  color:#e9cf85;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.partner-entry .partner-terms-head h2 {margin:0;color:#fff;font-size:clamp(20px,4vw,26px);line-height:1.2}
+.partner-entry .partner-terms-close {min-height:44px;padding:0 12px;background:#fff;color:#15382b}
+.partner-terms-body {
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:clamp(16px,4vw,26px);
+  font-size:14px;
+  line-height:1.65;
+}
+.partner-terms-body h3 {margin:18px 0 5px}
+.partner-terms-body p {margin:0 0 10px}
+.partner-terms-body ul {padding-inline-start:20px}
+.partner-terms-body li + li {margin-top:8px}
 .partner-access {
   position:relative;
   isolation:isolate;
@@ -1572,6 +1631,7 @@ function gate(message=''){
             <p class="partner-lead">Help nearby customers discover your food. Manage your menu, orders, and catering requests in one place.</p>
             <a class="btn partner-apply" href="https://papalitaoriginal.netlify.app/apply/?role=store">Apply as a Store Partner ${arrow}</a>
             <p class="partner-note">We review each application before your store goes live.</p>
+            <button type="button" class="partner-terms-link" id="partner-terms-open" aria-haspopup="dialog">Read Store Partner Terms &amp; Conditions</button>
           </section>
           <section class="partner-access" aria-labelledby="partner-signin-title">
             <svg class="partner-access-art" viewBox="0 0 160 160" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true">
@@ -1604,7 +1664,37 @@ function gate(message=''){
           </ol>
         </section>
       </main>
+      <dialog class="partner-terms-dialog" id="partner-terms-dialog" aria-labelledby="partner-terms-title">
+        <header class="partner-terms-head">
+          <div>
+            <span class="partner-kicker">Pilot terms · Draft for review</span>
+            <h2 id="partner-terms-title">Store Partner Terms &amp; Conditions</h2>
+          </div>
+          <form method="dialog"><button class="btn partner-terms-close">Close</button></form>
+        </header>
+        <div class="partner-terms-body" tabindex="0" role="region" aria-label="Store partner terms">
+          <p>These proposed terms cover cash on delivery (COD), store settlement, and failed deliveries. Final terms will be provided before pilot activation.</p>
+          <h3>Application and preparation</h3>
+          <p>Keep your business and contact details, menu, prices, availability, and closing time current. Provide the requested documents and verified payout details through the designated channel. Mark the order <strong>Ready</strong> once the complete order is prepared for pickup and confirm handover when the rider collects it.</p>
+          <h3>COD and settlement</h3>
+          <p>COD participation is agreed during onboarding. The store receives the food amount shown for each completed order under its agreed pricing and promotion terms. The full delivery fee belongs to the rider. Any agreed monthly store subscription is billed separately, with the price and renewal terms disclosed before activation.</p>
+          <p>Under the proposed flow, <strong>Delivered</strong> and <strong>COD Collected</strong> trigger the store settlement. Papalita uses the store’s saved closing time as the daily reporting cut-off in Philippine time. Orders completed after that time appear in the next statement. The payout follows the agreed schedule and the availability of settled funds.</p>
+          <h3>Returns</h3>
+          <p>Confirm receipt of a returned order or report the issue to Papalita. Any verified loss or reimbursement follows the approved store agreement and the failed-delivery policy below.</p>
+          <h3>Failed deliveries and returns</h3>
+          <ul>
+            <li><strong>Cancelled before pickup.</strong> Release the rider’s reservation. Any claim for prepared food follows the store agreement.</li>
+            <li><strong>Customer cancels, refuses, or is unavailable.</strong> The rider reports the attempt and follows the return instructions. Release the full hold when the evidence confirms the cause was outside the rider’s control. Verified losses follow the store and Papalita agreement.</li>
+            <li><strong>Store or platform error.</strong> Release the rider’s hold after verification. Any loss is settled under the agreement with the responsible party.</li>
+            <li><strong>Possible rider fault.</strong> Place the case under review. Papalita hears the rider’s explanation, verifies responsibility and actual loss, and provides a decision before any adjustment allowed by law and the approved terms.</li>
+            <li><strong>Return disputed or unavailable.</strong> Record the reason and relevant evidence and refer the case to Papalita support.</li>
+          </ul>
+          <p>Transfers show as paid after provider confirmation. Store, rider, and customer concerns can be reported through Papalita’s published support channel.</p>
+        </div>
+      </dialog>
     </div>`;
+  const termsDialog=$('#partner-terms-dialog');
+  $('#partner-terms-open').onclick=()=>termsDialog.showModal();
   $('#g').onsubmit=async event=>{
     event.preventDefault();
     const button=$('#signin');
