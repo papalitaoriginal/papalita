@@ -17,7 +17,7 @@
     const tell=message=>{info.textContent=message;};
     const rpc=async(name,args)=>{
       const {data,error}=await db.rpc(name,args);
-      if (error) throw Error(error.message || 'Could not connect.');
+      if (error) throw Object.assign(Error(error.message || 'Could not connect.'),{code:error.code});
       return data;
     };
     function paint() {
@@ -28,11 +28,13 @@
         const store=directions([o.store,o.store_address].filter(Boolean).join(', '));
         const drop=directions(Number.isFinite(o.drop_lat)&&Number.isFinite(o.drop_lng)
           ? o.drop_lat+','+o.drop_lng : cleanAddress(o.address));
-        const sharing=share?.id===o.id;
+        const sharing=share?.id===o.id, q=o.delivery_pricing;
         const disabled=requesting || !!share || o.status!=='out_for_delivery';
         return `<article class="panel"><b>Order #${escape(o.id.slice(0,8))}</b>
           <p class="sm mu">${escape(o.status.replaceAll('_',' '))} · ${escape(o.store||'Store')}</p>
           <p class="sm"><b>Drop-off</b> · ${escape(cleanAddress(o.address)||'Address unavailable')}</p>
+          ${q?`<p class="sm"><b>Delivery payout · ₱${(q.total_centavos/100).toFixed(2)}</b><br>
+            Base ₱${(q.base_centavos/100).toFixed(2)}${q.interior_centavos?' + ₱'+(q.interior_centavos/100).toFixed(2)+' interior top-up':''}${q.terrain_centavos?' + ₱'+(q.terrain_centavos/100).toFixed(2)+' upland surcharge':''}</p>`:''}
           <div class="row wrap" style="margin:8px 0">
             ${store?`<a class="btn s sm" href="${escape(store)}" target="_blank" rel="noopener noreferrer">Store directions</a>`:''}
             ${drop?`<a class="btn s sm" href="${escape(drop)}" target="_blank" rel="noopener noreferrer">Drop-off directions</a>`:''}
@@ -101,7 +103,10 @@
       if(!alive() || refreshing || document.hidden)return;
       refreshing=true;
       try {
-        const jobs=await rpc('papalita_tracking_jobs');
+        const jobs=await rpc('papalita_rider_dashboard').then(data=>data.assigned).catch(error=>{
+          if(error.code!=='PGRST202' && error.code!=='42883') throw error;
+          return rpc('papalita_tracking_jobs');
+        });
         if(!alive())return;
         rows=Array.isArray(jobs)?jobs:[];
         if(share&&!rows.some(o=>o.id===share.id&&o.status==='out_for_delivery'))void end('This delivery has ended or was reassigned.');

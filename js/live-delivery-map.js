@@ -146,7 +146,7 @@
         :'Rider location appears when delivery starts and the rider shares GPS.');
       const copy=message+(tilesUnavailable ? ' Map tiles may be unavailable.' : '');
       if(status.textContent!==copy)status.textContent=copy;
-      pin.hidden=!map || editing || !active.has(phase);
+      pin.hidden=!map || editing || !active.has(phase) || !!order.deliveryPricing;
       pin.textContent=destination()?'Change drop-off pin':'Set drop-off pin';
       useCenter.hidden=crosshair.hidden=!editing;
       useCenter.disabled=busy;
@@ -227,5 +227,55 @@
       loadingMap=false;paint();describe();
     }).catch(error=>{if(alive()){mapError=error.message;describe();}});
   }
-  window.PapalitaLiveMap = {open, close:()=>{if(currentDialog?.open)currentDialog.close();}};
+  function pickPin(start) {
+    if (!valid(start?.[1],start?.[0])) return Promise.reject(Error('Delivery map is not configured.'));
+    return new Promise(resolve => {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'papa-live-map-dialog';
+      dialog.setAttribute('aria-label','Set delivery pin');
+      dialog.innerHTML = `<div class="papa-map-stage"><div class="papa-live-map" aria-label="Delivery address map"></div>
+        <span class="papa-map-crosshair" aria-hidden="true"></span></div>
+        <button class="papa-map-back btn s" type="button" autofocus>‹ Back to checkout</button>
+        <div class="papa-map-sheet"><h2>Set your delivery pin</h2>
+          <p class="papa-map-status" role="status">Loading the map…</p>
+          <button class="btn p sm" type="button" data-use-pin disabled>Use map center</button>
+        </div>`;
+      document.body.append(dialog);
+      dialog.showModal();
+      const status = dialog.querySelector('.papa-map-status');
+      const confirm = dialog.querySelector('[data-use-pin]');
+      let map, selected, tilesReady = false;
+      const leave = () => dialog.close();
+      window.addEventListener('hashchange',leave);
+      dialog.querySelector('.papa-map-back').onclick = leave;
+      confirm.onclick = () => {
+        if (!map || !tilesReady) return;
+        const {lat,lng} = map.getCenter();
+        selected = [lng,lat];
+        dialog.close();
+      };
+      dialog.addEventListener('close',() => {
+        window.removeEventListener('hashchange',leave);
+        map?.remove();
+        dialog.remove();
+        resolve(selected);
+      },{once:true});
+      leaflet().then(L => {
+        if (!dialog.open) return;
+        map = L.map(dialog.querySelector('.papa-live-map')).setView([start[1],start[0]],17);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+          maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).on('load',() => {
+          if (tilesReady) return;
+          tilesReady = true;
+          status.textContent = 'Move the map until the crosshair is on the delivery address.';
+          confirm.disabled = false;
+        }).on('tileerror',() => {
+          if (!tilesReady) status.textContent = 'Map tiles could not load. Try again or use your phone location.';
+        }).addTo(map);
+      }).catch(error => { if (dialog.open) status.textContent = error.message; });
+    });
+  }
+
+  window.PapalitaLiveMap = {open, pickPin, close:()=>{if(currentDialog?.open)currentDialog.close();}};
 })();
