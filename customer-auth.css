@@ -190,3 +190,44 @@ body:has(#splash) .pp-auth-lockup { animation-play-state: paused; }
   .pp-auth-brand b { font-size: 22px; }
   .pp-auth-form { padding: 24px; }
 }
+
+/* Opening animation plays over the normal app startup. */
+#splash {
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #142c1c 0%, #060f0b 72%);
+  transition: opacity .42s ease, transform .42s ease;
+}
+#splash::before, #splash::after { content: none; }
+#splash.out { transform: translateY(-8px); }
+#splash .sp-video, #splash .sp-static { grid-area: 1 / 1; }
+#splash .sp-video {
+  display: block;
+  width: min(720px, 100vw, 100vh);
+  width: min(720px, 100vw, 100svh);
+  height: auto;
+  aspect-ratio: 1;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle, #000 57%, transparent 72%);
+  mask-image: radial-gradient(circle, #000 57%, transparent 72%);
+}
+#splash.has-video .sp-video { opacity: 1; }
+#splash.has-video .sp-static { visibility: hidden; }
+#splash .sp-static {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  font-family: Poppins, system-ui, sans-serif;
+  animation: papalita-splash-fallback .18s .28s both;
+}
+.sp-static img { width: clamp(42px, 13vw, 92px); height: auto; margin-bottom: 17px; }
+.sp-static strong { font-size: clamp(28px, 7vw, 48px); letter-spacing: .02em; }
+.sp-static span { font-size: clamp(12px, 3vw, 17px); color: #e1eedb; }
+@keyframes papalita-splash-fallback {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #splash { transition: none; }
+  #splash .sp-static { animation: none; }
+}
