@@ -48,6 +48,14 @@ body.authing main#view {
   object-position: 50% 53%;
   border-radius: 0;
 }
+/* A previously cached app.js still renders the older login markup. */
+div.pp-auth-photo { background: url("images/papalita-auth-food.webp") center / cover no-repeat; }
+div.pp-auth-photo > *,
+.pp-auth-brand small,
+.pp-auth-form .auth-top,
+.pp-auth-form #lf + p.note,
+.pp-auth-form #lf > .row.sp > span { display: none; }
+.pp-auth-form #lf > .row.sp { justify-content: flex-end; }
 .pp-auth-brand { gap: 12px; }
 .pp-auth-brand img {
   width: 44px;
@@ -57,7 +65,7 @@ body.authing main#view {
   background: #edf8d5;
 }
 .pp-auth-brand b { color: var(--auth-ink); font-size: 24px; font-weight: 700; }
-.pp-auth-kicker {
+.pp-auth-kicker, .pp-auth-pitch .pp-kicker {
   display: block;
   margin-bottom: 10px;
   color: var(--auth-accent);
@@ -66,7 +74,8 @@ body.authing main#view {
   letter-spacing: .15em;
   text-transform: uppercase;
 }
-.pp-auth-pitch .pp-auth-story h2 {
+.pp-auth-story { margin-top: clamp(32px, 7vh, 76px); }
+.pp-auth-pitch h2 {
   max-width: none;
   color: var(--auth-ink);
   font-size: clamp(38px, 5.3vw, 70px);
@@ -74,8 +83,8 @@ body.authing main#view {
   line-height: .99;
   letter-spacing: -.07em;
 }
-.pp-auth-pitch .pp-auth-story h2 em { color: var(--auth-accent); }
-.pp-auth-pitch .pp-auth-story p {
+.pp-auth-pitch h2 em { color: var(--auth-accent); }
+.pp-auth-pitch > div > p {
   max-width: 36ch;
   color: var(--auth-muted);
   font-size: 14px;
@@ -90,13 +99,32 @@ body.authing main#view {
   padding: clamp(28px, 5vw, 64px);
 }
 .pp-auth-form .pp-auth-heading { margin-bottom: 22px; }
-.pp-auth-form .pp-auth-heading h1 {
+.pp-auth-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  color: #fff;
+  animation: papalita-auth-logo-enter .48s ease-out both;
+}
+body:has(#splash) .pp-auth-lockup { animation-play-state: paused; }
+.pp-auth-lockup img { width: 35px; height: auto; flex: none; }
+.pp-auth-lockup b { display: block; font-size: 22px; font-weight: 700; line-height: 1.1; letter-spacing: .015em; }
+.pp-auth-lockup span { display: block; margin-top: 4px; font-size: 11px; font-weight: 500; }
+@keyframes papalita-auth-logo-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-auth-lockup { animation: none; }
+}
+.pp-auth-form :is(.pp-auth-heading, .auth) > h1 {
   font-size: clamp(30px, 4vw, 47px);
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -.055em;
 }
-.pp-auth-form .pp-auth-heading p {
+.pp-auth-form :is(.pp-auth-heading, .auth) > p.mu, .pp-auth-form .pp-auth-heading p {
   margin-top: 10px;
   color: var(--auth-muted);
   font-size: 14px;
@@ -125,6 +153,21 @@ body.authing main#view {
 .pp-auth-form .in.bad { border-color: var(--er); }
 .pp-auth-form .pwt { color: var(--auth-muted); }
 .pp-auth-form .link.gl { color: var(--auth-accent); font-size: 13px; }
+.pp-auth-consent { padding: 0 12px; border: 1px solid var(--auth-line); border-radius: 12px; }
+.pp-auth-consent-choice {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+  padding-block: 9px;
+  color: var(--auth-ink);
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.pp-auth-consent-choice input { width: 20px; height: 20px; margin: 0; color-scheme: dark; cursor: pointer; }
+.pp-auth-consent .link.gl { margin: -2px 0 2px 31px; min-height: 36px; padding-inline: 0; }
 .pp-auth-form .pp-auth-recovery { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
 .pp-auth-recovery button { min-height: 44px; padding-inline: 0; }
 .pp-auth-form .btn.p {
@@ -141,7 +184,8 @@ body.authing main#view {
   body.authing main#view { max-width: 510px; padding-top: 22px; }
   .pp-auth-layout { grid-template-columns: minmax(0, 1fr); min-height: 0; border-radius: 23px; }
   .pp-auth-pitch { padding: 20px 24px 0; border-radius: 22px 22px 0 0; background: transparent; }
-  .pp-auth-pitch .pp-auth-photo, .pp-auth-pitch::after, .pp-auth-story { display: none; }
+  .pp-auth-pitch:has(.pp-auth-story),
+  .pp-auth-pitch > :not(.pp-auth-brand), .pp-auth-pitch::after { display: none; }
   .pp-auth-brand img { width: 38px; height: 38px; padding: 5px 8px; }
   .pp-auth-brand b { font-size: 22px; }
   .pp-auth-form { padding: 24px; }
