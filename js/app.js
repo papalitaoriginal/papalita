@@ -758,7 +758,7 @@ function savePendingCheckout(customer, attempt) {
   } catch {}
 }
 async function sendCheckout(db, attempt) {
-  const {data,error} = await db.rpc('papalita_checkout', attempt.request);
+  const {data,error} = await db.rpc('papalita_checkout_v2', attempt.request);
   if (error) {
     // A database rejection rolled back the submission. Keep the key on a lost response.
     if (['PT429','P0001','22023','22P02','23514','PGRST202'].includes(error.code)) {
