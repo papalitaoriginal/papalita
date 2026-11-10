@@ -1,10 +1,10 @@
 /* Only public static files are cached. Supabase requests always use the network. */
 importScripts('./js/order-status.js?v=20261107-customer-v5');
-const CACHE = 'papalita-customer-ui-delivery-quotes-1';
-const ASSETS = ['./index.html','./customer-polish.css','./manifest.webmanifest',
+const CACHE = 'papalita-customer-ui-20261110-auth';
+const ASSETS = ['./index.html','./customer-polish.css','./customer-auth.css','./manifest.webmanifest',
  './js/notifications.js','./js/order-status.js','./js/app.js','./js/live-delivery-map.js','./js/config.js','./js/supabase.js','./js/customer-data.js',
  './js/customer-motion.js','./js/customer-install.js','./js/customer-legal.js',
- './images/papalita_mark_color.png','./images/papalita_full_white.png',
+ './images/papalita_mark_color.png','./images/papalita_full_white.png','./images/papalita-auth-food.webp',
  './images/papalita-icon-192-v2.png','./images/papalita-icon-512-v2.png'];
 const ALLOWED = new Set(ASSETS.map(p => new URL(p,self.registration.scope).pathname));
 self.addEventListener('install',event=>event.waitUntil((async()=>{

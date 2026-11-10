@@ -1,0 +1,148 @@
+/* Customer sign-in, registration and password reset. */
+body.authing {
+  background: radial-gradient(ellipse at 12% 10%, #263c27, transparent 55%), #0d1510;
+}
+body.authing main#view {
+  max-width: 1160px;
+  padding: clamp(24px, 6vh, 76px) clamp(16px, 4vw, 36px) calc(32px + var(--sb));
+}
+.pp-auth-layout {
+  --auth-ink: #f7f5e9;
+  --auth-muted: #c1cdc0;
+  --auth-accent: #d5f68c;
+  --auth-line: #c9e3c333;
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+  min-height: 630px;
+  color: var(--auth-ink);
+  font-family: Poppins, system-ui, sans-serif;
+  background: #162219;
+  border: 1px solid var(--auth-line);
+  border-radius: 28px;
+  box-shadow: 0 24px 72px #0006;
+}
+.pp-auth-pitch {
+  position: relative;
+  isolation: isolate;
+  justify-content: flex-start;
+  gap: clamp(38px, 7vh, 76px);
+  padding: clamp(28px, 4vw, 48px);
+  background: #192d1d;
+  border-radius: 27px 0 0 27px;
+  overflow: hidden;
+}
+.pp-auth-pitch::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg, #192d1d 27%, #192d1df2 44%, #12241947 67%, #0b1a10a3 100%);
+}
+.pp-auth-photo {
+  position: absolute;
+  z-index: -2;
+  inset: 36% 0 0;
+  width: 100%;
+  height: 64%;
+  object-fit: cover;
+  object-position: 50% 53%;
+  border-radius: 0;
+}
+.pp-auth-brand { gap: 12px; }
+.pp-auth-brand img {
+  width: 44px;
+  height: 44px;
+  padding: 6px 10px;
+  border-radius: 13px;
+  background: #edf8d5;
+}
+.pp-auth-brand b { color: var(--auth-ink); font-size: 24px; font-weight: 700; }
+.pp-auth-kicker {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--auth-accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.pp-auth-pitch .pp-auth-story h2 {
+  max-width: none;
+  color: var(--auth-ink);
+  font-size: clamp(38px, 5.3vw, 70px);
+  font-weight: 700;
+  line-height: .99;
+  letter-spacing: -.07em;
+}
+.pp-auth-pitch .pp-auth-story h2 em { color: var(--auth-accent); }
+.pp-auth-pitch .pp-auth-story p {
+  max-width: 36ch;
+  color: var(--auth-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.pp-auth-form {
+  --or: #b7db79;
+  --mu: var(--auth-muted);
+  --ln: var(--auth-line);
+  --er: #ffb8a8;
+  align-self: center;
+  padding: clamp(28px, 5vw, 64px);
+}
+.pp-auth-form .pp-auth-heading { margin-bottom: 22px; }
+.pp-auth-form .pp-auth-heading h1 {
+  font-size: clamp(30px, 4vw, 47px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -.055em;
+}
+.pp-auth-form .pp-auth-heading p {
+  margin-top: 10px;
+  color: var(--auth-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.pp-auth-form .seg {
+  padding: 4px;
+  margin-bottom: 21px;
+  border: 1px solid var(--auth-line);
+  background: #0d1910;
+}
+.pp-auth-form .seg button { color: var(--auth-muted); min-height: 44px; }
+.pp-auth-form .seg button.on { color: var(--auth-accent); background: #293c28; box-shadow: none; }
+.pp-auth-form .field { margin-bottom: 16px; }
+.pp-auth-form .field label { color: var(--auth-ink); font-size: 13px; }
+.pp-auth-form .in {
+  min-height: 52px;
+  color: var(--auth-ink);
+  background: #0e1a12;
+  border-color: var(--auth-line);
+  border-radius: 12px;
+  color-scheme: dark;
+}
+.pp-auth-form .in::placeholder { color: #9cae9f; }
+.pp-auth-form .in:focus { border-color: var(--auth-accent); box-shadow: 0 0 0 3px #d5f68c25; }
+.pp-auth-form .in.bad { border-color: var(--er); }
+.pp-auth-form .pwt { color: var(--auth-muted); }
+.pp-auth-form .link.gl { color: var(--auth-accent); font-size: 13px; }
+.pp-auth-form .pp-auth-recovery { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
+.pp-auth-recovery button { min-height: 44px; padding-inline: 0; }
+.pp-auth-form .btn.p {
+  min-height: 52px;
+  border-radius: 12px;
+  background: var(--auth-accent);
+  color: #172313;
+  box-shadow: none;
+}
+.pp-auth-form .btn.p:hover { background: #e5ffa9; }
+.pp-auth-form :focus-visible { outline-color: var(--auth-accent); }
+
+@media (max-width: 760px) {
+  body.authing main#view { max-width: 510px; padding-top: 22px; }
+  .pp-auth-layout { grid-template-columns: minmax(0, 1fr); min-height: 0; border-radius: 23px; }
+  .pp-auth-pitch { padding: 20px 24px 0; border-radius: 22px 22px 0 0; background: transparent; }
+  .pp-auth-pitch .pp-auth-photo, .pp-auth-pitch::after, .pp-auth-story { display: none; }
+  .pp-auth-brand img { width: 38px; height: 38px; padding: 5px 8px; }
+  .pp-auth-brand b { font-size: 22px; }
+  .pp-auth-form { padding: 24px; }
+}
