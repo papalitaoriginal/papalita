@@ -1145,6 +1145,13 @@ const pwField = (id, label, auto, extra = '') => `<div class="field"><label for=
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
 function authScreen() {
   const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t === 'register'}" class="${t === 'register' ? 'on' : ''}" data-a="authtab" data-v="register">Register</button></div>`;
+  if (AU.view === 'forgot') return `<section class="view auth">${authHead('Reset your password', 'Enter the email address you used to sign up for Papalita.')}
+    <form id="ff" novalidate>
+      <div class="field"><label for="fe">Email address</label><input class="in" id="fe" type="email" autocomplete="email" required aria-describedby="forgot-error" value="${esc(AU.prefill)}"><p class="err" id="forgot-error" data-e="fe" role="alert"></p></div>
+      <button type="submit" class="btn p blk">Send reset link</button>
+      <p class="sm mu" id="forgot-result" role="status"></p>
+      <button type="button" class="btn o blk" style="margin-top:12px" data-a="authtab" data-v="login">Back to log in</button>
+    </form></section>`;
   if (AU.view === 'reset') return `<section class="view auth">${authHead('Create a new password', 'Choose a new password for your Papalita account.')}<form id="rp" novalidate>${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Save password</button></form></section>`;
   if (AU.view === 'register') return `<section class="view auth">${authHead('Create your account', 'Sign up to order from local stores in Alegria. We’ll email you a link to activate your account.')}${tabs('register')}
     <form id="rf" novalidate><div class="field"><label for="rn">Full name</label><input class="in" id="rn" autocomplete="name" maxlength="60"><p class="err" data-e="rn"></p></div><div class="field"><label for="rm">Mobile number</label><input class="in" id="rm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="rm"></p></div>
@@ -1164,6 +1171,7 @@ const authDB = () => {
   if (!window.PAPALITA_DB) throw new Error('Supabase client not available. Check js/config.js and script loading.');
   return window.PAPALITA_DB;
 };
+const authRedirect = () => new URL('./', location.href).href;
 function useAuthUser(user) {
   const meta = user.user_metadata || {};
   const acc = { id:user.id, name:meta.full_name || user.email?.split('@')[0] || 'Customer',
@@ -1210,10 +1218,9 @@ async function doRegister(f) {
   if (AU.busy) return;
   AU.busy = true;
   try {
-    const redirect = 'https://tomcaberio99-design.github.io/papalita/';
     const {error} = await authDB().auth.signUp({
       email,password,
-      options:{ emailRedirectTo:redirect, data:{full_name:name,phone,barangay} }
+      options:{ emailRedirectTo:authRedirect(), data:{full_name:name,phone,barangay} }
     });
     if (error) throw error;
     AU.prefill = email;
@@ -1225,6 +1232,29 @@ async function doRegister(f) {
 }
 function meter(input) { const id = input.id, n = pwScore(input.value), bars = $$(`[data-m=${id}] i`), t = $(`[data-mt=${id}]`); bars.forEach((b, i) => { b.className = i < n ? 's' + n : ''; }); if (t) t.textContent = !input.value ? 'Use 8+ characters with letters and numbers.' : ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][n] + (pwOk(input.value) ? '' : ' · needs 8+ characters, a letter and a number'); }
 function termsSheet() { window.papalitaOpenLegal?.(); }
+async function doForgotPassword(form) {
+  const button = form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  const input = $('#fe', form), email = input.value.trim();
+  const status = $('#forgot-result', form);
+  const valid = /^\S+@\S+\.\S+$/.test(email);
+  input.setAttribute('aria-invalid', String(!valid));
+  status.textContent = '';
+  if (showErrs(form, valid ? {} : { fe: 'Enter a valid email address.' })) return;
+  AU.prefill = email;
+  button.disabled = true;
+  button.textContent = 'Sending…';
+  try {
+    const { error } = await authDB().auth.resetPasswordForEmail(email, { redirectTo: authRedirect() });
+    if (error) throw error;
+    status.textContent = 'If you have a Papalita account with this email, check your inbox for a reset link.';
+  } catch {
+    status.textContent = 'Could not send a reset link right now. Please try again later.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Send reset link';
+  }
+}
 async function doReset(f){
   const password=$('#np1',f).value,er={};if(!pwOk(password))er.np1='Use 8+ characters, a letter and a number.';if($('#np2',f).value!==password)er.np2='Passwords do not match.';if(showErrs(f,er))return;
   const button=f.querySelector('button.btn.p');button.disabled=true;
@@ -1240,11 +1270,12 @@ document.addEventListener('input',e=>{if(['rpw','np1'].includes(e.target.id))met
 document.addEventListener('submit',e=>{
   const f=e.target;if(f.id==='lf'){e.preventDefault();void doLogin(f);}
   else if(f.id==='rf'){e.preventDefault();void doRegister(f);}
+  else if(f.id==='ff'){e.preventDefault();void doForgotPassword(f);}
   else if(f.id==='rp'){e.preventDefault();void doReset(f);}
 });
 const AUTH_A={
   authtab:b=>{if(['login','register'].includes(b.dataset.v)){AU.view=b.dataset.v;render();}},
-  forgot:async()=>{const email=prompt('Enter your registered email address:');if(!email)return;if(!/^\S+@\S+\.\S+$/.test(email.trim()))return toast('Enter a valid email address.');try{const q=await authDB().auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(q.error)throw q.error;toast('If this email is registered, check its password-reset message.');}catch(error){toast('Reset request failed: '+error.message);}},
+  forgot:()=>{AU.prefill=($('#li')?.value || '').trim();AU.view='forgot';render();$('#fe')?.focus();},
   terms:termsSheet,pwchange:pwChangeSheet,delacct:deleteAcctSheet,
   pwtoggle:b=>{const input=document.getElementById(b.dataset.id),show=input.type==='password';input.type=show?'text':'password';b.innerHTML=ic(show?'eyeoff':'eye',20);b.setAttribute('aria-label',show?'Hide password':'Show password');}
 };
