@@ -1016,17 +1016,92 @@ function orderProgress(order) {
   };
 }
 /* ---------- receipt ---------- */
-function receiptHTML(o, anim) { const r=R(o.rid)||{name:'Store',items:[]}, pr = o.promo && window.PROMOS.find(p => p.code === o.promo); let n = 0; const L = (a, b, cls = '') => `<div class="ln ${cls}" style="--i:${n++}"><span>${a}</span><i></i><span>${b}</span></div>`;
-  const stamp=o.pay?.status==='paid'?'PAYMENT RECORDED':o.pay?.method==='cod'?'CASH PAYMENT':'PAYMENT NOT CONFIRMED';
-  return `<div class="rwrap ${anim ? 'print' : ''}"><div class="rcpt" id="rcpt-${o.id}"><div class="rhead"><b>PAPALITA</b><span>Good food, good mood</span><span class="rst">${esc(r.name)}</span><span>${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).toUpperCase()}</span></div><div class="dash"></div>
-  <div class="rno"><span>ORDER NO.</span><b>${esc(o.id)}</b></div><div class="dash"></div>
-  ${o.items.map(l => L(`${l.qty} x ${esc(l.name).toUpperCase()}`, peso(l.unit * l.qty)) + (selText(l) ? `<div class="sub" style="--i:${n++}">${esc(selText(l))}</div>` : '')).join('')}<div class="dash"></div>
-  ${L('SUBTOTAL', peso(o.sub))}${orderStatus.mode(o) === 'pickup' ? '' : L('DELIVERY FEE', o.disc && pr && pr.type === 'ship' ? 'FREE' : o.fee==null?'Not supplied':peso(o.fee))}${o.disc && (!pr||pr.type !== 'ship') ? L('PROMO ' + esc(pr?.code||'RECORDED'), '-' + peso(o.disc), 'g') : ''}${o.tip ? L('RIDER TIP', peso(o.tip)) : ''}
-  <div class="ln tot" style="--i:${n++}"><span>TOTAL</span><i></i><span>${peso(o.total)}</span></div><div class="sub" style="--i:${n++}">Order summary · ask the store for a tax invoice</div><div class="dash"></div>
-  ${L('PAYMENT', payTag(o).toUpperCase())}<div class="ln" style="--i:${n++}"><span>${orderLocationLabel(o).toUpperCase()}</span></div><div class="sub" style="--i:${n++};color:#222">${esc(orderLocation(o))}</div>${o.note ? `<div class="sub" style="--i:${n++}">Note: ${esc(o.note)}</div>` : ''}<div class="dash"></div>
-  <div class="rbar" style="--i:${n++}"><span>${esc(o.id)}</span></div><p class="thx" style="--i:${n++}">SALAMAT, ALEGRIA!<br><small>Thank you for ordering local.</small></p><div class="stamp">${stamp}</div></div></div>`; }
-V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound(); const r=R(o.rid)||{name:'Store',items:[]};
-  return { html: `<section class="view" style="max-width:520px;margin:0 auto;text-align:center"><div class="okh"><span class="okc">${ic('check', 40)}</span><h1>Order placed!</h1><p class="mu">The store will review your order.</p></div><div class="slot" aria-hidden="true"></div>${receiptHTML(o, true)}
+const receiptDate = new Intl.DateTimeFormat('en-PH', {
+  dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila'
+});
+// Code 128 symbol widths, indexed by codeword. Bars and gaps alternate, starting with a bar.
+const receiptBarcodeWidths = `
+  212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212
+  112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131
+  311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321
+  112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121
+  313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111
+  314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114
+  122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212
+  124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113
+  114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112
+`.trim().split(/\s+/);
+function receiptBarcode(orderNumber) {
+  if (typeof orderNumber !== 'string' || !/^[\x20-\x7e]{1,36}$/.test(orderNumber)) return '';
+  const startB = 104;
+  const data = Array.from(orderNumber, character => character.charCodeAt(0) - 32);
+  const checksum = data.reduce((sum, code, i) => sum + code * (i + 1), startB) % 103;
+  const quietZone = 10;
+  let x = quietZone;
+  let bars = '';
+  for (const code of [startB, ...data, checksum, 106]) {
+    for (const [i, digit] of Array.from(receiptBarcodeWidths[code]).entries()) {
+      const width = Number(digit);
+      if (i % 2 === 0) bars += `M${x} 0h${width}v42h-${width}z`;
+      x += width;
+    }
+  }
+  return `<svg class="pp-receipt-barcode" aria-hidden="true" viewBox="0 0 ${x + quietZone} 42" preserveAspectRatio="none"><path fill="currentColor" d="${bars}"></path></svg>`;
+}
+function receiptHTML(o, animate = false) {
+  const store = R(o.rid);
+  const promo = o.promo && window.PROMOS.find(p => p.code === o.promo);
+  const freeDelivery = o.disc && promo?.type === 'ship';
+  const deliveryFee = freeDelivery ? 'Free' : o.fee == null ? 'Not supplied' : peso(o.fee);
+  const paymentStatus = o.pay?.status === 'paid' ? 'Payment recorded'
+    : o.pay?.method === 'cod' ? '' : 'Payment not confirmed';
+  const placed = new Date(o.createdAt);
+  const placedHTML = Number.isFinite(placed.getTime())
+    ? `<time class="pp-receipt-date" datetime="${placed.toISOString()}">${receiptDate.format(placed)}</time>`
+    : '';
+  const items = o.items.map(line => {
+    const options = selText(line);
+    return `<tr>
+      <td class="pp-receipt-qty">${esc(line.qty)}</td>
+      <th scope="row">${esc(line.name)}${options ? `<small class="pp-receipt-options">${esc(options)}</small>` : ''}</th>
+      <td class="pp-receipt-amount">${peso(line.unit * line.qty)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="pp-receipt-frame"><article class="pp-receipt${animate ? ' pp-receipt-enter' : ''}" aria-label="Order receipt">
+    <header class="pp-receipt-head">
+      <p class="pp-receipt-brand">PAPALITA</p>
+      <p class="pp-receipt-store">${esc(store?.name || 'Store')}</p>
+      <h2><span aria-hidden="true">*** </span>Order receipt<span aria-hidden="true"> ***</span></h2>
+      ${placedHTML}
+      <dl class="pp-receipt-ref"><dt>Order number</dt><dd>${esc(o.id)}</dd></dl>
+      ${orderStatus.status(o) === 'cancelled' ? '<p class="pp-receipt-cancelled">Order cancelled</p>' : ''}
+    </header>
+    <div class="pp-receipt-body">
+      <table class="pp-receipt-items">
+        <thead><tr><th scope="col" class="pp-receipt-qty">Qty</th><th scope="col">Item</th><th scope="col" class="pp-receipt-amount">Amount</th></tr></thead>
+        <tbody>${items || '<tr><td colspan="3">Item details unavailable</td></tr>'}</tbody>
+      </table>
+      <dl class="pp-receipt-totals">
+        <div><dt>Subtotal</dt><dd>${peso(o.sub)}</dd></div>
+        ${orderStatus.mode(o) === 'pickup' ? '' : `<div><dt>Delivery fee</dt><dd>${deliveryFee}</dd></div>`}
+        ${o.disc && !freeDelivery ? `<div class="pp-receipt-discount"><dt>Discount${promo?.code ? ' (' + esc(promo.code) + ')' : ''}</dt><dd>−${peso(o.disc)}</dd></div>` : ''}
+        ${o.tip ? `<div><dt>Rider tip</dt><dd>${peso(o.tip)}</dd></div>` : ''}
+        <div class="pp-receipt-total"><dt>Total</dt><dd>${peso(o.total)}</dd></div>
+      </dl>
+      <dl class="pp-receipt-meta">
+        <div><dt>Payment</dt><dd>${payTag(o)}${paymentStatus ? `<small class="pp-receipt-options">${paymentStatus}</small>` : ''}</dd></div>
+        <div><dt>${orderLocationLabel(o)}</dt><dd>${esc(orderLocation(o))}</dd></div>
+        ${o.note ? `<div><dt>Order note</dt><dd>${esc(o.note)}</dd></div>` : ''}
+      </dl>
+      <footer class="pp-receipt-end">
+        ${receiptBarcode(o.id)}
+        <p class="pp-receipt-footer">Ask the store for a tax invoice.</p>
+      </footer>
+    </div>
+  </article></div>`;
+}
+V.confirmation = id => { const o = ORD(id); if (!o) return V.notFound();
+  return { html: `<section class="view" style="max-width:520px;margin:0 auto;text-align:center"><div class="okh"><span class="okc">${ic('check', 40)}</span><h1>Order placed!</h1><p class="mu">The store will review your order.</p></div>${receiptHTML(o, !calmMotion())}
   <div class="row" style="margin-top:22px"><button class="btn s grow" data-a="printrcpt" data-id="${o.id}">${ic('copy', 16)}Save receipt</button><button class="btn p grow" data-a="gotrack" data-id="${o.id}">${ic(orderStatus.mode(o)==='pickup'?'store':'orders',18)}${orderStatus.mode(o)==='pickup'?'Track pickup':'Track order'}</button></div><button class="btn o blk" style="margin-top:10px" data-a="home">Back home</button></section>` }; };
 /* ---------- motion: fly to cart ---------- */
 const calmMotion = () => window.PapalitaMotion?.stopped() || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1622,7 +1697,12 @@ const A = {
     window.PapalitaLiveMap.open(order,authDB(),()=>S.user.in&&S.user.id===uid&&curPath()==='/track/'+order.id);
   },
   tip: b => { CK.tip = +b.dataset.v; render(); },
-  receipt: b => { const o = ORD(b.dataset.id); openSheet(`<div class="pd" style="padding-top:34px">${receiptHTML(o, false)}<button class="btn p blk" style="margin-top:14px" data-a="printrcpt" data-id="${o.id}">Save / print receipt</button></div>`, { label: 'Receipt' }); }, printrcpt: b => printReceipt(b.dataset.id),
+  receipt: b => {
+    const o = ORD(b.dataset.id);
+    if (!o) return;
+    openSheet(`<div class="pd" style="padding-top:52px">${receiptHTML(o)}<button class="btn p blk" style="margin-top:14px" data-a="printrcpt" data-id="${esc(o.id)}">Save / print receipt</button></div>`, { label: 'Receipt' });
+  },
+  printrcpt: b => printReceipt(b.dataset.id),
   cater: b => go('/catering/request?rid=' + b.dataset.id), newcater: () => go('/catering/request'),
   contact: b => { const r = R(b.dataset.id), k = b.dataset.k; if(!r.phone)return toast('The store has not supplied a contact number.');
     if (k === 'call') location.href = 'tel:' + r.phone; else if (k === 'sms') location.href = 'sms:' + r.phone; else if (k === 'msgr') r.messenger ? window.open(r.messenger, '_blank', 'noopener') : toast('Messenger link not set yet.'); else { try { navigator.clipboard.writeText(r.phone); toast('Number copied.'); } catch (e) { toast('Copy is not available here.'); } } },
