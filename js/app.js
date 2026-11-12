@@ -49,6 +49,7 @@ try{
     return{id:String(s.id),name:s.name,kind:business.replace(/_/g,' '),description:s.description||'',items,
       cat:items[0]?.cat||'Other',cover:s.cover||s.logo_url||'',logo_url:s.logo_url||'',addr:s.address||'',phone:s.phone||'',messenger:'',
       hours:[s.open_time||'',s.close_time||''],verifiedHours:!!(s.open_time&&s.close_time),open_state:s.is_open,closed:s.is_open===false,
+      closureReason:s.closure_reason||'',pauseUntil:s.orders_paused_until||null,pauseReason:s.orders_pause_reason||'',
       rating:null,reviews:'',reviewsList:[],min:0,
       catering:/^(restaurant|carinderia|bulaloan|specialty[_\s-]*restaurant)$/i.test(business)&&s.catering_enabled===true,
       stay:false,feature:null,promo:null};
@@ -119,7 +120,44 @@ const notify = (type, t, b, who) => { S.notes.unshift({ id: uid('n'), type, t, b
 const nowMin = () => { const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date()); return +p[0].value % 24 * 60 + +p[2].value; };
 const toMin = s => { const [h, m] = s.split(':'); return +h * 60 + +m; };
 const fmtT = s => { let [h, m] = s.split(':').map(Number); h %= 24; return ((h + 11) % 12 + 1) + (m ? ':' + String(m).padStart(2, '0') : ':00') + (h < 12 ? ' AM' : ' PM'); };
-const isOpen=r=>{if(r.closed||r.open_state===false)return false;if(!r.verifiedHours)return r.open_state===true;const o=toMin(r.hours[0]),c=toMin(r.hours[1]),n=nowMin();return c<o?n>=o||n<c:n>=o&&n<c;};
+const isStorePaused = r => Date.parse(r.pauseUntil) > Date.now();
+const isOpen=r=>{if(r.closed||r.open_state===false||isStorePaused(r))return false;if(!r.verifiedHours)return r.open_state===true;const o=toMin(r.hours[0]),c=toMin(r.hours[1]),n=nowMin();return c<o?n>=o||n<c:n>=o&&n<c;};
+const storeClosureReason = r => String(isStorePaused(r) ? r.pauseReason : r.open_state===false ? r.closureReason : '').trim();
+function storeAvailabilityLabel(r) {
+  if (isOpen(r)) return 'Open';
+  const reason = storeClosureReason(r);
+  if (/^emergency(?: clos(?:e|ure))?$/i.test(reason)) return 'Emergency closure';
+  if (/^power (?:interruption|outage)$/i.test(reason)) return 'Power interruption';
+  return 'Not open';
+}
+
+function watchStoreAvailability(repaint) {
+  const route = location.hash;
+  const key = () => JSON.stringify(RS.map(r=>[r.id,storeAvailabilityLabel(r),storeClosureReason(r),...r.hours]));
+  let displayed = key(), busy = false;
+  const refresh = async () => {
+    if (!window.loadPapalitaStoreAvailability || busy || location.hash !== route || sheetEl) return;
+    busy = true;
+    try {
+      const {data,error} = await window.loadPapalitaStoreAvailability();
+      if (error || !Array.isArray(data) || location.hash !== route || sheetEl) return;
+      for (const row of data) {
+        const store = R(String(row.id));
+        if (store) Object.assign(store,{
+          hours:[row.open_time||'',row.close_time||''],
+          verifiedHours:!!(row.open_time&&row.close_time),open_state:row.is_open,closed:row.is_open===false,
+          closureReason:row.closure_reason||'',pauseUntil:row.orders_paused_until||null,pauseReason:row.orders_pause_reason||''
+        });
+      }
+      const current = key();
+      if (current !== displayed) { displayed = current; repaint(); }
+    } catch (error) {
+      console.warn('[Papalita] Store availability:',error.message);
+    } finally { busy = false; }
+  };
+  refresh();
+  timers.push(setInterval(refresh,15000));
+}
 const hoursText = r => r.hours[0] === '00:00' && r.hours[1] === '24:00' ? 'Open 24 hours' : `${fmtT(r.hours[0])} – ${fmtT(r.hours[1])}`;
 
 const defSel = item => { const s = {}; (item.opts||[]).forEach(g => { if (g.req && g.ch?.length) s[g.id] = [g.ch[0].n]; }); return s; };
@@ -216,8 +254,16 @@ function restCard(r) {
   const op = isOpen(r);
   const fee = feeOf();
   const delivery = fee === null || deliveryConfig?.enabled !== false ? 'Check delivery fee at checkout' : `${peso(fee)} delivery to ${S.loc.brgy}`;
-  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}">${hrt('rests',r.id)}<span class="pp-store-state ${op?'':'pp-store-closed'}">${op?'Open':'Closed'}</span>${photo(r.cover, `${r.name} store photo`)}<div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div><p class="pp-store-delivery">${ic('bike',15)}<span>${esc(delivery)}</span></p></div></article>`;
+  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}">${hrt('rests',r.id)}<span class="pp-store-state ${op?'':'pp-store-closed'}">${esc(storeAvailabilityLabel(r))}</span>${photo(r.cover, `${r.name} store photo`)}<div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div>${op?`<p class="pp-store-delivery">${ic('bike',15)}<span>${esc(delivery)}</span></p>`:''}</div></article>`;
 }
+function groupStores(stores) {
+  const open = [], unavailable = [];
+  for (const store of stores) (isOpen(store) ? open : unavailable).push(store);
+  return {open,unavailable};
+}
+const storeGrid = stores => `<div class="grid restaurant-results-grid">${stores.map(restCard).join('')}</div>`;
+const unavailableStores = stores => stores.length ? `<section class="sec">
+  <div class="sec-h"><h3>Unavailable stores</h3></div>${storeGrid(stores)}</section>` : '';
 
 /* ---------- router ---------- */
 let timers = [], first = true;
@@ -290,9 +336,10 @@ const fillCurated = () => {
   const target = $('#cur');
   if (!target) return;
   const stores = RS.filter(r => HC === 'all' || r.cat === HC || (r.items || []).some(i => i.cat === HC));
-  target.innerHTML = stores.length
-    ? stores.map(restCard).join('')
-    : emptyState('search', 'No stores yet', 'Try another category.');
+  const {open,unavailable} = groupStores(stores);
+  target.innerHTML = open.length ? open.map(restCard).join('')
+    : emptyState('search', stores.length ? 'No stores open right now' : 'No stores yet', 'Check back later or try another category.');
+  $('#cur-unavailable').innerHTML = unavailableStores(unavailable);
   $$('[data-a=hcat]').forEach(b => {
     b.classList.toggle('on', b.dataset.id === HC);
     b.setAttribute('aria-pressed', String(b.dataset.id === HC));
@@ -301,7 +348,7 @@ const fillCurated = () => {
 };
 
 const popularDishes = () => ALL()
-  .filter(({item}) => PD === 'all' || item.cat === PD)
+  .filter(({item,rest}) => isOpen(rest) && (PD === 'all' || item.cat === PD))
   .slice(0, 8);
 
 const fillPopular = () => {
@@ -424,10 +471,10 @@ V.home = () => {
     <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
     ${CATS.length?`<div class="pp-categories" role="group" aria-label="Menu categories"><button class="chipc on" data-a="hcat" data-id="all" aria-pressed="true">${ic('grid',16)}All food</button>${CATS.map(c=>`<button class="chipc" data-a="hcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div>`:''}
     ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic(orderStatus.mode(act)==='pickup'?'store':'orders',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(orderStatus.copy(act)[0])}</span></span>${ic('chev',18)}</a>`:''}
-    <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Stores carousel"></div></div>
+    <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Open stores"></div><div id="cur-unavailable"></div></div>
     <div class="sec"><div class="sec-h"><h2>On the menu</h2><button class="link gl" data-a="qa" data-id="order">See all ${ic('arrow',16)}</button></div><div class="chips popular-chips" role="group" aria-label="Filter menu"><button class="chip on" data-a="pcat" data-id="all" aria-pressed="true">All food</button>${CATS.map(c=>`<button class="chip" data-a="pcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="popular-grid" id="popular-dishes"></div></div>
     ${RS.some(r=>r.catering)?`<a class="mint row home-promo-card" href="#/catering">${ic('box',24)}<span class="grow"><b>Bring everyone to the table.</b><br><span class="sm mu">Ask participating stores about catering.</span></span>${ic('arrow',19)}</a>`:''}
-    ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();watchHomeVoucher();}};
+    ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();watchHomeVoucher();watchStoreAvailability(()=>{fillCurated();fillPopular();});}};
 };
 function authLayout() {
   return `<div class="pp-auth-layout">
@@ -446,8 +493,9 @@ function authLayout() {
 function suggestions(q) {
   q = q.trim().toLowerCase(); if (!q) return ''; const has = s => s.toLowerCase().includes(q), out = [];
   CATS.filter(c => has(c.name)).slice(0, 2).forEach(c => out.push(`<button data-a="sugg" data-t="cat" data-id="${c.id}">${photo(c.img, '', { w: 100 })}<span><b>${esc(c.name)}</b><br><span class="sm mu">Cuisine</span></span></button>`));
-  RS.filter(r => has(r.name) || has(r.kind)).slice(0, 3).forEach(r => out.push(`<button data-a="sugg" data-t="rest" data-id="${r.id}">${photo(r.cover, '', { w: 100 })}<span><b>${esc(r.name)}</b><br><span class="sm mu">Restaurant · ${esc(r.kind)}</span></span></button>`));
-  ALL().filter(x => has(x.item.name) || has(x.item.desc)).slice(0, 4).forEach(x => out.push(`<button data-a="sugg" data-t="item" data-id="${x.item.id}">${photo(x.item.img, '', { w: 100 })}<span><b>${esc(x.item.name)}</b><br><span class="sm mu">${esc(x.rest.name)} · ${peso(x.item.price)}</span></span></button>`));
+  const stores = groupStores(RS.filter(r => has(r.name) || has(r.kind)));
+  [...stores.open,...stores.unavailable].slice(0, 3).forEach(r => out.push(`<button data-a="sugg" data-t="rest" data-id="${r.id}">${photo(r.cover, '', { w: 100 })}<span><b>${esc(r.name)}</b><br><span class="sm mu">${esc(storeAvailabilityLabel(r))} · ${esc(r.kind)}</span></span></button>`));
+  ALL().filter(x => isOpen(x.rest) && (has(x.item.name) || has(x.item.desc))).slice(0, 4).forEach(x => out.push(`<button data-a="sugg" data-t="item" data-id="${x.item.id}">${photo(x.item.img, '', { w: 100 })}<span><b>${esc(x.item.name)}</b><br><span class="sm mu">${esc(x.rest.name)} · ${peso(x.item.price)}</span></span></button>`));
   return `<div class="sugg" role="listbox">${out.join('') || `<p class="mu" style="padding:14px">No matches for “${esc(q)}”. Try “burger”, “ramen” or “milk tea”.</p>`}<button data-a="sugg" data-t="q" data-id="${esc(q)}">${ic('search', 18)}<span>Search all for “<b>${esc(q)}</b>”</span></button></div>`;
 }
 
@@ -455,7 +503,7 @@ function suggestions(q) {
 let F = { tab: 'dishes', q: '', cat: 'all', price: 0, rating: 0, eta: 0, promo: false, sort: 'popular', open: false };
 V.discover = (_, p) => { if (p.get('reset')) F = { ...F, q: '', cat: 'all', price: 0, rating: 0, eta: 0, promo: false, sort: 'popular', open: false }; if (p.has('q')) F.q = p.get('q'); if (p.has('cat')) F.cat = p.get('cat'); if (p.has('tab')) F.tab = p.get('tab'); if (p.get('f')) F.open = true;
   return { html: `<section class="view">${pageHead(F.tab === 'dishes' ? 'Order food' : 'Restaurants')}<div class="search" style="margin-top:0"><div class="sbox">${ic('search', 22)}<input id="dq" type="search" value="${esc(F.q)}" placeholder="Search dishes, restaurants, cuisines, ingredients" aria-label="Search" autocomplete="off"><button class="ib" data-a="dclear" aria-label="Clear search" ${F.q ? '' : 'hidden'}>${ic('x', 18)}</button><i class="vr"></i><button class="ib" data-a="ftoggle" aria-label="Toggle filters" aria-expanded="${F.open}">${ic('sliders', 22)}</button></div></div>
-  <div class="chips" style="margin-top:14px" role="tablist">${[['dishes', 'Dishes'], ['rests', 'Restaurants']].map(([k, l]) => `<button class="chip ${F.tab === k ? 'on' : ''}" role="tab" aria-selected="${F.tab === k}" data-a="ftab" data-v="${k}">${l}</button>`).join('')}</div><div id="dfilters"></div><div id="results" aria-live="polite"></div></section>`, after: fillDiscover }; };
+  <div class="chips" style="margin-top:14px" role="tablist">${[['dishes', 'Dishes'], ['rests', 'Restaurants']].map(([k, l]) => `<button class="chip ${F.tab === k ? 'on' : ''}" role="tab" aria-selected="${F.tab === k}" data-a="ftab" data-v="${k}">${l}</button>`).join('')}</div><div id="dfilters"></div><div id="results" aria-live="polite"></div></section>`, after:()=>{fillDiscover();watchStoreAvailability(fillResults);} }; };
 const chipRow = (k, opts) => `<div class="chips">${opts.map(([v, l]) => `<button class="chip ${F[k] === v ? 'on' : ''}" data-a="flt" data-k="${k}" data-v="${v}">${l}</button>`).join('')}</div>`;
 function fillDiscover() {
   $('#dfilters').innerHTML = `<div class="chips" style="margin:14px 0 4px"><button class="chip ${F.cat==='all'?'on':''}" data-a="flt" data-k="cat" data-v="all">All</button>${CATS.map(c=>`<button class="chip ${F.cat===c.id?'on':''}" data-a="flt" data-k="cat" data-v="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>${F.open?`<div class="panel" style="margin-top:12px"><div class="field"><label>Item price</label>${chipRow('price',[[0,'Any'],[150,'Under ₱150'],[300,'Under ₱300']])}</div><div class="field" style="margin:0"><label for="sort">Sort by</label><select id="sort" class="in" data-sort><option value="popular">Menu order</option><option value="price">Lowest price</option></select></div></div>`:''}`;
@@ -465,21 +513,26 @@ function fillResults() {
   const terms = F.q.toLowerCase().split(/\s+/).filter(Boolean), cn = id => (CATS.find(c => c.id === id) || {}).name || '';
   let html, n;
   if (F.tab === 'dishes') {
-    let a = ALL().filter(({ item: i, rest: r }) => (F.cat === 'all' || i.cat === F.cat) && (!F.price || i.price <= F.price) && terms.every(t => `${i.name} ${i.desc} ${r.name} ${r.kind} ${cn(i.cat)}`.toLowerCase().includes(t)));
+    let a = ALL().filter(({ item: i, rest: r }) => isOpen(r) && (F.cat === 'all' || i.cat === F.cat) && (!F.price || i.price <= F.price) && terms.every(t => `${i.name} ${i.desc} ${r.name} ${r.kind} ${cn(i.cat)}`.toLowerCase().includes(t)));
     if(F.sort==='price')a.sort((x,y)=>x.item.price-y.item.price);
-    n = a.length; html = a.map(dishCard).join('');
+    n = a.length; html = `<div class="grid">${a.map(dishCard).join('')}</div>`;
   } else {
     let a = RS.filter(r => (F.cat === 'all' || r.cat === F.cat || r.items.some(i => i.cat === F.cat)) && (!F.price || Math.min(...r.items.map(i => i.price)) <= F.price) && terms.every(t => `${r.name} ${r.kind} ${r.items.map(i => i.name + ' ' + i.desc).join(' ')}`.toLowerCase().includes(t)));
     if(F.sort==='price')a.sort((x,y)=>Math.min(...x.items.map(i=>i.price))-Math.min(...y.items.map(i=>i.price)));
-    n = a.length; html = a.map(restCard).join('');
+    const {open,unavailable} = groupStores(a);
+    n = a.length;
+    html = (open.length ? storeGrid(open) : '') + unavailableStores(unavailable);
   }
-  $('#results').innerHTML = n ? `<p class="mu sm" style="margin:12px 0">${n} ${F.tab === 'dishes' ? 'dish' : 'restaurant'}${n > 1 ? (F.tab === 'dishes' ? 'es' : 's') : ''} found</p><div class="grid ${F.tab === 'rests' ? 'restaurant-results-grid' : ''}">${html}</div>` : emptyState('search', 'No matches', 'Try a different word or remove a filter.', 'Clear filters', 'fclear');
+  $('#results').innerHTML = n ? `<p class="mu sm" style="margin:12px 0">${n} ${F.tab === 'dishes' ? 'dish' : 'restaurant'}${n > 1 ? (F.tab === 'dishes' ? 'es' : 's') : ''} found</p>${html}` : emptyState('search', 'No matches', 'Try a different word or remove a filter.', 'Clear filters', 'fclear');
 }
 
 /* ---------- restaurant ---------- */
 V.restaurant = id => { const r = R(id); if (!r) return V.notFound(); const op = isOpen(r), secs = [...new Set(r.items.map(i => i.sec))];
+  const label = storeAvailabilityLabel(r);
+  const reason = storeClosureReason(r);
   return { html: `<section class="view"><div class="cover">${photo(r.cover, r.name + ' cover photo', { w: 1200, eager: 1 })}<div class="cov-sh"></div><div class="cov-b"><button class="ib w" data-a="back" aria-label="Go back">${ic('back')}</button><span class="row">${hrt('rests', r.id)}<button class="ib w" data-a="share" data-id="${r.id}" aria-label="Share restaurant">${ic('share')}</button></span></div></div>
-  <div class="fcard"><div class="row sp"><h1 style="font-size:28px">${esc(r.name)}</h1><span class="status ${op?'open':'closed'}">${op?'Open':'Closed'}</span></div><p class="mu" style="margin-top:6px">${esc(r.kind)} • ${esc(r.addr)}${op?'':' • Not accepting orders'}</p>
+  <div class="fcard"><div class="row sp wrap"><h1 style="font-size:28px">${esc(r.name)}</h1><span class="status ${op?'open':'closed'}">${esc(label)}</span></div><p class="mu" style="margin-top:6px">${esc(r.kind)} • ${esc(r.addr)}</p>
+  ${label==='Not open' && reason && !/^closed by owner$/i.test(reason)?`<p class="mu sm" style="margin-top:8px">${esc(reason)}</p>`:''}
   <div class="stats"><div>${ic('store',18,'gc')}Menu & availability</div><div>${ic('pin',18,'gc')}Alegria</div></div></div>
   <p class="sm mu" style="margin:12px 6px 0">${r.busy ? `<span class="status closed">Busy · +${r.busy} min</span> ` : ''}${r.promo ? ` · <button class="link gl" style="padding:0" data-a="usepromo" data-id="${r.promo}">Code ${r.promo}</button>` : ''}</p>
   ${r.feature ? `<button class="mint row" data-a="jump" data-id="s-${esc(r.feature.sec)}" style="width:100%;text-align:left;margin-top:14px">${photo(r.feature.img, r.feature.title, { ar: '1', w: 200 }).replace('class="ph', 'style="width:64px;border-radius:16px;flex:none" class="ph')}<span class="grow"><b style="font-size:17px">${esc(r.feature.title)}</b><br><span class="sm mu">${esc(r.feature.sub)}</span></span>${ic('chev', 18, 'mu')}</button>` : ''}
@@ -489,7 +542,7 @@ V.restaurant = id => { const r = R(id); if (!r) return V.notFound(); const op = 
   ${r.catering ? cateringSection(r) : ''}
   <div class="sec"><h2 style="margin-bottom:10px">Contact</h2><div class="panel">${contactBtns(r)}</div></div>
   <div class="sec"><h2 style="margin-bottom:10px">Opening hours</h2><div class="panel"><div class="row sp"><span>Store hours</span><b>${r.verifiedHours?hoursText(r):'Ask the store'}</b></div></div></div>
-</section>` }; };
+</section>`, after:()=>watchStoreAvailability(render) }; };
 
 /* Match instructions to the actual product; seller-configured option groups remain unchanged. */
 function instructionPlaceholder(item, rest) {

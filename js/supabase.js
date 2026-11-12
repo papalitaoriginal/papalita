@@ -20,12 +20,30 @@
 
   window.PAPALITA_DB = client;
 
+  const availabilityColumns = [
+    'closure_reason,orders_paused_until,orders_pause_reason',
+    'closure_reason',
+    ''
+  ];
+  let availabilityVariant = 0;
+
+  async function approvedStores(columns) {
+    while (true) {
+      const variant = availabilityVariant;
+      const extra = availabilityColumns[variant];
+      const response = await client.from('stores').select(extra ? columns + ',' + extra : columns).eq('status','approved');
+      if (!['42703','PGRST204'].includes(response.error?.code) || !extra) return response;
+      availabilityVariant = Math.max(availabilityVariant, variant + 1);
+    }
+  }
+
+  window.loadPapalitaStoreAvailability = () => approvedStores('id,is_open,open_time,close_time');
+
   window.loadPapalitaProducts = async function () {
     try {
-      const { data: stores, error: storeError } = await client
-        .from("stores")
-        .select("id, name, logo_url, cover_url, address, description, phone, business_type, open_time, close_time, is_open, catering_enabled, status")
-        .eq("status", "approved");
+      const {data:stores,error:storeError} = await approvedStores(
+        'id,name,logo_url,cover_url,address,description,phone,business_type,open_time,close_time,is_open,catering_enabled,status'
+      );
 
       if (storeError) throw storeError;
 
@@ -49,6 +67,9 @@
         open_time: store.open_time,
         close_time: store.close_time,
         is_open: store.is_open,
+        closure_reason: store.closure_reason,
+        orders_paused_until: store.orders_paused_until,
+        orders_pause_reason: store.orders_pause_reason,
         catering_enabled: store.catering_enabled === true,
 
         // Store photo comes from Supabase stores.logo_url.
