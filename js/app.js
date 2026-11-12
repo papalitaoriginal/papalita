@@ -88,7 +88,7 @@ const ICONS = {
 ICONS.chat='<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>';ICONS.eye='<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';ICONS.eyeoff='<path d="M17.9 17.9A10.7 10.7 0 0 1 12 19c-6.4 0-10-7-10-7a18 18 0 0 1 5.1-5.9M9.9 5.2A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a18 18 0 0 1-2.2 3.2M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/>';ICONS.chevd='<path d="m6 9 6 6 6-6"/>';ICONS.share='<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>';
 const ic = (n, s = 20, c = '') => `<svg class="i ${c}" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const photo = (key, alt, o = {}) => { const u = window.photoUrl(key, o.w || 600), u2 = window.photoUrl(key, (o.w || 600) * 2);
-  return `<span class="ph ${o.cls || ''}" style="${o.ar ? '--ar:' + o.ar : ''}">${ic('fork', 48)}${u ? `<img src="${esc(u)}"${u2 !== u ? ` srcset="${esc(u)} 1x, ${esc(u2)} 2x"` : ''} alt="${esc(alt)}" loading="${o.eager ? 'eager' : 'lazy'}" decoding="async">` : ''}</span>`; };
+  return `<span class="ph ${o.cls || ''}" style="${o.ar ? '--ar:' + o.ar : ''}">${ic('fork', 48)}${u ? `<img src="${esc(u)}"${u2 !== u ? ` srcset="${esc(u)} 1x, ${esc(u2)} 2x"` : ''} alt="${esc(alt)}" loading="${o.eager ? 'eager' : 'lazy'}" decoding="async">` : ''}${o.closedLabel ? `<span class="pp-store-photo-status" aria-hidden="true">${esc(o.closedLabel)}</span>` : ''}</span>`; };
 document.addEventListener('error', e => { const t = e.target; if (t.tagName === 'IMG' && t.closest('.ph')) t.closest('.ph').classList.add('failed'); }, true);
 
 /* ---------- store ---------- */
@@ -252,9 +252,15 @@ function dishCard({item:i,rest:r}) {
 }
 function restCard(r) {
   const op = isOpen(r);
+  const status = storeAvailabilityLabel(r);
   const fee = feeOf();
   const delivery = fee === null || deliveryConfig?.enabled !== false ? 'Check delivery fee at checkout' : `${peso(fee)} delivery to ${S.loc.brgy}`;
-  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}">${hrt('rests',r.id)}<span class="pp-store-state ${op?'':'pp-store-closed'}">${esc(storeAvailabilityLabel(r))}</span>${photo(r.cover, `${r.name} store photo`)}<div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div>${op?`<p class="pp-store-delivery">${ic('bike',15)}<span>${esc(delivery)}</span></p>`:''}</div></article>`;
+  return `<article class="card big" data-reveal tabindex="0" role="link" data-a="rest" data-id="${esc(r.id)}" aria-label="${esc(r.name)}, ${esc(status)}">
+    ${hrt('rests',r.id)}${op?'<span class="pp-store-state">Open</span>':''}
+    ${photo(r.cover, `${r.name} store photo`, {closedLabel:op?'':status})}
+    <div class="bd"><h3>${esc(r.name)}</h3><div class="meta2">${esc(r.kind)}</div>
+      ${op?`<p class="pp-store-delivery">${ic('bike',15)}<span>${esc(delivery)}</span></p>`:''}
+    </div></article>`;
 }
 function groupStores(stores) {
   const open = [], unavailable = [];
@@ -262,8 +268,6 @@ function groupStores(stores) {
   return {open,unavailable};
 }
 const storeGrid = stores => `<div class="grid restaurant-results-grid">${stores.map(restCard).join('')}</div>`;
-const unavailableStores = stores => stores.length ? `<section class="sec">
-  <div class="sec-h"><h3>Unavailable stores</h3></div>${storeGrid(stores)}</section>` : '';
 
 /* ---------- router ---------- */
 let timers = [], first = true;
@@ -337,9 +341,8 @@ const fillCurated = () => {
   if (!target) return;
   const stores = RS.filter(r => HC === 'all' || r.cat === HC || (r.items || []).some(i => i.cat === HC));
   const {open,unavailable} = groupStores(stores);
-  target.innerHTML = open.length ? open.map(restCard).join('')
-    : emptyState('search', stores.length ? 'No stores open right now' : 'No stores yet', 'Check back later or try another category.');
-  $('#cur-unavailable').innerHTML = unavailableStores(unavailable);
+  target.innerHTML = stores.length ? [...open,...unavailable].map(restCard).join('')
+    : emptyState('search', 'No stores yet', 'Check back later or try another category.');
   $$('[data-a=hcat]').forEach(b => {
     b.classList.toggle('on', b.dataset.id === HC);
     b.setAttribute('aria-pressed', String(b.dataset.id === HC));
@@ -471,7 +474,7 @@ V.home = () => {
     <div class="search pp-home-search" id="hs"><div class="sbox">${ic('search',21)}<input id="q" type="search" placeholder="Search food or stores" aria-label="Search food or stores" aria-controls="sg" autocomplete="off"><button class="ib" data-a="clearq" aria-label="Clear search" hidden>${ic('x',18)}</button><button class="ib" data-a="filters" aria-label="Search filters">${ic('sliders',19)}</button></div><div id="sg"></div></div>
     ${CATS.length?`<div class="pp-categories" role="group" aria-label="Menu categories"><button class="chipc on" data-a="hcat" data-id="all" aria-pressed="true">${ic('grid',16)}All food</button>${CATS.map(c=>`<button class="chipc" data-a="hcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div>`:''}
     ${act?`<a class="mint row" href="#/track/${esc(act.id)}" style="margin-top:18px">${ic(orderStatus.mode(act)==='pickup'?'store':'orders',24)}<span class="grow"><b>Your order</b><br><span class="sm mu">${esc(R(act.rid)?.name || 'Store')} · ${esc(orderStatus.copy(act)[0])}</span></span>${ic('chev',18)}</a>`:''}
-    <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Open stores"></div><div id="cur-unavailable"></div></div>
+    <div class="sec"><div class="sec-h"><h2>Stores near you</h2><button class="link gl" data-a="qa" data-id="rests">See all ${ic('arrow',16)}</button></div><div class="store-swipe" id="cur" aria-label="Stores near you"></div></div>
     <div class="sec"><div class="sec-h"><h2>On the menu</h2><button class="link gl" data-a="qa" data-id="order">See all ${ic('arrow',16)}</button></div><div class="chips popular-chips" role="group" aria-label="Filter menu"><button class="chip on" data-a="pcat" data-id="all" aria-pressed="true">All food</button>${CATS.map(c=>`<button class="chip" data-a="pcat" data-id="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="popular-grid" id="popular-dishes"></div></div>
     ${RS.some(r=>r.catering)?`<a class="mint row home-promo-card" href="#/catering">${ic('box',24)}<span class="grow"><b>Bring everyone to the table.</b><br><span class="sm mu">Ask participating stores about catering.</span></span>${ic('arrow',19)}</a>`:''}
     ${customerFooter()}</section>`,after:()=>{fillCurated();fillPopular();watchHomeVoucher();watchStoreAvailability(()=>{fillCurated();fillPopular();});}};
@@ -521,7 +524,7 @@ function fillResults() {
     if(F.sort==='price')a.sort((x,y)=>Math.min(...x.items.map(i=>i.price))-Math.min(...y.items.map(i=>i.price)));
     const {open,unavailable} = groupStores(a);
     n = a.length;
-    html = (open.length ? storeGrid(open) : '') + unavailableStores(unavailable);
+    html = storeGrid([...open,...unavailable]);
   }
   $('#results').innerHTML = n ? `<p class="mu sm" style="margin:12px 0">${n} ${F.tab === 'dishes' ? 'dish' : 'restaurant'}${n > 1 ? (F.tab === 'dishes' ? 'es' : 's') : ''} found</p>${html}` : emptyState('search', 'No matches', 'Try a different word or remove a filter.', 'Clear filters', 'fclear');
 }
