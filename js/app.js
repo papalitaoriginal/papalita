@@ -1153,9 +1153,14 @@ function authScreen() {
       <button type="button" class="btn o blk" style="margin-top:12px" data-a="authtab" data-v="login">Back to log in</button>
     </form></section>`;
   if (AU.view === 'reset') return `<section class="view auth">${authHead('Create a new password', 'Choose a new password for your Papalita account.')}<form id="rp" novalidate>${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Save password</button></form></section>`;
-  if (AU.view === 'register') return `<section class="view auth">${authHead('Create your account', 'Sign up to order from local stores in Alegria. We’ll email you a link to activate your account.')}${tabs('register')}
+  if (AU.view === 'register') return `<section class="view auth">${authHead('Create your account', 'Sign up to order from local stores in Alegria.')}${tabs('register')}
     <form id="rf" novalidate><div class="field"><label for="rn">Full name</label><input class="in" id="rn" autocomplete="name" maxlength="60"><p class="err" data-e="rn"></p></div><div class="field"><label for="rm">Mobile number</label><input class="in" id="rm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="rm"></p></div>
-    <div class="field"><label for="re">Email address (required)</label><input class="in" id="re" type="email" autocomplete="email"><p class="err" data-e="re"></p></div><div class="field"><label for="rb">Barangay</label><select class="in" id="rb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option>${b.n}</option>`).join('')}</select><p class="err" data-e="rb"></p></div>
+    <div class="field">
+      <label for="re">Email address (required)</label>
+      <input class="in" id="re" type="email" autocomplete="email" aria-describedby="re-hint re-error">
+      <p class="sm mu" id="re-hint" style="margin-top:6px">Use an active email address you can access. We’ll send your confirmation link there.</p>
+      <p class="err" id="re-error" data-e="re" role="alert"></p>
+    </div><div class="field"><label for="rb">Barangay</label><select class="in" id="rb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option>${b.n}</option>`).join('')}</select><p class="err" data-e="rb"></p></div>
     ${pwField('rpw', 'Password', 'new-password', meterHTML('rpw'))}${pwField('rpc', 'Confirm password', 'new-password')}
     <div class="pp-auth-consent">
       <label class="pp-auth-consent-choice" for="rt"><input type="checkbox" id="rt" aria-describedby="rt-error"><span>I agree to the Terms and Privacy Policy</span></label>
@@ -1218,7 +1223,7 @@ async function doRegister(f) {
   if (AU.busy) return;
   AU.busy = true;
   try {
-    const {error} = await authDB().auth.signUp({
+    const {data,error} = await authDB().auth.signUp({
       email,password,
       options:{ emailRedirectTo:authRedirect(), data:{full_name:name,phone,barangay} }
     });
@@ -1226,7 +1231,16 @@ async function doRegister(f) {
     AU.prefill = email;
     AU.view = 'login';
     render();
-    toast('Check your email for the confirmation link, then log in.');
+    if (data?.session) {
+      toast('Account created. You can now log in.');
+    } else {
+      openSheet(`<div class="pd" style="padding-top:38px">
+        <h2>Check your email</h2>
+        <p class="mu" style="margin-top:10px">Look for the Papalita confirmation email at <strong style="overflow-wrap:anywhere">${esc(email)}</strong>.</p>
+        <p class="mu sm" style="margin-top:10px">Open the link to confirm your account, then return to log in. If you don’t see the email, check your Spam or Junk folder.</p>
+        <button type="button" class="btn p blk" data-a="close" style="margin-top:18px">Back to log in</button>
+      </div>`, { label: 'Check your email' });
+    }
   } catch(err) { showErrs(f,{re:err.message || 'Registration failed.'}); }
   finally { AU.busy = false; }
 }
