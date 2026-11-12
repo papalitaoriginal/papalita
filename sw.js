@@ -1,6 +1,6 @@
 /* Only public static files are cached. Supabase requests always use the network. */
 importScripts('./js/order-status.js?v=20261107-customer-v5');
-const CACHE = 'papalita-customer-ui-20261112-order-progress-support';
+const CACHE = 'papalita-customer-ui-20261112-store-availability';
 const ASSETS = ['./index.html','./customer-polish.css','./customer-auth.css','./manifest.webmanifest',
  './js/notifications.js','./js/order-status.js','./js/app.js','./js/live-delivery-map.js','./js/config.js','./js/supabase.js','./js/customer-data.js',
  './js/customer-motion.js','./js/customer-install.js','./js/customer-legal.js',

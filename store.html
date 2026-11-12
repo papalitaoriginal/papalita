@@ -1932,20 +1932,12 @@ async function papaChangeOrderStatus(orderId,nextStatus,button){
  if(nextStatus==='cancelled'&&!confirm('Cancel/reject this order? This action cannot be undone.'))return;
  if(nextStatus==='completed'&&!confirm('Confirm this order has been fulfilled?'))return;
 
- // NEW: Mag-ask og ETA kung mudawat sa order
- let etaNotes = "";
- if(nextStatus==='confirmed') {
-    const eta = prompt(`Set estimated delivery/prep time in minutes for Order #${String(order.id).slice(0,8)}\n\n(Example: type "30" for 30 minutes)`, "30");
-    if(eta === null) return; // if gituyo og cancel sa owner
-    etaNotes = eta.trim() ? `ETA: ${eta} mins` : "";
- }
-
  if(button)button.disabled=true;
  try{
   const {data,error}=await db.rpc('papalita_merchant_update_order_status',{p_order_id:orderId,p_new_status:nextStatus});
   if(error)throw error;
   if(!data)throw Error('Server did not confirm status update.');
-  toast(`Order updated to ${nextStatus.replaceAll('_',' ')}` + (etaNotes ? ` | Customer notified: ${etaNotes}` : ''));
+  toast(`Order updated to ${nextStatus.replaceAll('_',' ')}`);
   await papaFetchOrders();
  }catch(e){console.error('[Papalita] Order status update failed',e);toast('Could not update order: '+e.message);if(button)button.disabled=false;}
 }
@@ -2530,7 +2522,7 @@ function action(a){
   'availability':()=>void papaToggleStoreHeader(),'refresh':()=>void Promise.all([papaLoad(),papaFetchOrders(),fetchCatering()]).then(()=>render()).catch(e=>toast(e.message)),
   'export':exportCSV,'print':()=>window.print(),
   'logout':async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;me=null;gate();},
-  'help':()=>ppModal('Your Papalita workspace','A quick guide for your day.',`<div class="stack"><p>Use Orders to accept, prepare and complete customer orders. Your original order rules, ETA prompt and live notifications stay active.</p><p>Products and Menu & Pricing use your existing product editor, including size and add-on options.</p><p>Store Settings updates your approved store profile, photo, hours and availability. Catering Requests appears when catering is enabled for an eligible store.</p><p>Payouts summarizes recorded payments. It does not initiate transfers.</p></div>`)
+  'help':()=>ppModal('Your Papalita workspace','A quick guide for your day.',`<div class="stack"><p>Use Orders to accept, prepare and complete customer orders. Live notifications show incoming orders.</p><p>Products and Menu & Pricing use your existing product editor, including size and add-on options.</p><p>Store Settings updates your approved store profile, photo, hours and availability. Catering Requests appears when catering is enabled for an eligible store.</p><p>Payouts summarizes recorded payments. It does not initiate transfers.</p></div>`)
  };handlers[a]?.();
 }
 function bind(){
