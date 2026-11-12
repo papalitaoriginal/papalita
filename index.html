@@ -1831,6 +1831,22 @@ main {
   .pp-voucher-picker .pp-paper-ticket[aria-pressed="true"] { background: var(--pp-grain) #e1efd8; }
   .pp-voucher-picker .pp-paper-ticket:disabled { box-shadow: none; }
 
+  .ph > .pp-store-photo-status {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    padding: 10px 16px;
+    color: #fff;
+    background: rgba(8, 19, 14, .68);
+    font-size: clamp(12px, 3.5vw, 16px);
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    pointer-events: none;
+  }
+  .card.big > .hrt { z-index: 3; }
   .pp-order-detail { max-width: 620px; margin-inline: auto; }
   .pp-order-actions { margin-bottom: 10px; }
   .pp-order-detail .pp-order-paper {
@@ -1942,7 +1958,7 @@ main {
 <script src="js/customer-data.js?v=20261107-customer-v5"></script>
 <script src="js/order-status.js?v=20261107-customer-v5"></script>
 <script src="js/live-delivery-map.js?v=delivery-quotes-1"></script>
-<script src="js/app.js?v=20261112-store-availability"></script>
+<script src="js/app.js?v=20261112-store-photo-status"></script>
 
 <script>
 (function () {
