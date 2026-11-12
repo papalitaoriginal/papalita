@@ -931,6 +931,34 @@ function orderMapLink(order, fulfillment) {
   const url = 'https://www.google.com/maps/' + action + encodeURIComponent(destination);
   return `<a class="btn s sm" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${ic('pin',16)}${fulfillment === 'pickup' ? 'Directions to store' : 'View drop-off map'}</a>`;
 }
+const liveOrderMapButton = order => `<button type="button" class="btn p sm" data-a="livemap" data-id="${esc(order.id)}">${ic('map',16)}Live delivery map</button>`;
+const orderHelpLink = order => `<a class="btn s blk" href="#/support?order=${encodeURIComponent(order.id)}" style="margin-top:10px">${ic('help',16)}Need help with this order?</a>`;
+
+function orderProgress(order) {
+  const [title, detail, icon] = orderStatus.copy(order);
+  const mode = orderStatus.mode(order);
+  const status = orderStatus.status(order);
+  const pickupReady = mode === 'pickup' && status === 'ready';
+  const onTheWay = mode === 'delivery' && status === 'out_for_delivery';
+  const store = pickupReady ? R(order.rid) : null;
+  const address = store?.addr?.trim();
+  return {
+    pickupReady, onTheWay,
+    html: `<section class="panel pp-order-status" aria-label="Order progress">
+      <span class="pp-order-status-icon">${ic(icon,24)}</span>
+      <div class="grow" style="min-width:0">
+        <p class="pp-order-status-mode">${mode === 'pickup' ? 'Store pickup' : mode === 'delivery' ? 'Delivery' : 'Order status'}</p>
+        <h2>${esc(title)}</h2>
+        <p class="mu sm">${esc(detail)}</p>
+        ${pickupReady ? `<p class="sm" style="margin-top:10px"><b>${esc(store?.name || 'Pickup location')}</b><br>
+          ${esc(address || 'Confirm the pickup address with the store.')}</p>
+          ${address ? `<div style="margin-top:10px">${orderMapLink(order, 'pickup')}</div>` : ''}` : ''}
+        ${onTheWay ? `<p class="sm mu" style="margin:10px 0">Keep your phone nearby in case your rider needs directions.</p>
+          ${liveOrderMapButton(order)}` : ''}
+      </div>
+    </section>`
+  };
+}
 /* ---------- receipt ---------- */
 function receiptHTML(o, anim) { const r=R(o.rid)||{name:'Store',items:[]}, pr = o.promo && window.PROMOS.find(p => p.code === o.promo); let n = 0; const L = (a, b, cls = '') => `<div class="ln ${cls}" style="--i:${n++}"><span>${a}</span><i></i><span>${b}</span></div>`;
   const stamp=o.pay?.status==='paid'?'PAYMENT RECORDED':o.pay?.method==='cod'?'CASH PAYMENT':'PAYMENT NOT CONFIRMED';
@@ -1001,51 +1029,66 @@ function linkedOrderView(id) {
   }};
 }
 
-V.track = id => { const o = ORD(id); if (!o) return linkedOrderView(id);
+function watchCustomerOrder(order, selector, make) {
+  const route = curPath();
+  let busy = false;
+  const sync = async () => {
+    if (busy || curPath() !== route || !S.user.in || ORD(order.id) !== order) return;
+    const db = window.PAPALITA_DB;
+    if (!db) return;
+    const previous = {status:order.status, fulfillment:order.fulfillment, upd:order.upd};
+    busy = true;
+    try {
+      const {data,error} = await db.from('orders').select('id,status,fulfillment_type,updated_at')
+        .eq('id',order.id).eq('customer_id',order.uid).single();
+      if (error) throw error;
+      if (!data || curPath() !== route || !S.user.in || ORD(order.id) !== order ||
+        order.status !== previous.status || order.fulfillment !== previous.fulfillment || order.upd !== previous.upd) return;
+      const fulfillment = data.fulfillment_type || order.fulfillment;
+      if (data.status === order.status && fulfillment === order.fulfillment) return;
+      order.status = data.status;
+      order.fulfillment = fulfillment;
+      order.upd = Date.parse(data.updated_at) || Date.now();
+      save();
+      const view = $(selector);
+      if (view) view.innerHTML = make();
+      updateChrome();
+    } catch (error) {
+      console.warn('[Papalita] Order status refresh:',error.message);
+    } finally {
+      busy = false;
+    }
+  };
+  sync();
+  if (isCurrent(order)) timers.push(setInterval(sync,5000));
+}
 
-    const make = () => {
-      const statuses = orderStatus.timeline(o);
-      const idx = statuses.findIndex(([key]) => key === orderStatus.status(o));
-      const [title, detail, icon] = orderStatus.copy(o);
-      const fulfillment = orderStatus.mode(o);
-      const cancelled = o.status === 'cancelled';
-      return `${pageHead(fulfillment === 'pickup' ? 'Track pickup' : 'Track order', true)}
-        <div class="panel pp-order-status">
-          <span class="pp-order-status-icon">${ic(icon,24)}</span>
-          <div><p class="pp-order-status-mode">${fulfillment === 'pickup' ? 'Store pickup' : fulfillment === 'delivery' ? 'Delivery' : 'Order status'}</p>
-          <h2>${esc(title)}</h2><p class="mu sm">${esc(detail)}</p></div>
-        </div>
-        <div class="panel"><ol class="tl">${cancelled
-          ? `<li class="cur"><b>Cancelled</b><div class="sm">This order was cancelled.</div></li>`
-          : statuses.map(([,title],i)=>`<li class="${i<=idx?'done':''} ${i===idx?'cur':''}"${i===idx?' aria-current="step"':''}>
-              <span class="b">${ic(i<idx?'check':'clock',16)}</span><b>${title}</b></li>`).join('')}
-        </ol></div>
-        <div class="panel"><div class="row sp wrap" style="margin-bottom:10px"><div><b>${orderLocationLabel(o)}</b><p>${esc(orderLocation(o))}</p></div><div class="row wrap">${orderMapLink(o,fulfillment)}
-          ${fulfillment==='delivery'&&isCurrent(o)?`<button class="btn p sm" data-a="livemap" data-id="${esc(id)}">${ic('map',16)}Live delivery map</button>`:''}</div></div>
-        <div class="row sp"><b>Total</b><b>${peso(o.total)}</b></div></div>`;
-    };
-    return {html:`<section class="view" id="trk">${make()}</section>`,after:()=>{
-      // Poll server as fallback even if Supabase Realtime is not enabled.
-      let busy=false;
-      const sync=async()=>{
-        if(busy || curPath() !== '/track/'+id) return;
-        busy=true;
-        try {
-          const db=window.PAPALITA_DB;
-          if(!db) return;
-          const {data,error}=await db.from('orders').select('id,status,fulfillment_type,updated_at').eq('id',id).eq('customer_id',S.user.id).single();
-          if(error) throw error;
-          if(data && (data.status!==o.status || (data.fulfillment_type && data.fulfillment_type!==o.fulfillment))){
-            o.status=data.status; o.fulfillment=data.fulfillment_type || o.fulfillment; o.upd=Date.parse(data.updated_at)||Date.now();
-            save(); const el=$('#trk'); if(el) el.innerHTML=make();
-            updateChrome();
-          }
-        }catch(e){console.warn('[Papalita] Tracking refresh:',e.message)}
-        finally{busy=false}
-      };
-      sync(); timers.push(setInterval(sync,5000));
-    }};
-  
+V.track = id => {
+  const o = ORD(id);
+  if (!o) return linkedOrderView(id);
+  const make = () => {
+    const statuses = orderStatus.timeline(o);
+    const idx = statuses.findIndex(([key]) => key === orderStatus.status(o));
+    const fulfillment = orderStatus.mode(o);
+    const progress = orderProgress(o);
+    return `${pageHead(fulfillment === 'pickup' ? 'Track pickup' : 'Track order', true)}
+      ${progress.html}
+      ${idx >= 0 ? `<div class="panel"><ol class="tl">${statuses.map(([,title],i)=>
+        `<li class="${i<=idx?'done':''} ${i===idx?'cur':''}"${i===idx?' aria-current="step"':''}>
+          <span class="b">${ic(i<idx?'check':'clock',16)}</span><b>${esc(title)}</b></li>`).join('')}
+      </ol></div>` : ''}
+      <div class="panel">${progress.pickupReady ? '' : `<div class="row sp wrap" style="margin-bottom:10px">
+        <div><b>${orderLocationLabel(o)}</b><p>${esc(orderLocation(o))}</p></div>
+        <div class="row wrap">${orderMapLink(o,fulfillment)}
+          ${fulfillment === 'delivery' && isCurrent(o) && !progress.onTheWay ? liveOrderMapButton(o) : ''}</div>
+      </div>`}
+      <div class="row sp"><b>Total</b><b>${peso(o.total)}</b></div></div>
+      ${orderHelpLink(o)}`;
+  };
+  return {
+    html: `<section class="view" id="trk">${make()}</section>`,
+    after: () => watchCustomerOrder(o, '#trk', make)
+  };
 };
 
 function reorder(o) { const lines = []; o.items.forEach(l => { const x = ITEM(l.itemId); if (x && x.item.available) lines.push({ ...l, key: uid('l'), unit: unitPrice(x.item, l.sel) }); }); if (!lines.length) return toast('Those items are no longer available.'); if(!R(o.rid)||!isOpen(R(o.rid)))return toast('This store is not accepting orders right now.');
@@ -1059,18 +1102,31 @@ V.ordersView = (_, p) => { if (p && p.get('t')) OT = p.get('t'); const cur = myO
   return { html: `<section class="view">${pageHead('Orders', false)}<div class="chips" role="tablist" style="margin-bottom:14px">${[['current', `Current (${cur.length})`], ['history', 'History'], ['catering', `Catering (${myCater().length})`]].map(([k, l]) => `<button class="chip ${OT === k ? 'on' : ''}" role="tab" aria-selected="${OT === k}" data-a="otab" data-v="${k}">${l}</button>`).join('')}</div>
   ${OT === 'current' && cur.some(canCancelOrder) ? '<p class="sm mu" style="margin-bottom:12px">Press and hold an order or tap &hellip; for order options.</p>' : ''}
   ${OT === 'catering' ? cateringList() : list.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">${list.map(card).join('')}</div>` : emptyState('orders', OT === 'current' ? 'No active orders' : 'No past orders yet', 'Your orders will appear here.', 'Order food', 'browse')}</section>` }; };
-V.orderDetail = id => { const o = ORD(id); if (!o) return V.notFound(); const s = stageOf(o), r=R(o.rid)||{name:'Store'};
-  return { html: `<section class="view pp-order-detail">${pageHead('Order details')}
+V.orderDetail = id => {
+  const o = ORD(id);
+  if (!o) return V.notFound();
+  const make = () => {
+    const progress = orderProgress(o);
+    const store = R(o.rid);
+    return `${pageHead('Order details')}
+  ${progress.html}
   <article class="panel pp-order-paper" aria-label="Order summary">
     <header class="pp-order-paper-head">
-      <div><p class="pp-paper-label">Order summary</p><h2>${esc(r.name)}</h2><p class="pp-order-ref">${esc(o.id)}</p><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p></div>
-      <span class="status pp-ink-stamp ${s < 0 ? 'closed' : s === 5 ? 'open' : 'n'}">${esc(orderStatus.copy(o)[0])}</span>
+      <div><p class="pp-paper-label">Order summary</p><h2>${esc(store?.name || 'Store')}</h2><p class="pp-order-ref">${esc(o.id)}</p><p class="mu sm">${new Date(o.createdAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })}</p></div>
     </header>
     ${o.cancelReason ? `<p class="sm" style="color:var(--er);margin-top:8px">${esc(o.cancelReason)}</p>` : ''}
     <div class="pp-order-paper-lines">${orderLines(o)}<div style="margin-top:10px">${sumHTML({ ...o, promo: o.promo && window.PROMOS.find(p => p.code === o.promo), perr: '', vat: (o.total - (o.tip || 0)) * 12 / 112 })}</div></div>
-    <dl class="pp-order-paper-meta sm"><div><dt>${orderLocationLabel(o)}</dt><dd>${esc(orderLocation(o))}</dd></div><div><dt>Payment</dt><dd>${payTag(o)}</dd></div></dl>
+    <dl class="pp-order-paper-meta sm">${progress.pickupReady ? '' : `<div><dt>${orderLocationLabel(o)}</dt><dd>${esc(orderLocation(o))}</dd></div>`}<div><dt>Payment</dt><dd>${payTag(o)}</dd></div></dl>
   </article>
-  <div class="row pp-order-actions">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${o.id}">Track order</button>` : `<button class="btn p grow" data-a="reorder" data-id="${o.id}">Reorder</button>`}${canCancelOrder(o) ? `<button class="btn d grow" data-a="cancel" data-id="${o.id}">Cancel order</button>` : ''}</div><button class="btn s blk" data-a="receipt" data-id="${o.id}">${ic('copy', 16)}View receipt</button></section>` }; };
+  <div class="row pp-order-actions">${isCurrent(o) ? `<button class="btn p grow" data-a="gotrack" data-id="${esc(o.id)}">${orderStatus.mode(o) === 'pickup' ? 'Track pickup' : 'Track order'}</button>` : `<button class="btn p grow" data-a="reorder" data-id="${esc(o.id)}">Reorder</button>`}${canCancelOrder(o) ? `<button class="btn d grow" data-a="cancel" data-id="${esc(o.id)}">Cancel order</button>` : ''}</div>
+  <button class="btn s blk" data-a="receipt" data-id="${esc(o.id)}">${ic('copy', 16)}View receipt</button>
+  ${orderHelpLink(o)}`;
+  };
+  return {
+    html: `<section class="view pp-order-detail" id="order-details">${make()}</section>`,
+    after: () => watchCustomerOrder(o, '#order-details', make)
+  };
+};
 
 /* ---------- promos ---------- */
 V.promos = () => ({ html: `<section class="view pp-promotions" style="max-width:680px;margin:0 auto">${pageHead('Promotions')}${!window.PROMOS.length?emptyState('ticket','No current offers','Approved promotions will appear here when available.'):''}${window.PROMOS.filter(p => p.active !== false).map(p => { const exp=p.expires_at&&Date.parse(p.expires_at)<=Date.now(), on = S.promo === p.code;
@@ -1353,18 +1409,26 @@ const GMAIL_COMPOSE_URL = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + enc
 const SUPPORT_EMAIL_URL = /Android.*Chrome\//.test(navigator.userAgent)
   ? `intent:${SUPPORT_EMAIL}#Intent;scheme=mailto;action=android.intent.action.SENDTO;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(GMAIL_COMPOSE_URL)};end`
   : GMAIL_COMPOSE_URL;
-const FAQ=[['How do I check an order?','Open Orders, select your order and view its recorded status. Timing is confirmed by the store.'],['How do I cancel?','Press and hold an order in Current to reveal Cancel order, or open its details. You can cancel before the store marks it Ready.'],['How can I pay?','Cash payment is supported. Online payments are not connected.'],['I need help with an order.','Contact Papalita Support and include your order reference so we can look it up.']];
-V.support = () => ({html:`<section class="view" style="max-width:680px;margin:auto">
-  ${pageHead('Support')}
+const FAQ=[['How do I check an order?','Open Orders, choose your order, and tap Track order or Track pickup.'],['How do I cancel?','Press and hold an order in Current to reveal Cancel order, or open its details. You can cancel before the store marks it Ready.'],['How can I pay?','Cash payment is supported. Online payments are not connected.'],['I need help with an order.','Tap Need help with this order? from Order details or tracking to include the order number in your email.']];
+V.support = (_, params) => {
+  const order = ORD(params?.get('order'));
+  const subject = order ? encodeURIComponent(`Help with Papalita order ${order.id}`) : '';
+  const body = order ? encodeURIComponent(`Hello Papalita,\r\n\r\nI need help with order ${order.id}.\r\n\r\nMy concern:\r\n`) : '';
+  const emailUrl = order ? `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}` : SUPPORT_EMAIL_URL;
+  return {html:`<section class="view" style="max-width:680px;margin:auto">
+  ${pageHead(order ? 'Order support' : 'Support')}
   <div class="panel">
     <h2>Contact Papalita</h2>
-    <p class="mu sm" style="margin:8px 0">Get help with your order, account, or the app. For order concerns, include your order reference.</p>
-    <a class="li" href="${esc(SUPPORT_EMAIL_URL)}"><span class="ic">${ic('send',20)}</span><span class="grow"><b>Email Papalita</b><br><span class="sm mu" style="overflow-wrap:anywhere">${SUPPORT_EMAIL}</span></span>${ic('chev',18,'mu')}</a>
+    ${order ? `<p class="sm" style="margin:8px 0;overflow-wrap:anywhere">Order number <b>${esc(order.id)}</b></p>
+      <button type="button" class="btn s sm" data-a="copy" data-id="${esc(order.id)}">${ic('copy',16)}Copy order number</button>`
+      : '<p class="mu sm" style="margin:8px 0">Get help with your order, account, or the app. For order concerns, include your order reference.</p>'}
+    <a class="li" href="${esc(emailUrl)}"><span class="ic">${ic('send',20)}</span><span class="grow"><b>Email Papalita</b><br><span class="sm mu" style="overflow-wrap:anywhere">${order ? 'Order number included in your draft' : SUPPORT_EMAIL}</span></span>${ic('chev',18,'mu')}</a>
     <a class="li" href="tel:${SUPPORT_DIAL}"><span class="ic">${ic('phone',20)}</span><span class="grow"><b>Call Papalita</b><br><span class="sm mu">${SUPPORT_PHONE}</span></span>${ic('chev',18,'mu')}</a>
     <a class="li" href="sms:${SUPPORT_DIAL}"><span class="ic">${ic('chat',20)}</span><span class="grow"><b>Text Papalita</b><br><span class="sm mu">${SUPPORT_PHONE}</span></span>${ic('chev',18,'mu')}</a>
   </div>
   <div class="panel"><h2>Frequently asked questions</h2>${FAQ.map(([q,a])=>`<details style="padding:12px 0"><summary style="font-weight:700;cursor:pointer">${esc(q)}</summary><p class="mu sm" style="margin-top:10px">${esc(a)}</p></details>`).join('')}</div>
-</section>`});
+</section>`};
+};
 function payPick(){const el=openSheet(`<form class="pd" style="padding-top:34px"><h2>Payment method</h2><label class="opt" style="margin-top:16px"><input type="radio" checked name="cash"><span>Cash on delivery or pickup</span></label><p class="mu sm" style="margin:12px 0">No online payment is processed by this app.</p><button class="btn p blk">Use cash payment</button></form>`,{label:'Payment method'});$('form',el).onsubmit=e=>{e.preventDefault();CK.pay='cod';CK.det={};closeSheet();render();};}
 function deleteAcctSheet() {
   openSheet(`<div class="pd" style="padding-top:34px">
