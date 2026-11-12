@@ -1366,7 +1366,73 @@ V.support = () => ({html:`<section class="view" style="max-width:680px;margin:au
   <div class="panel"><h2>Frequently asked questions</h2>${FAQ.map(([q,a])=>`<details style="padding:12px 0"><summary style="font-weight:700;cursor:pointer">${esc(q)}</summary><p class="mu sm" style="margin-top:10px">${esc(a)}</p></details>`).join('')}</div>
 </section>`});
 function payPick(){const el=openSheet(`<form class="pd" style="padding-top:34px"><h2>Payment method</h2><label class="opt" style="margin-top:16px"><input type="radio" checked name="cash"><span>Cash on delivery or pickup</span></label><p class="mu sm" style="margin:12px 0">No online payment is processed by this app.</p><button class="btn p blk">Use cash payment</button></form>`,{label:'Payment method'});$('form',el).onsubmit=e=>{e.preventDefault();CK.pay='cod';CK.det={};closeSheet();render();};}
-function deleteAcctSheet(){openSheet(`<div class="pd" style="padding-top:38px"><h2>Account deletion</h2><p class="mu" style="margin-top:12px">Account deletion needs Papalita’s authenticated server support. This app cannot delete an account directly. Your account has not been deleted.</p><button class="btn s blk" style="margin-top:18px" data-a="close">Close</button></div>`,{label:'Account deletion'});}
+function deleteAcctSheet() {
+  openSheet(`<div class="pd" style="padding-top:34px">
+    <h2>Delete your account?</h2>
+    <p class="mu" style="margin-top:10px">This permanently deletes your Papalita customer account. Wait for any ongoing orders to finish before deleting it.</p>
+    <p class="err" id="delete-account-message" role="alert" style="margin-top:10px"></p>
+    <button type="button" class="btn o blk" data-a="go" data-id="/orders?t=current" id="delete-account-orders" hidden>View current orders</button>
+    <div class="row" style="margin-top:16px">
+      <button type="button" class="btn o grow" data-a="close">Cancel</button>
+      <button type="button" class="btn d grow" data-a="confirmdelacct">Delete account</button>
+    </div>
+  </div>`, { noX: true, label: 'Delete your account?' });
+}
+
+async function deleteCustomerAccount(button) {
+  if (button.disabled) return;
+  const customerId = S.user.id;
+  const dialog = button.closest('[role="dialog"]');
+  const message = $('#delete-account-message', dialog);
+  const orders = $('#delete-account-orders', dialog);
+  const db = authDB();
+  button.disabled = true;
+  button.textContent = 'Deleting…';
+  message.textContent = '';
+  orders.hidden = true;
+  try {
+    const {data, error} = await db.rpc('papalita_delete_customer_account', {p_expected_user_id:customerId});
+    if (error) throw error;
+    if (data === 'active_orders') {
+      message.textContent = 'You have an ongoing order. Wait until it is completed or cancelled, then try again.';
+      orders.hidden = false;
+      return;
+    }
+    if (data === 'partner_account' || data === 'linked_records') {
+      message.textContent = 'This account has linked records. Contact Papalita support for help deleting it.';
+      return;
+    }
+    if (data !== 'deleted') throw Error('The server did not confirm deletion.');
+  } catch (error) {
+    message.textContent = error.code === '42501' ? 'Please log in again before deleting your account.' :
+      'Papalita could not confirm account deletion. Please try again.';
+    return;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Delete account';
+  }
+
+  delete S.users?.[customerId];
+  for (const key of ['orders', 'cater', 'notes']) S[key] = (S[key] || []).filter(row => row.uid !== customerId);
+  if (S.user.id === customerId) {
+    const fresh = seed();
+    for (const key of BUCKET) S[key] = fresh[key];
+    S.user = fresh.user;
+    savePendingCheckout(customerId, null);
+    clearSession();
+    AU.prefill = '';
+    AU.view = 'login';
+    save();
+    await Promise.allSettled([
+      window.PAPALITA_NOTIFICATIONS?.disconnectPhone(),
+      db.auth.signOut({scope:'local'})
+    ]);
+    render();
+  } else {
+    save();
+  }
+  toast('Your Papalita account has been deleted.');
+}
 const contactBtns=r=>r.phone?`<div class="contact"><a class="cbtn" href="tel:${esc(r.phone.replace(/[^+\d]/g,''))}">${ic('phone',20)}Call store</a><a class="cbtn" href="sms:${esc(r.phone.replace(/[^+\d]/g,''))}">${ic('send',20)}Text store</a></div><p class="sm mu" style="margin-top:10px">${esc(r.phone)}</p>`:'<p class="mu sm">The store has not supplied a contact number.</p>';
 const cateringCard=r=>`<article class="card"><div class="bd" style="padding:20px"><h2>${esc(r.name)}</h2><p class="mu" style="margin:10px 0">Ask this participating store about catering, availability and pricing. An inquiry is not a confirmed booking.</p><button class="btn p" data-a="cater" data-id="${esc(r.id)}">Request catering</button></div></article>`;
 function locSheet(){const el=openSheet(`<div class="pd" style="padding-top:36px"><h2>Your barangay</h2><p class="mu sm" style="margin:10px 0">Choose your delivery area in Alegria.</p>${window.BRGYS.map(b=>`<label class="opt"><input type="radio" name="lc" value="${esc(b.n)}" ${S.loc.brgy===b.n?'checked':''}><span class="grow">${esc(b.n)}</span><small>${deliveryFees.has(b.n)?peso(deliveryFees.get(b.n)):'Delivery fee not configured'}</small></label>`).join('')}</div>`,{label:'Choose barangay'});el.addEventListener('change',e=>{if(e.target.name==='lc'){S.loc={...S.loc,brgy:e.target.value,label:e.target.value+', Alegria'};save();closeSheet();updateChrome();render();}});}
@@ -1444,7 +1510,7 @@ const A = {
   pcat: b => { PD = b.dataset.id; fillPopular(); },
   hcat: b => { if (b.dataset.id === 'catering') return go('/catering'); HC = HC === b.dataset.id ? 'all' : b.dataset.id; fillCurated(); },
   share: b => { const r = R(b.dataset.id), u = location.href; if (navigator.share) navigator.share({ title: r.name + ' on Papalita', url: u }).catch(() => {}); else { try { navigator.clipboard.writeText(u); toast('Link copied.'); } catch (e) { toast('Sharing is not available here.'); } } },
-  close: closeSheet, reload: () => render(), home: () => go('/'), browse, back: () => history.length > 1 ? history.back() : go('/'), go: (b) => { closeSheet(); go(b.dataset.id); },
+  close: closeSheet, confirmdelacct: deleteCustomerAccount, reload: () => render(), home: () => go('/'), browse, back: () => history.length > 1 ? history.back() : go('/'), go: (b) => { closeSheet(); go(b.dataset.id); },
   fav: b => toggleFav(b.dataset.k, b.dataset.id), item: b => openItem(b.dataset.id),
   rest: b => { const restaurant = R(b.dataset.id); if (restaurant) go('/restaurant/' + encodeURIComponent(restaurant.id)); },
   restmenu: b => go('/restaurant/' + b.dataset.id),
