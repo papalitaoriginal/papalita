@@ -388,37 +388,120 @@ h2{font-size:21px;font-weight:800;letter-spacing:-.01em}h3{font-size:16px;font-w
 
 .okc{width:76px;height:76px;border-radius:50%;background:var(--or);color:#fff;display:grid;place-items:center;box-shadow:0 12px 28px rgba(8,127,50,.38);animation:okpop .6s cubic-bezier(.3,1.6,.5,1) both}@keyframes okpop{0%{transform:scale(0) rotate(-40deg)}100%{transform:scale(1) rotate(0)}}
 
-.slot{height:16px;max-width:470px;margin:0 auto;border-radius:99px;background:linear-gradient(#2c323a,#12151a);box-shadow:0 6px 14px rgba(0,0,0,.25),inset 0 2px 3px rgba(255,255,255,.12);position:relative;z-index:3}
-
-.rwrap{position:relative;max-width:440px;margin:-9px auto 0;overflow:hidden;padding-bottom:14px;text-align:left}
-
-.rwrap.print .rcpt{animation:printout 1.3s cubic-bezier(.22,.8,.3,1) both}@keyframes printout{from{transform:translateY(-102%)}to{transform:none}}
-
-.rcpt{position:relative;background:#FFFDF6 url("data:image/svg+xml,%3Csvg xmlns='http\://www\.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");color:#1d1f22;font-family:'Courier New',ui-monospace,Menlo,monospace;font-size:13.5px;padding:34px 24px 38px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.16));
-
- -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 51% repeat-x,conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/18px 51% repeat-x;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 51% repeat-x,conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/18px 51% repeat-x}
-
-.rhead{text-align:center;display:flex;flex-direction:column;gap:2px;font-size:12.5px;letter-spacing:.04em}.rhead b{font-size:21px;letter-spacing:.14em;color:var(--or)}.rhead .rst{font-weight:700;margin-top:6px;font-size:14px}
-
-.dash{border-top:2px dashed #b9b4a4;margin:14px 0}.rno{display:flex;justify-content:space-between;align-items:baseline}.rno b{font-size:22px;letter-spacing:.06em}
-
-.ln{display:flex;align-items:baseline;gap:4px;padding:3px 0}.ln i{flex:1;border-bottom:2px dotted #b9b4a4;transform:translateY(-3px);min-width:10px}.ln.tot{font-size:19px;font-weight:700;padding-top:8px}.ln.g{color:var(--or)}
-
-.sub{font-size:11.5px;color:#7b7667;padding:0 0 2px 22px;letter-spacing:.02em}
-
-.rbar{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px}.barcode{width:78%;height:46px;fill:#1d1f22}.rbar span{font-size:12px;letter-spacing:.3em}
-
-.thx{text-align:center;margin-top:14px;font-weight:700;letter-spacing:.12em}.thx small{font-weight:400;letter-spacing:.04em;color:#7b7667}
-
-.rwrap.print .ln,.rwrap.print .sub,.rwrap.print .rbar,.rwrap.print .thx{opacity:0;animation:rin .45s ease both;animation-delay:calc(.7s + var(--i,0)*70ms)}@keyframes rin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-.stamp{position:absolute;right:16px;top:118px;border:3px solid var(--or);color:var(--or);font-weight:700;letter-spacing:.12em;font-size:14px;padding:6px 12px;border-radius:8px;transform:rotate(-14deg);background:rgba(255,255,255,.4)}
-
-.rwrap.print .stamp{animation:stampin .55s cubic-bezier(.2,2,.4,1) 1.9s both}@keyframes stampin{from{opacity:0;transform:rotate(-14deg) scale(2.4)}to{opacity:.92;transform:rotate(-14deg) scale(1)}}
+.pp-receipt-frame {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 14px clamp(12px, 4vw, 20px) 21px;
+  background: #28763e;
+}
+.pp-receipt {
+  --receipt-paper: #fffef8;
+  --receipt-muted: #505049;
+  --receipt-border: #b8b7ad;
+  position: relative;
+  padding: 18px clamp(12px, 4vw, 22px) 16px;
+  background: var(--receipt-paper);
+  color: #171713;
+  box-shadow: 0 3px 12px #14351940;
+  font: 13px/1.45 "Courier Prime", "Courier New", ui-monospace, monospace;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.pp-receipt::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: 7px;
+  background: conic-gradient(from -45deg at bottom, var(--receipt-paper) 0 90deg, transparent 90deg)
+    0 0 / 14px 7px repeat-x;
+}
+.pp-receipt-enter { animation: receipt-in .3s ease-out both }
+@keyframes receipt-in {
+  from { opacity: 0; transform: translateY(8px) }
+  to { opacity: 1; transform: none }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-receipt-enter, .okc { animation: none }
+}
+.pp-receipt-head { text-align: center }
+.pp-receipt-brand { font-size: 19px; font-weight: 700; letter-spacing: .16em }
+.pp-receipt-store { margin-top: 3px; font-size: 13px; font-weight: 700; line-height: 1.4 }
+.pp-receipt-head h2 {
+  margin-top: 12px;
+  padding: 10px 0 5px;
+  border-top: 1px solid var(--receipt-border);
+  font-size: clamp(14px, 4vw, 17px);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.pp-receipt-date, .pp-receipt-ref, .pp-receipt-options, .pp-receipt-footer {
+  color: var(--receipt-muted);
+  font-size: 12px;
+}
+.pp-receipt-ref { margin-top: 6px }
+.pp-receipt-ref dt { font-weight: 700; text-transform: uppercase }
+.pp-receipt-ref dd { margin: 1px 0 0; user-select: text }
+.pp-receipt-cancelled { margin-top: 5px; font-weight: 700; text-transform: uppercase }
+.pp-receipt-items {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  border-block: 1px solid var(--receipt-border);
+}
+.pp-receipt-items th, .pp-receipt-items td { padding: 4px 0; text-align: left; vertical-align: top }
+.pp-receipt-items thead th {
+  padding-top: 8px;
+  color: var(--receipt-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.pp-receipt-items tbody tr:last-child > * { padding-bottom: 8px }
+.pp-receipt-items tbody th { font-weight: 700 }
+.pp-receipt-items .pp-receipt-qty { width: 1%; padding-right: 9px; white-space: nowrap }
+.pp-receipt-items .pp-receipt-amount {
+  width: 1%;
+  padding-left: 9px;
+  text-align: right;
+  white-space: nowrap;
+}
+.pp-receipt-options { display: block; margin-top: 1px; font-weight: 400 }
+.pp-receipt-totals { display: grid; gap: 4px; margin-top: 8px }
+.pp-receipt-totals > div { display: flex; justify-content: space-between; gap: 8px }
+.pp-receipt-totals dd, .pp-receipt-amount {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pp-receipt-total {
+  align-items: baseline;
+  margin-top: 4px;
+  padding: 8px 0;
+  border-block: 1px solid var(--receipt-border);
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.pp-receipt-meta { display: grid; gap: 5px; margin-top: 9px }
+.pp-receipt-meta > div { display: flex; justify-content: space-between; gap: 8px }
+.pp-receipt-meta dt { flex: 0 0 auto; font-size: 11px; font-weight: 700; text-transform: uppercase }
+.pp-receipt-meta dd { margin: 0; text-align: right }
+.pp-receipt-end { border-top: 1px solid var(--receipt-border); margin-top: 10px; padding-top: 9px; text-align: center }
+.pp-receipt-barcode { display: block; width: min(100%, 268px); height: 42px; margin: 1px auto 8px; color: #111 }
 
 #print-root{display:none}
 
-@media print{body.printing>*:not(#print-root){display:none!important}body.printing{background:#fff}#print-root{display:block!important;position:static}#print-root .rwrap{margin:0 auto;overflow:visible}#print-root .rcpt{filter:none}}
+@media print {
+  body.printing > :not(#print-root) { display: none !important }
+  body.printing { background: #fff }
+  body.printing #print-root { display: block }
+  .pp-receipt-frame { max-width: 120mm; padding: 0; background: #fff }
+  .pp-receipt { --receipt-paper: #fff; box-shadow: none }
+  .pp-receipt::after { display: none }
+  .pp-receipt-barcode { width: 100%; height: 12mm }
+  .pp-receipt-items tr, .pp-receipt-totals, .pp-receipt-meta > div, .pp-receipt-end { break-inside: avoid }
+}
 
 /* ===== Ratings ===== */
 
@@ -1958,7 +2041,7 @@ main {
 <script src="js/customer-data.js?v=20261107-customer-v5"></script>
 <script src="js/order-status.js?v=20261107-customer-v5"></script>
 <script src="js/live-delivery-map.js?v=delivery-quotes-1"></script>
-<script src="js/app.js?v=20261112-store-photo-status"></script>
+<script src="js/app.js?v=20261112-receipt-thermal"></script>
 
 <script>
 (function () {
