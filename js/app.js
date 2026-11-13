@@ -1321,6 +1321,7 @@ const own=x=>realId(S.user.id)&&x.uid===S.user.id;
 const myOrders=()=>S.orders.filter(o=>own(o)&&o.source==='supabase'), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
 let AU={view:'login',prefill:'',busy:false};
+let pendingPolicyUser = null;
 const authHead = (title, intro) => `<header class="pp-auth-heading">
   <div class="pp-auth-lockup">
     <img src="images/papalita_mark_white.png" alt="" width="256" height="350">
@@ -1330,8 +1331,16 @@ const authHead = (title, intro) => `<header class="pp-auth-heading">
 </header>`;
 const pwField = (id, label, auto, extra = '') => `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${auto}">${`<button type="button" class="pwt" data-a="pwtoggle" data-id="${id}" aria-label="Show password">${ic('eye', 20)}</button>`}</div>${extra}<p class="err" data-e="${id}"></p></div>`;
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
+const policyConsent = () => `<div class="pp-auth-consent">
+  <label class="pp-auth-consent-choice" for="rt"><input type="checkbox" id="rt" aria-describedby="rt-error"><span>I agree to the Terms and acknowledge the Privacy Policy</span></label>
+  <button type="button" class="link gl" data-a="terms">Read Terms &amp; Privacy</button>
+</div><p class="err" id="rt-error" data-e="rt" role="alert"></p>`;
+const policySubmit = label => `<button type="submit" class="btn p blk" data-policy-submit disabled style="margin-top:10px">${label}</button>`;
 function authScreen() {
   const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t === 'register'}" class="${t === 'register' ? 'on' : ''}" data-a="authtab" data-v="register">Register</button></div>`;
+  if (pendingPolicyUser && AU.view !== 'reset') return `<section class="view auth">${authHead('Review the updated policies', 'Read and accept the Terms and acknowledge the Privacy Policy to continue to Papalita.')}
+    <form id="policy-form">${policyConsent()}${policySubmit('Continue')}</form>
+    <button type="button" class="btn o blk" style="margin-top:12px" data-a="logout">Log out</button></section>`;
   if (AU.view === 'forgot') return `<section class="view auth">${authHead('Reset your password', 'Enter the email address you used to sign up for Papalita.')}
     <form id="ff" novalidate>
       <div class="field"><label for="fe">Email address</label><input class="in" id="fe" type="email" autocomplete="email" required aria-describedby="forgot-error" value="${esc(AU.prefill)}"><p class="err" id="forgot-error" data-e="fe" role="alert"></p></div>
@@ -1349,13 +1358,11 @@ function authScreen() {
       <p class="err" id="re-error" data-e="re" role="alert"></p>
     </div><div class="field"><label for="rb">Barangay</label><select class="in" id="rb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option>${b.n}</option>`).join('')}</select><p class="err" data-e="rb"></p></div>
     ${pwField('rpw', 'Password', 'new-password', meterHTML('rpw'))}${pwField('rpc', 'Confirm password', 'new-password')}
-    <div class="pp-auth-consent">
-      <label class="pp-auth-consent-choice" for="rt"><input type="checkbox" id="rt" aria-describedby="rt-error"><span>I agree to the Terms and Privacy Policy</span></label>
-      <button type="button" class="link gl" data-a="terms">Read policy</button>
-    </div><p class="err" id="rt-error" data-e="rt"></p><button class="btn p blk" style="margin-top:10px">Create account</button></form></section>`;
+    ${policyConsent()}${policySubmit('Create account')}</form></section>`;
   return `<section class="view auth">${authHead('Welcome back', 'Log in to order from your local favorites and track your delivery.')}${tabs('login')}
     <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" type="email" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
-    <div class="pp-auth-recovery"><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div><button class="btn p blk">Log in</button></form></section>`;
+    <div class="pp-auth-recovery"><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div>
+    ${policyConsent()}${policySubmit('Log in')}</form></section>`;
 }
 const clearErrs = f => { $$('.in', f).forEach(i => i.classList.remove('bad')); $$('[data-e]', f).forEach(x => x.textContent = ''); };
 const showErrs = (f, er) => { clearErrs(f); const k = Object.keys(er); k.forEach(x => { const i = $('#' + x, f); i && i.classList.add('bad'); const e = $(`[data-e=${x}]`, f); e && (e.textContent = er[x]); }); if (k.length) { const i = $('#' + k[0], f); i && i.focus(); } return k.length; };
@@ -1364,7 +1371,10 @@ const authDB = () => {
   return window.PAPALITA_DB;
 };
 const authRedirect = () => new URL('./', location.href).href;
+const hasPolicyAgreement = f => Boolean(window.PapalitaLegal?.accepted() && $('#rt', f)?.checked);
+const policyError = 'Read both policies to the end and accept to continue.';
 function useAuthUser(user) {
+  pendingPolicyUser = null;
   const meta = user.user_metadata || {};
   const acc = { id:user.id, name:meta.full_name || user.email?.split('@')[0] || 'Customer',
     phone:meta.phone || '', email:user.email || '', brgy:meta.barangay || 'Poblacion' };
@@ -1374,25 +1384,43 @@ function useAuthUser(user) {
   setTimeout(()=>window.dispatchEvent(new Event('papalita-session-ready')),0);
   save();
 }
+function restoreAuthUser(user) {
+  if (window.PapalitaLegal?.hasAccepted(user.id)) useAuthUser(user);
+  else pendingPolicyUser = user;
+}
+function continueAfterPolicy(form) {
+  if (!pendingPolicyUser || showErrs(form, hasPolicyAgreement(form) ? {} : { rt:policyError })) return;
+  window.PapalitaLegal.record(pendingPolicyUser.id);
+  useAuthUser(pendingPolicyUser);
+  render();
+  if (!onCheckout()) void prepareDeliveryPricing();
+}
+function setAuthPending(form, pending) {
+  AU.busy = pending;
+  form.querySelector('[data-policy-submit]').toggleAttribute('data-auth-pending', pending);
+  window.PapalitaLegal?.sync();
+}
 async function doLogin(f) {
   const email = $('#li',f).value.trim(), password = $('#lp',f).value;
   const er = {};
   if (!/^\S+@\S+\.\S+$/.test(email)) er.li = 'Enter a valid email address.';
   if (!password) er.lp = 'Enter your password.';
+  if (!hasPolicyAgreement(f)) er.rt = policyError;
   if (showErrs(f,er)) return;
   if (AU.busy) return;
-  AU.busy = true;
+  setAuthPending(f, true);
   try {
     const {data,error} = await authDB().auth.signInWithPassword({email,password});
     if (error) throw error;
     if (!data?.session?.user) throw new Error('Confirm your email before logging in.');
+    window.PapalitaLegal.record(data.session.user.id);
     useAuthUser(data.session.user);
     void prepareDeliveryPricing();
     location.hash = '#/';
     render();
     refreshCateringRequests().catch(err=>console.error('[Papalita] Catering load:',err));
   } catch(err) { showErrs(f,{lp:err.message || 'Login failed.'}); }
-  finally { AU.busy = false; }
+  finally { setAuthPending(f, false); }
 }
 async function doRegister(f) {
   const v = id => $('#'+id,f).value.trim();
@@ -1405,16 +1433,17 @@ async function doRegister(f) {
   if (!barangay) er.rb = 'Choose your barangay.';
   if (!pwOk(password)) er.rpw = 'Use 8+ characters, a letter and a number.';
   else if ($('#rpc',f).value !== password) er.rpc = 'Passwords do not match.';
-  if (!window.papalitaLegalAccepted || !$('#rt',f).checked) er.rt = 'Read and accept both policies to continue.';
+  if (!hasPolicyAgreement(f)) er.rt = policyError;
   if (showErrs(f,er)) return;
   if (AU.busy) return;
-  AU.busy = true;
+  setAuthPending(f, true);
   try {
     const {data,error} = await authDB().auth.signUp({
       email,password,
       options:{ emailRedirectTo:authRedirect(), data:{full_name:name,phone,barangay} }
     });
     if (error) throw error;
+    if (data?.session?.user) window.PapalitaLegal.record(data.session.user.id);
     AU.prefill = email;
     AU.view = 'login';
     render();
@@ -1429,10 +1458,13 @@ async function doRegister(f) {
       </div>`, { label: 'Check your email' });
     }
   } catch(err) { showErrs(f,{re:err.message || 'Registration failed.'}); }
-  finally { AU.busy = false; }
+  finally { setAuthPending(f, false); }
 }
 function meter(input) { const id = input.id, n = pwScore(input.value), bars = $$(`[data-m=${id}] i`), t = $(`[data-mt=${id}]`); bars.forEach((b, i) => { b.className = i < n ? 's' + n : ''; }); if (t) t.textContent = !input.value ? 'Use 8+ characters with letters and numbers.' : ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][n] + (pwOk(input.value) ? '' : ' · needs 8+ characters, a letter and a number'); }
-function termsSheet() { window.papalitaOpenLegal?.(); }
+function termsSheet() {
+  if (window.papalitaOpenLegal) window.papalitaOpenLegal();
+  else toast('Terms and Privacy could not load. Refresh to try again.');
+}
 async function doForgotPassword(form) {
   const button = form.querySelector('button[type="submit"]');
   if (button.disabled) return;
@@ -1466,17 +1498,18 @@ async function doReset(f){
   }catch(error){showErrs(f,{np1:error.message});}finally{if(button.isConnected)button.disabled=false;}
 }
 function pwChangeSheet(){AU.view='reset';render();}
-function afterAuth(){}
+function afterAuth(){window.PapalitaLegal?.sync();}
 document.addEventListener('input',e=>{if(['rpw','np1'].includes(e.target.id))meter(e.target);});
 document.addEventListener('submit',e=>{
   const f=e.target;if(f.id==='lf'){e.preventDefault();void doLogin(f);}
   else if(f.id==='rf'){e.preventDefault();void doRegister(f);}
+  else if(f.id==='policy-form'){e.preventDefault();continueAfterPolicy(f);}
   else if(f.id==='ff'){e.preventDefault();void doForgotPassword(f);}
   else if(f.id==='rp'){e.preventDefault();void doReset(f);}
 });
 const AUTH_A={
-  authtab:b=>{if(['login','register'].includes(b.dataset.v)){AU.view=b.dataset.v;render();}},
-  forgot:()=>{AU.prefill=($('#li')?.value || '').trim();AU.view='forgot';render();$('#fe')?.focus();},
+  authtab:b=>{if(!AU.busy&&['login','register'].includes(b.dataset.v)){AU.view=b.dataset.v;render();}},
+  forgot:()=>{if(AU.busy)return;AU.prefill=($('#li')?.value || '').trim();AU.view='forgot';render();$('#fe')?.focus();},
   terms:termsSheet,pwchange:pwChangeSheet,delacct:deleteAcctSheet,
   pwtoggle:b=>{const input=document.getElementById(b.dataset.id),show=input.type==='password';input.type=show?'text':'password';b.innerHTML=ic(show?'eyeoff':'eye',20);b.setAttribute('aria-label',show?'Hide password':'Show password');}
 };
@@ -1607,6 +1640,7 @@ async function deleteCustomerAccount(button) {
     button.textContent = 'Delete account';
   }
 
+  window.PapalitaLegal?.forget(customerId);
   delete S.users?.[customerId];
   for (const key of ['orders', 'cater', 'notes']) S[key] = (S[key] || []).filter(row => row.uid !== customerId);
   if (S.user.id === customerId) {
@@ -1897,7 +1931,11 @@ document.body.insertAdjacentHTML('beforeend', '<div id="offline" role="status" h
 const netUi = () => { const o = $('#offline'); if (o) o.hidden = navigator.onLine !== false; }; window.addEventListener('online', netUi); window.addEventListener('offline', () => { const o = $('#offline'); o && (o.hidden = false); });
 authDB().auth.onAuthStateChange((event)=>{
   if(event==='PASSWORD_RECOVERY')setTimeout(()=>{AU.view='reset';render();},0);
-  if(event==='SIGNED_OUT')setTimeout(()=>{S.user.in=false;AU.view='login';save();render();},0);
+  if(event==='SIGNED_OUT'){
+    pendingPolicyUser=null;
+    window.PapalitaLegal?.reset();
+    setTimeout(()=>{S.user.in=false;AU.view='login';save();render();},0);
+  }
 });
 Object.assign(A, AUTH_A);
 // Supabase Auth is the source of truth.
@@ -1905,7 +1943,7 @@ S.user.in = false;
 clearSession();
 try {
   const {data,error}=await authDB().auth.getUser();
-  if(!error&&data?.user)useAuthUser(data.user);
+  if(!error&&data?.user)restoreAuthUser(data.user);
 } catch (err) { console.error('[Papalita] Auth restore failed:',err); }
 chrome(); window.addEventListener('hashchange', render); render();
 if (S.user.in && !onCheckout()) void prepareDeliveryPricing();
