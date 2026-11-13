@@ -13,8 +13,9 @@
     const box = document.getElementById('rt');
     if (!box) return;
     box.checked = accepted;
-    const submit = box.closest('form')?.querySelector('[data-policy-submit]');
-    if (submit) submit.disabled = !accepted || submit.hasAttribute('data-auth-pending');
+    box.closest('form')?.querySelectorAll('[data-policy-submit]').forEach(submit => {
+      submit.disabled = !accepted || submit.hasAttribute('data-auth-pending');
+    });
   }
 
   function check() {
@@ -73,13 +74,14 @@
   window.papalitaOpenLegal = openLegal;
   window.termsSheet = openLegal;
   window.PapalitaLegal = {
+    version,
     accepted: () => accepted,
     hasAccepted(id) {
       try { return Boolean(version && id && localStorage.getItem(storageKey(id)) === version); }
       catch { return false; }
     },
-    record(id) {
-      if (!version || !id || !accepted) return;
+    record(id, acceptedVersion = accepted ? version : null) {
+      if (!version || !id || acceptedVersion !== version) return;
       try { localStorage.setItem(storageKey(id), version); } catch {}
     },
     forget(id) {

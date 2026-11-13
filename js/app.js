@@ -1320,8 +1320,10 @@ function adoptUser(acc) { S.users = S.users || {}; const b = S.users[acc.id] || 
 const own=x=>realId(S.user.id)&&x.uid===S.user.id;
 const myOrders=()=>S.orders.filter(o=>own(o)&&o.source==='supabase'), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
-let AU={view:'login',prefill:'',busy:false};
+let AU={view:'login',prefill:'',busy:false,googleError:''};
 let pendingPolicyUser = null;
+let pendingGoogleProfile = null;
+const googleAttemptKey = 'papalita.customer-google-attempt';
 const authHead = (title, intro) => `<header class="pp-auth-heading">
   <div class="pp-auth-lockup">
     <img src="images/papalita_mark_white.png" alt="" width="256" height="350">
@@ -1336,10 +1338,22 @@ const policyConsent = () => `<div class="pp-auth-consent">
   <button type="button" class="link gl" data-a="terms">Read Terms &amp; Privacy</button>
 </div><p class="err" id="rt-error" data-e="rt" role="alert"></p>`;
 const policySubmit = label => `<button type="submit" class="btn p blk" data-policy-submit disabled style="margin-top:10px">${label}</button>`;
+const googleButton = submit => `<button type="${submit ? 'submit' : 'button'}" class="btn o blk pp-auth-google" ${submit ? '' : 'data-a="google-login"'} data-policy-submit disabled>
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h5.4c-.2 1.2-.9 2.2-2 2.9v2.4h3.2c1.9-1.7 3-4.1 3-7Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.4c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.1H3.1v2.5A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 14a6 6 0 0 1 0-4V7.5H3.1a10 10 0 0 0 0 9l3.3-2.5Z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A9.5 9.5 0 0 0 12 2a10 10 0 0 0-8.9 5.5L6.4 10A6 6 0 0 1 12 5.9Z"/></svg>
+  Continue with Google</button>`;
+const googleNotice = () => `<p class="err" data-e="google" role="alert">${esc(AU.googleError)}</p>`;
+const googleFields = (draft = {}) => `
+  <div class="field"><label for="gn">Full name</label><input class="in" id="gn" autocomplete="name" maxlength="60" value="${esc(draft.name || '')}"><p class="err" data-e="gn"></p></div>
+  <div class="field"><label for="gm">Mobile number</label><input class="in" id="gm" inputmode="tel" autocomplete="tel" placeholder="09XXXXXXXXX" value="${esc(draft.phone || '')}"><p class="err" data-e="gm"></p></div>
+  <div class="field"><label for="gb">Barangay</label><select class="in" id="gb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option ${b.n === draft.barangay ? 'selected' : ''}>${esc(b.n)}</option>`).join('')}</select><p class="err" data-e="gb"></p></div>
+  <div class="field"><label for="ga">Purok, street or building</label><input class="in" id="ga" autocomplete="address-line1" maxlength="180" value="${esc(draft.address || '')}"><p class="err" data-e="ga"></p></div>`;
 function authScreen() {
-  const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t === 'register'}" class="${t === 'register' ? 'on' : ''}" data-a="authtab" data-v="register">Register</button></div>`;
+  const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t !== 'login'}" class="${t !== 'login' ? 'on' : ''}" data-a="authtab" data-v="google-register">Register</button></div>`;
   if (pendingPolicyUser && AU.view !== 'reset') return `<section class="view auth">${authHead('Review the updated policies', 'Read and accept the Terms and acknowledge the Privacy Policy to continue to Papalita.')}
     <form id="policy-form">${policyConsent()}${policySubmit('Continue')}</form>
+    <button type="button" class="btn o blk" style="margin-top:12px" data-a="logout">Log out</button></section>`;
+  if (pendingGoogleProfile && AU.view !== 'reset') return `<section class="view auth">${authHead('Finish setting up your account', 'Add the details we need to deliver your orders.')}
+    <form id="google-profile" novalidate>${googleFields(pendingGoogleProfile.draft)}${googleNotice()}<button type="submit" class="btn p blk">Save and continue</button></form>
     <button type="button" class="btn o blk" style="margin-top:12px" data-a="logout">Log out</button></section>`;
   if (AU.view === 'forgot') return `<section class="view auth">${authHead('Reset your password', 'Enter the email address you used to sign up for Papalita.')}
     <form id="ff" novalidate>
@@ -1349,6 +1363,9 @@ function authScreen() {
       <button type="button" class="btn o blk" style="margin-top:12px" data-a="authtab" data-v="login">Back to log in</button>
     </form></section>`;
   if (AU.view === 'reset') return `<section class="view auth">${authHead('Create a new password', 'Choose a new password for your Papalita account.')}<form id="rp" novalidate>${pwField('np1', 'New password', 'new-password', meterHTML('np1'))}${pwField('np2', 'Confirm new password', 'new-password')}<button class="btn p blk">Save password</button></form></section>`;
+  if (AU.view === 'google-register') return `<section class="view auth">${authHead('Create your account', 'Enter your delivery details, then choose your Google account.')}${tabs('register')}
+    <form id="google-register" novalidate>${googleFields(AU.googleDraft)}${policyConsent()}${googleButton(true)}${googleNotice()}</form>
+    <p class="pp-auth-switch"><button type="button" class="link gl" data-a="authtab" data-v="register">Register with email and password</button></p></section>`;
   if (AU.view === 'register') return `<section class="view auth">${authHead('Create your account', 'Sign up to order from local stores in Alegria.')}${tabs('register')}
     <form id="rf" novalidate><div class="field"><label for="rn">Full name</label><input class="in" id="rn" autocomplete="name" maxlength="60"><p class="err" data-e="rn"></p></div><div class="field"><label for="rm">Mobile number</label><input class="in" id="rm" inputmode="tel" placeholder="09XXXXXXXXX" autocomplete="tel"><p class="err" data-e="rm"></p></div>
     <div class="field">
@@ -1358,11 +1375,12 @@ function authScreen() {
       <p class="err" id="re-error" data-e="re" role="alert"></p>
     </div><div class="field"><label for="rb">Barangay</label><select class="in" id="rb"><option value="">Choose your barangay</option>${window.BRGYS.map(b => `<option>${b.n}</option>`).join('')}</select><p class="err" data-e="rb"></p></div>
     ${pwField('rpw', 'Password', 'new-password', meterHTML('rpw'))}${pwField('rpc', 'Confirm password', 'new-password')}
-    ${policyConsent()}${policySubmit('Create account')}</form></section>`;
+    ${policyConsent()}${policySubmit('Create account')}</form>
+    <p class="pp-auth-switch"><button type="button" class="link gl" data-a="authtab" data-v="google-register">Register with Google</button></p></section>`;
   return `<section class="view auth">${authHead('Welcome back', 'Log in to order from your local favorites and track your delivery.')}${tabs('login')}
     <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" type="email" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
     <div class="pp-auth-recovery"><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div>
-    ${policyConsent()}${policySubmit('Log in')}</form></section>`;
+    ${policyConsent()}${policySubmit('Log in')}${googleButton(false)}${googleNotice()}</form></section>`;
 }
 const clearErrs = f => { $$('.in', f).forEach(i => i.classList.remove('bad')); $$('[data-e]', f).forEach(x => x.textContent = ''); };
 const showErrs = (f, er) => { clearErrs(f); const k = Object.keys(er); k.forEach(x => { const i = $('#' + x, f); i && i.classList.add('bad'); const e = $(`[data-e=${x}]`, f); e && (e.textContent = er[x]); }); if (k.length) { const i = $('#' + k[0], f); i && i.focus(); } return k.length; };
@@ -1371,10 +1389,62 @@ const authDB = () => {
   return window.PAPALITA_DB;
 };
 const authRedirect = () => new URL('./', location.href).href;
+const googleRedirect = () => new URL('?auth=google', authRedirect()).href;
 const hasPolicyAgreement = f => Boolean(window.PapalitaLegal?.accepted() && $('#rt', f)?.checked);
 const policyError = 'Read both policies to the end and accept to continue.';
+function googleDetails(form) {
+  const value = id => ($('#'+id, form).value || '').trim();
+  const draft = {
+    name:value('gn').replace(/\s+/g, ' ').slice(0, 60), phone:normPhone(value('gm')),
+    barangay:value('gb'), address:value('ga').slice(0, 180)
+  };
+  const errors = {};
+  if (draft.name.length < 2) errors.gn = 'Enter your full name.';
+  if (!PH.test(draft.phone)) errors.gm = 'Use a PH mobile number like 09171234567.';
+  if (!window.BRGYS.some(b => b.n === draft.barangay)) errors.gb = 'Choose your barangay.';
+  if (draft.address.length < 5) errors.ga = 'Enter your purok, street or building.';
+  return { draft, errors };
+}
+function takeGoogleAttempt() {
+  try {
+    const raw = sessionStorage.getItem(googleAttemptKey);
+    sessionStorage.removeItem(googleAttemptKey);
+    const attempt = JSON.parse(raw);
+    if (attempt && Date.now() - attempt.startedAt < 15 * 60_000) return attempt;
+  } catch {}
+  return null;
+}
+async function startGoogle(form, register = false) {
+  if (!form || AU.busy) return;
+  const { draft, errors } = register ? googleDetails(form) : { draft:null, errors:{} };
+  if (!hasPolicyAgreement(form)) errors.rt = policyError;
+  if (showErrs(form, errors)) return;
+  setAuthPending(form, true);
+  AU.googlePendingForm = form;
+  try {
+    sessionStorage.setItem(googleAttemptKey, JSON.stringify({
+      startedAt:Date.now(), policyVersion:window.PapalitaLegal.version, draft
+    }));
+    const { error } = await authDB().auth.signInWithOAuth({
+      provider:'google', options:{ redirectTo:googleRedirect(), queryParams:{ prompt:'select_account' } }
+    });
+    if (error) throw error;
+  } catch {
+    takeGoogleAttempt();
+    AU.googlePendingForm = null;
+    showErrs(form, { google:'Google sign-in could not start. Try again or log in with email and password.' });
+    setAuthPending(form, false);
+  }
+}
+window.addEventListener('pageshow', event => {
+  if (!event.persisted || !AU.googlePendingForm) return;
+  setAuthPending(AU.googlePendingForm, false);
+  AU.googlePendingForm = null;
+  takeGoogleAttempt();
+});
 function useAuthUser(user) {
   pendingPolicyUser = null;
+  pendingGoogleProfile = null;
   const meta = user.user_metadata || {};
   const acc = { id:user.id, name:meta.full_name || user.email?.split('@')[0] || 'Customer',
     phone:meta.phone || '', email:user.email || '', brgy:meta.barangay || 'Poblacion' };
@@ -1384,21 +1454,103 @@ function useAuthUser(user) {
   setTimeout(()=>window.dispatchEvent(new Event('papalita-session-ready')),0);
   save();
 }
+function admitAuthUser(user) {
+  if (user.app_metadata?.provider === 'google' && !PH.test(normPhone(user.user_metadata?.phone))) {
+    pendingPolicyUser = null;
+    pendingGoogleProfile = { user, draft:{ name:user.user_metadata?.full_name, barangay:user.user_metadata?.barangay } };
+  } else useAuthUser(user);
+}
 function restoreAuthUser(user) {
-  if (window.PapalitaLegal?.hasAccepted(user.id)) useAuthUser(user);
+  if (window.PapalitaLegal?.hasAccepted(user.id)) admitAuthUser(user);
   else pendingPolicyUser = user;
 }
 function continueAfterPolicy(form) {
   if (!pendingPolicyUser || showErrs(form, hasPolicyAgreement(form) ? {} : { rt:policyError })) return;
   window.PapalitaLegal.record(pendingPolicyUser.id);
-  useAuthUser(pendingPolicyUser);
+  admitAuthUser(pendingPolicyUser);
   render();
-  if (!onCheckout()) void prepareDeliveryPricing();
+  if (S.user.in && !onCheckout()) void prepareDeliveryPricing();
 }
 function setAuthPending(form, pending) {
   AU.busy = pending;
-  form.querySelector('[data-policy-submit]').toggleAttribute('data-auth-pending', pending);
+  form.querySelectorAll('[data-policy-submit]').forEach(button => button.toggleAttribute('data-auth-pending', pending));
   window.PapalitaLegal?.sync();
+}
+async function saveGoogleProfile(user, draft) {
+  const auth = authDB().auth;
+  if (!PH.test(normPhone(user.user_metadata?.phone))) {
+    const { data, error } = await auth.updateUser({
+      data:{ full_name:draft.name, phone:draft.phone, barangay:draft.barangay }
+    });
+    if (error || data?.user?.id !== user.id) throw new Error('Could not save your delivery details. Please try again.');
+    user = data.user;
+  }
+  useAuthUser(user);
+  if (!S.addrs.length) {
+    const address = { id:uid('a'), label:'Home', line:draft.address, city:draft.barangay+', Alegria', landmark:'', def:true };
+    S.addrs.push(address);
+    CK.addr = address.id;
+    syncLoc(address);
+    save();
+  }
+}
+async function finishGoogleProfile(form) {
+  if (AU.busy || !pendingGoogleProfile) return;
+  const { draft, errors } = googleDetails(form);
+  if (showErrs(form, errors)) return;
+  const button = form.querySelector('button[type="submit"]');
+  AU.busy = button.disabled = true;
+  try {
+    const { data, error } = await authDB().auth.getUser();
+    if (error || data?.user?.id !== pendingGoogleProfile?.user.id) throw new Error('Your session expired. Log out and continue with Google again.');
+    await saveGoogleProfile(data.user, draft);
+    render();
+    if (!onCheckout()) void prepareDeliveryPricing();
+  } catch (error) {
+    showErrs(form, { google:error.message || 'Could not save your delivery details. Please try again.' });
+  } finally {
+    AU.busy = button.disabled = false;
+  }
+}
+async function restoreCustomerAuth() {
+  const auth = authDB().auth;
+  const googleReturn = window.papalitaGoogleReturn;
+  delete window.papalitaGoogleReturn;
+  const attempt = googleReturn ? takeGoogleAttempt() : null;
+  const { data, error } = await auth.getUser();
+  const user = error ? null : data?.user;
+  if (!googleReturn) {
+    if (user) restoreAuthUser(user);
+    return;
+  }
+  const url = new URL(location.href);
+  for (const name of ['auth', 'error', 'error_code', 'error_description']) url.searchParams.delete(name);
+  if (!url.hash.startsWith('#/')) url.hash = '';
+  history.replaceState(history.state, '', url.href);
+  const googleUser = user?.identities?.some(identity => identity.provider === 'google') || user?.app_metadata?.provider === 'google';
+  if (!googleUser || !await googleReturn(auth, user.id)) {
+    AU.view = attempt?.draft ? 'google-register' : 'login';
+    AU.googleDraft = attempt?.draft || undefined;
+    AU.googleError = 'Google sign-in did not finish. Try again or log in with email and password.';
+    if (user) restoreAuthUser(user);
+    return;
+  }
+  const legal = window.PapalitaLegal;
+  pendingPolicyUser = null;
+  if (attempt?.policyVersion === legal.version) legal.record(user.id, attempt.policyVersion);
+  if (!legal.hasAccepted(user.id) && attempt?.policyVersion !== legal.version) {
+    restoreAuthUser(user);
+    return;
+  }
+  if (attempt?.draft) {
+    try { await saveGoogleProfile(user, attempt.draft); }
+    catch {
+      pendingGoogleProfile = { user, draft:attempt.draft };
+      AU.googleError = 'Could not save your delivery details. Tap Save and continue to retry.';
+    }
+  } else if (!PH.test(normPhone(user.user_metadata?.phone))) {
+    pendingGoogleProfile = { user, draft:{ name:user.user_metadata?.full_name, barangay:user.user_metadata?.barangay } };
+  } else useAuthUser(user);
 }
 async function doLogin(f) {
   const email = $('#li',f).value.trim(), password = $('#lp',f).value;
@@ -1503,12 +1655,15 @@ document.addEventListener('input',e=>{if(['rpw','np1'].includes(e.target.id))met
 document.addEventListener('submit',e=>{
   const f=e.target;if(f.id==='lf'){e.preventDefault();void doLogin(f);}
   else if(f.id==='rf'){e.preventDefault();void doRegister(f);}
+  else if(f.id==='google-register'){e.preventDefault();void startGoogle(f,true);}
+  else if(f.id==='google-profile'){e.preventDefault();void finishGoogleProfile(f);}
   else if(f.id==='policy-form'){e.preventDefault();continueAfterPolicy(f);}
   else if(f.id==='ff'){e.preventDefault();void doForgotPassword(f);}
   else if(f.id==='rp'){e.preventDefault();void doReset(f);}
 });
 const AUTH_A={
-  authtab:b=>{if(!AU.busy&&['login','register'].includes(b.dataset.v)){AU.view=b.dataset.v;render();}},
+  authtab:b=>{if(!AU.busy&&['login','register','google-register'].includes(b.dataset.v)){AU.view=b.dataset.v;AU.googleError='';render();}},
+  'google-login':b=>{void startGoogle(b.closest('form'));},
   forgot:()=>{if(AU.busy)return;AU.prefill=($('#li')?.value || '').trim();AU.view='forgot';render();$('#fe')?.focus();},
   terms:termsSheet,pwchange:pwChangeSheet,delacct:deleteAcctSheet,
   pwtoggle:b=>{const input=document.getElementById(b.dataset.id),show=input.type==='password';input.type=show?'text':'password';b.innerHTML=ic(show?'eyeoff':'eye',20);b.setAttribute('aria-label',show?'Hide password':'Show password');}
@@ -1933,6 +2088,12 @@ authDB().auth.onAuthStateChange((event)=>{
   if(event==='PASSWORD_RECOVERY')setTimeout(()=>{AU.view='reset';render();},0);
   if(event==='SIGNED_OUT'){
     pendingPolicyUser=null;
+    pendingGoogleProfile=null;
+    takeGoogleAttempt();
+    AU.googleDraft=undefined;
+    AU.googleError='';
+    AU.googlePendingForm=null;
+    AU.busy=false;
     window.PapalitaLegal?.reset();
     setTimeout(()=>{S.user.in=false;AU.view='login';save();render();},0);
   }
@@ -1942,8 +2103,7 @@ Object.assign(A, AUTH_A);
 S.user.in = false;
 clearSession();
 try {
-  const {data,error}=await authDB().auth.getUser();
-  if(!error&&data?.user)restoreAuthUser(data.user);
+  await restoreCustomerAuth();
 } catch (err) { console.error('[Papalita] Auth restore failed:',err); }
 chrome(); window.addEventListener('hashchange', render); render();
 if (S.user.in && !onCheckout()) void prepareDeliveryPricing();
