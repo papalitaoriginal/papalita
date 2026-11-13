@@ -1549,6 +1549,19 @@ main {
 .pp-auth-google svg {
   flex: none;
 }
+.pp-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.pp-auth-divider::before, .pp-auth-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--auth-line);
+}
 .pp-auth-switch {
   margin-top: 12px;
   text-align: center;
@@ -2061,16 +2074,22 @@ main {
 <script>
 (() => {
   const url = new URL(location.href);
-  if (url.searchParams.get('auth') !== 'google') return;
+  const mode = url.searchParams.get('auth');
+  if (mode !== 'google' && mode !== 'google-login') return;
   // Capture the OAuth result before Supabase consumes and clears the fragment.
   const params = new URLSearchParams(url.hash.slice(1));
   const token = params.get('access_token');
   const hasRefreshToken = params.has('refresh_token');
   const failed = [url.searchParams, params].some(values => values.has('error') || values.has('error_code'));
-  window.papalitaGoogleReturn = async (auth, userId) => {
-    if (failed || !token || !hasRefreshToken) return false;
-    const { data, error } = await auth.getSession();
-    return !error && data.session?.access_token === token && data.session.user?.id === userId;
+  const description = url.searchParams.get('error_description') || params.get('error_description');
+  window.papalitaGoogleReturn = {
+    register: mode === 'google',
+    needsRegistration: failed && description === 'This email is not registered with Papalita.',
+    async matchesSession(auth, userId) {
+      if (failed || !token || !hasRefreshToken) return false;
+      const { data, error } = await auth.getSession();
+      return !error && data.session?.access_token === token && data.session.user?.id === userId;
+    }
   };
 })();
 </script>
@@ -2349,8 +2368,8 @@ main {
   </div>
 </dialog>
 
-<script src="js/customer-legal.js?v=20261113-customer-google"></script>
-<script src="js/app.js?v=20261113-customer-google"></script>
+<script src="js/customer-legal.js?v=20261113-customer-login"></script>
+<script src="js/app.js?v=20261113-customer-login"></script>
 
 <script src="./js/notifications.js?v=20261107-customer-v5" defer></script>
 </body>
