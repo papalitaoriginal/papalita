@@ -1542,6 +1542,17 @@ main {
   opacity: .55;
   cursor: not-allowed;
 }
+.pp-auth-google {
+  margin-top: 10px;
+  color: var(--auth-ink);
+}
+.pp-auth-google svg {
+  flex: none;
+}
+.pp-auth-switch {
+  margin-top: 12px;
+  text-align: center;
+}
 </style>
 
 <style id="papalita-compact-install-profile">
@@ -2047,6 +2058,22 @@ main {
 
 <noscript>Papalita needs JavaScript to run.</noscript>
 
+<script>
+(() => {
+  const url = new URL(location.href);
+  if (url.searchParams.get('auth') !== 'google') return;
+  // Capture the OAuth result before Supabase consumes and clears the fragment.
+  const params = new URLSearchParams(url.hash.slice(1));
+  const token = params.get('access_token');
+  const hasRefreshToken = params.has('refresh_token');
+  const failed = [url.searchParams, params].some(values => values.has('error') || values.has('error_code'));
+  window.papalitaGoogleReturn = async (auth, userId) => {
+    if (failed || !token || !hasRefreshToken) return false;
+    const { data, error } = await auth.getSession();
+    return !error && data.session?.access_token === token && data.session.user?.id === userId;
+  };
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js?v=papalita-20261027-install2"></script>
 <script src="js/supabase.js?v=20261112-store-availability"></script>
@@ -2092,7 +2119,7 @@ main {
 <!-- TERMS AND PRIVACY: ONE CONTINUOUS SCROLL -->
 <dialog
   id="papalitaLegal"
-  data-policy-version="2026-11-13"
+  data-policy-version="2026-11-13-google"
   role="dialog"
   aria-modal="true"
   aria-labelledby="legalTitle"
@@ -2225,6 +2252,11 @@ main {
           details, order history, and other information needed
           to provide food ordering and delivery services.
         </p>
+        <p>
+          If you choose Continue with Google, Papalita uses the name and email
+          provided by Google to identify your account. Your saved delivery
+          addresses are stored on this device for use at checkout.
+        </p>
 
         <h3>2. Purpose of Data Processing</h3>
         <p>
@@ -2317,8 +2349,8 @@ main {
   </div>
 </dialog>
 
-<script src="js/customer-legal.js?v=20261113-customer-terms"></script>
-<script src="js/app.js?v=20261113-customer-terms"></script>
+<script src="js/customer-legal.js?v=20261113-customer-google"></script>
+<script src="js/app.js?v=20261113-customer-google"></script>
 
 <script src="./js/notifications.js?v=20261107-customer-v5" defer></script>
 </body>
