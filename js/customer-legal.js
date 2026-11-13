@@ -12,9 +12,10 @@
   function sync() {
     const box = document.getElementById('rt');
     if (!box) return;
-    box.checked = accepted;
+    const requiresReading = box.hasAttribute('data-scroll-consent');
+    if (requiresReading) box.checked = accepted;
     box.closest('form')?.querySelectorAll('[data-policy-submit]').forEach(submit => {
-      submit.disabled = !accepted || submit.hasAttribute('data-auth-pending');
+      submit.disabled = (requiresReading && !accepted) || submit.hasAttribute('data-auth-pending');
     });
   }
 
@@ -33,7 +34,8 @@
     returnOverflow = document.body.style.overflow;
     reached = false;
     agree.disabled = true;
-    status.textContent = 'Scroll to the end of both policies to enable the agreement button.';
+    status.textContent = from?.closest('#lf') ? 'You can also acknowledge the policies on the login screen.' :
+      'Scroll to the end of both policies to enable the agreement button.';
     modal.showModal();
     document.body.style.overflow = 'hidden';
     area.scrollTop = 0;
@@ -48,7 +50,9 @@
   document.getElementById('legalClose').onclick = () => modal.close();
   agree.onclick = () => {
     if (!reached || !modal.open) return;
-    accepted = true;
+    const loginBox = trigger?.closest('#lf')?.querySelector('#rt');
+    if (loginBox) loginBox.checked = true;
+    else accepted = true;
     sync();
     const error = document.getElementById('rt-error');
     if (error) error.textContent = '';
@@ -56,7 +60,7 @@
   };
   area.addEventListener('scroll', check, { passive: true });
   document.addEventListener('click', event => {
-    if (event.target.id === 'rt' && !accepted) {
+    if (event.target.matches('#rt[data-scroll-consent]') && !accepted) {
       event.preventDefault();
       openLegal(event.target);
     } else if (event.target.closest('[data-papalita-legal]')) {
@@ -65,7 +69,7 @@
     }
   });
   document.addEventListener('change', event => {
-    if (event.target.id === 'rt' && !event.target.checked) {
+    if (event.target.matches('#rt[data-scroll-consent]') && !event.target.checked) {
       accepted = false;
       sync();
     }

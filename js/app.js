@@ -1321,9 +1321,9 @@ const own=x=>realId(S.user.id)&&x.uid===S.user.id;
 const myOrders=()=>S.orders.filter(o=>own(o)&&o.source==='supabase'), myNotes = () => S.notes.filter(own), myCater = () => (S.cater || []).filter(own);
 
 let AU={view:'login',prefill:'',busy:false,googleError:''};
-let pendingPolicyUser = null;
 let pendingGoogleProfile = null;
 const googleAttemptKey = 'papalita.customer-google-attempt';
+const googleLoginProvider = 'custom:papalita-google-login';
 const authHead = (title, intro) => `<header class="pp-auth-heading">
   <div class="pp-auth-lockup">
     <img src="images/papalita_mark_white.png" alt="" width="256" height="350">
@@ -1333,12 +1333,12 @@ const authHead = (title, intro) => `<header class="pp-auth-heading">
 </header>`;
 const pwField = (id, label, auto, extra = '') => `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${auto}">${`<button type="button" class="pwt" data-a="pwtoggle" data-id="${id}" aria-label="Show password">${ic('eye', 20)}</button>`}</div>${extra}<p class="err" data-e="${id}"></p></div>`;
 const meterHTML = id => `<div class="meter" data-m="${id}" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="sm mu" data-mt="${id}">Use 8+ characters with letters and numbers.</p>`;
-const policyConsent = () => `<div class="pp-auth-consent">
-  <label class="pp-auth-consent-choice" for="rt"><input type="checkbox" id="rt" aria-describedby="rt-error"><span>I agree to the Terms and acknowledge the Privacy Policy</span></label>
+const policyConsent = (requiresReading = true) => `<div class="pp-auth-consent">
+  <label class="pp-auth-consent-choice" for="rt"><input type="checkbox" id="rt" ${requiresReading ? 'data-scroll-consent' : ''} aria-describedby="rt-error"><span>I agree to the Terms and acknowledge the Privacy Policy</span></label>
   <button type="button" class="link gl" data-a="terms">Read Terms &amp; Privacy</button>
 </div><p class="err" id="rt-error" data-e="rt" role="alert"></p>`;
 const policySubmit = label => `<button type="submit" class="btn p blk" data-policy-submit disabled style="margin-top:10px">${label}</button>`;
-const googleButton = submit => `<button type="${submit ? 'submit' : 'button'}" class="btn o blk pp-auth-google" ${submit ? '' : 'data-a="google-login"'} data-policy-submit disabled>
+const googleButton = submit => `<button type="${submit ? 'submit' : 'button'}" class="btn o blk pp-auth-google" ${submit ? 'disabled' : 'data-a="google-login"'} data-policy-submit>
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.3-.2-1.9H12v3.6h5.4c-.2 1.2-.9 2.2-2 2.9v2.4h3.2c1.9-1.7 3-4.1 3-7Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.4c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.1H3.1v2.5A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 14a6 6 0 0 1 0-4V7.5H3.1a10 10 0 0 0 0 9l3.3-2.5Z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A9.5 9.5 0 0 0 12 2a10 10 0 0 0-8.9 5.5L6.4 10A6 6 0 0 1 12 5.9Z"/></svg>
   Continue with Google</button>`;
 const googleNotice = () => `<p class="err" data-e="google" role="alert">${esc(AU.googleError)}</p>`;
@@ -1349,11 +1349,8 @@ const googleFields = (draft = {}) => `
   <div class="field"><label for="ga">Purok, street or building</label><input class="in" id="ga" autocomplete="address-line1" maxlength="180" value="${esc(draft.address || '')}"><p class="err" data-e="ga"></p></div>`;
 function authScreen() {
   const tabs = t => `<div class="seg" role="tablist"><button role="tab" aria-selected="${t === 'login'}" class="${t === 'login' ? 'on' : ''}" data-a="authtab" data-v="login">Log in</button><button role="tab" aria-selected="${t !== 'login'}" class="${t !== 'login' ? 'on' : ''}" data-a="authtab" data-v="google-register">Register</button></div>`;
-  if (pendingPolicyUser && AU.view !== 'reset') return `<section class="view auth">${authHead('Review the updated policies', 'Read and accept the Terms and acknowledge the Privacy Policy to continue to Papalita.')}
-    <form id="policy-form">${policyConsent()}${policySubmit('Continue')}</form>
-    <button type="button" class="btn o blk" style="margin-top:12px" data-a="logout">Log out</button></section>`;
   if (pendingGoogleProfile && AU.view !== 'reset') return `<section class="view auth">${authHead('Finish setting up your account', 'Add the details we need to deliver your orders.')}
-    <form id="google-profile" novalidate>${googleFields(pendingGoogleProfile.draft)}${googleNotice()}<button type="submit" class="btn p blk">Save and continue</button></form>
+    <form id="google-profile" novalidate>${googleFields(pendingGoogleProfile.draft)}${googleNotice()}${pendingGoogleProfile.requirePolicy ? policyConsent()+policySubmit('Save and continue') : '<button type="submit" class="btn p blk">Save and continue</button>'}</form>
     <button type="button" class="btn o blk" style="margin-top:12px" data-a="logout">Log out</button></section>`;
   if (AU.view === 'forgot') return `<section class="view auth">${authHead('Reset your password', 'Enter the email address you used to sign up for Papalita.')}
     <form id="ff" novalidate>
@@ -1380,7 +1377,9 @@ function authScreen() {
   return `<section class="view auth">${authHead('Welcome back', 'Log in to order from your local favorites and track your delivery.')}${tabs('login')}
     <form id="lf" novalidate><div class="field"><label for="li">Email address</label><input class="in" id="li" type="email" autocomplete="username" value="${esc(AU.prefill)}"><p class="err" data-e="li"></p></div>${pwField('lp', 'Password', 'current-password')}
     <div class="pp-auth-recovery"><button type="button" class="link gl" data-a="forgot">Forgot password?</button></div>
-    ${policyConsent()}${policySubmit('Log in')}${googleButton(false)}${googleNotice()}</form></section>`;
+    ${policyConsent(false)}<button type="submit" class="btn p blk" data-policy-submit style="margin-top:10px">Log in</button>
+    <div class="pp-auth-divider">or</div>${googleButton(false)}${googleNotice()}
+    ${AU.googleNeedsRegistration ? '<button type="button" class="link gl" data-google-register-link data-a="authtab" data-v="google-register">Go to Register</button>' : ''}</form></section>`;
 }
 const clearErrs = f => { $$('.in', f).forEach(i => i.classList.remove('bad')); $$('[data-e]', f).forEach(x => x.textContent = ''); };
 const showErrs = (f, er) => { clearErrs(f); const k = Object.keys(er); k.forEach(x => { const i = $('#' + x, f); i && i.classList.add('bad'); const e = $(`[data-e=${x}]`, f); e && (e.textContent = er[x]); }); if (k.length) { const i = $('#' + k[0], f); i && i.focus(); } return k.length; };
@@ -1389,7 +1388,7 @@ const authDB = () => {
   return window.PAPALITA_DB;
 };
 const authRedirect = () => new URL('./', location.href).href;
-const googleRedirect = () => new URL('?auth=google', authRedirect()).href;
+const googleRedirect = register => new URL(register ? '?auth=google' : '?auth=google-login', authRedirect()).href;
 const hasPolicyAgreement = f => Boolean(window.PapalitaLegal?.accepted() && $('#rt', f)?.checked);
 const policyError = 'Read both policies to the end and accept to continue.';
 function googleDetails(form) {
@@ -1417,22 +1416,26 @@ function takeGoogleAttempt() {
 async function startGoogle(form, register = false) {
   if (!form || AU.busy) return;
   const { draft, errors } = register ? googleDetails(form) : { draft:null, errors:{} };
-  if (!hasPolicyAgreement(form)) errors.rt = policyError;
+  if (register && !hasPolicyAgreement(form)) errors.rt = policyError;
   if (showErrs(form, errors)) return;
+  AU.googleNeedsRegistration = false;
+  $('[data-google-register-link]', form)?.setAttribute('hidden', '');
   setAuthPending(form, true);
   AU.googlePendingForm = form;
   try {
     sessionStorage.setItem(googleAttemptKey, JSON.stringify({
-      startedAt:Date.now(), policyVersion:window.PapalitaLegal.version, draft
+      startedAt:Date.now(), register, policyVersion:register ? window.PapalitaLegal.version : null, draft
     }));
     const { error } = await authDB().auth.signInWithOAuth({
-      provider:'google', options:{ redirectTo:googleRedirect(), queryParams:{ prompt:'select_account' } }
+      provider:register ? 'google' : googleLoginProvider,
+      options:{ redirectTo:googleRedirect(register), queryParams:{ prompt:'select_account' } }
     });
     if (error) throw error;
   } catch {
     takeGoogleAttempt();
     AU.googlePendingForm = null;
-    showErrs(form, { google:'Google sign-in could not start. Try again or log in with email and password.' });
+    showErrs(form, { google:register ? 'Google registration could not start. Try again.' :
+      'Google sign-in could not start. Try again or log in with email and password.' });
     setAuthPending(form, false);
   }
 }
@@ -1443,7 +1446,6 @@ window.addEventListener('pageshow', event => {
   takeGoogleAttempt();
 });
 function useAuthUser(user) {
-  pendingPolicyUser = null;
   pendingGoogleProfile = null;
   const meta = user.user_metadata || {};
   const acc = { id:user.id, name:meta.full_name || user.email?.split('@')[0] || 'Customer',
@@ -1454,22 +1456,13 @@ function useAuthUser(user) {
   setTimeout(()=>window.dispatchEvent(new Event('papalita-session-ready')),0);
   save();
 }
-function admitAuthUser(user) {
-  if (user.app_metadata?.provider === 'google' && !PH.test(normPhone(user.user_metadata?.phone))) {
-    pendingPolicyUser = null;
-    pendingGoogleProfile = { user, draft:{ name:user.user_metadata?.full_name, barangay:user.user_metadata?.barangay } };
-  } else useAuthUser(user);
-}
 function restoreAuthUser(user) {
-  if (window.PapalitaLegal?.hasAccepted(user.id)) admitAuthUser(user);
-  else pendingPolicyUser = user;
-}
-function continueAfterPolicy(form) {
-  if (!pendingPolicyUser || showErrs(form, hasPolicyAgreement(form) ? {} : { rt:policyError })) return;
-  window.PapalitaLegal.record(pendingPolicyUser.id);
-  admitAuthUser(pendingPolicyUser);
-  render();
-  if (S.user.in && !onCheckout()) void prepareDeliveryPricing();
+  if (user.app_metadata?.provider === 'google' && !PH.test(normPhone(user.user_metadata?.phone))) {
+    pendingGoogleProfile = {
+      user, requirePolicy:!window.PapalitaLegal?.hasAccepted(user.id),
+      draft:{ name:user.user_metadata?.full_name, barangay:user.user_metadata?.barangay }
+    };
+  } else useAuthUser(user);
 }
 function setAuthPending(form, pending) {
   AU.busy = pending;
@@ -1497,6 +1490,7 @@ async function saveGoogleProfile(user, draft) {
 async function finishGoogleProfile(form) {
   if (AU.busy || !pendingGoogleProfile) return;
   const { draft, errors } = googleDetails(form);
+  if (pendingGoogleProfile.requirePolicy && !hasPolicyAgreement(form)) errors.rt = policyError;
   if (showErrs(form, errors)) return;
   const button = form.querySelector('button[type="submit"]');
   AU.busy = button.disabled = true;
@@ -1504,6 +1498,7 @@ async function finishGoogleProfile(form) {
     const { data, error } = await authDB().auth.getUser();
     if (error || data?.user?.id !== pendingGoogleProfile?.user.id) throw new Error('Your session expired. Log out and continue with Google again.');
     await saveGoogleProfile(data.user, draft);
+    if (hasPolicyAgreement(form)) window.PapalitaLegal.record(data.user.id);
     render();
     if (!onCheckout()) void prepareDeliveryPricing();
   } catch (error) {
@@ -1516,7 +1511,8 @@ async function restoreCustomerAuth() {
   const auth = authDB().auth;
   const googleReturn = window.papalitaGoogleReturn;
   delete window.papalitaGoogleReturn;
-  const attempt = googleReturn ? takeGoogleAttempt() : null;
+  const savedAttempt = googleReturn ? takeGoogleAttempt() : null;
+  const attempt = savedAttempt?.register === googleReturn?.register ? savedAttempt : null;
   const { data, error } = await auth.getUser();
   const user = error ? null : data?.user;
   if (!googleReturn) {
@@ -1527,16 +1523,23 @@ async function restoreCustomerAuth() {
   for (const name of ['auth', 'error', 'error_code', 'error_description']) url.searchParams.delete(name);
   if (!url.hash.startsWith('#/')) url.hash = '';
   history.replaceState(history.state, '', url.href);
-  const googleUser = user?.identities?.some(identity => identity.provider === 'google') || user?.app_metadata?.provider === 'google';
-  if (!googleUser || !await googleReturn(auth, user.id)) {
-    AU.view = attempt?.draft ? 'google-register' : 'login';
+  const provider = googleReturn.register ? 'google' : googleLoginProvider;
+  const googleUser = user?.identities?.some(identity => identity.provider === provider) || user?.app_metadata?.provider === provider;
+  if (!googleUser || !await googleReturn.matchesSession(auth, user.id)) {
+    AU.view = googleReturn.register ? 'google-register' : 'login';
     AU.googleDraft = attempt?.draft || undefined;
-    AU.googleError = 'Google sign-in did not finish. Try again or log in with email and password.';
+    AU.googleNeedsRegistration = googleReturn.needsRegistration && !googleReturn.register;
+    AU.googleError = AU.googleNeedsRegistration ? 'This email is not registered with Papalita.' :
+      googleReturn.register ? 'Google sign-in did not finish. Try again.' :
+      'Google sign-in did not finish. Use the Google account with your confirmed Papalita email, or try email and password.';
     if (user) restoreAuthUser(user);
     return;
   }
+  if (!googleReturn.register) {
+    restoreAuthUser(user);
+    return;
+  }
   const legal = window.PapalitaLegal;
-  pendingPolicyUser = null;
   if (attempt?.policyVersion === legal.version) legal.record(user.id, attempt.policyVersion);
   if (!legal.hasAccepted(user.id) && attempt?.policyVersion !== legal.version) {
     restoreAuthUser(user);
@@ -1548,16 +1551,13 @@ async function restoreCustomerAuth() {
       pendingGoogleProfile = { user, draft:attempt.draft };
       AU.googleError = 'Could not save your delivery details. Tap Save and continue to retry.';
     }
-  } else if (!PH.test(normPhone(user.user_metadata?.phone))) {
-    pendingGoogleProfile = { user, draft:{ name:user.user_metadata?.full_name, barangay:user.user_metadata?.barangay } };
-  } else useAuthUser(user);
+  } else restoreAuthUser(user);
 }
 async function doLogin(f) {
   const email = $('#li',f).value.trim(), password = $('#lp',f).value;
   const er = {};
   if (!/^\S+@\S+\.\S+$/.test(email)) er.li = 'Enter a valid email address.';
   if (!password) er.lp = 'Enter your password.';
-  if (!hasPolicyAgreement(f)) er.rt = policyError;
   if (showErrs(f,er)) return;
   if (AU.busy) return;
   setAuthPending(f, true);
@@ -1565,7 +1565,6 @@ async function doLogin(f) {
     const {data,error} = await authDB().auth.signInWithPassword({email,password});
     if (error) throw error;
     if (!data?.session?.user) throw new Error('Confirm your email before logging in.');
-    window.PapalitaLegal.record(data.session.user.id);
     useAuthUser(data.session.user);
     void prepareDeliveryPricing();
     location.hash = '#/';
@@ -1613,8 +1612,8 @@ async function doRegister(f) {
   finally { setAuthPending(f, false); }
 }
 function meter(input) { const id = input.id, n = pwScore(input.value), bars = $$(`[data-m=${id}] i`), t = $(`[data-mt=${id}]`); bars.forEach((b, i) => { b.className = i < n ? 's' + n : ''; }); if (t) t.textContent = !input.value ? 'Use 8+ characters with letters and numbers.' : ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][n] + (pwOk(input.value) ? '' : ' · needs 8+ characters, a letter and a number'); }
-function termsSheet() {
-  if (window.papalitaOpenLegal) window.papalitaOpenLegal();
+function termsSheet(trigger) {
+  if (window.papalitaOpenLegal) window.papalitaOpenLegal(trigger);
   else toast('Terms and Privacy could not load. Refresh to try again.');
 }
 async function doForgotPassword(form) {
@@ -1657,12 +1656,11 @@ document.addEventListener('submit',e=>{
   else if(f.id==='rf'){e.preventDefault();void doRegister(f);}
   else if(f.id==='google-register'){e.preventDefault();void startGoogle(f,true);}
   else if(f.id==='google-profile'){e.preventDefault();void finishGoogleProfile(f);}
-  else if(f.id==='policy-form'){e.preventDefault();continueAfterPolicy(f);}
   else if(f.id==='ff'){e.preventDefault();void doForgotPassword(f);}
   else if(f.id==='rp'){e.preventDefault();void doReset(f);}
 });
 const AUTH_A={
-  authtab:b=>{if(!AU.busy&&['login','register','google-register'].includes(b.dataset.v)){AU.view=b.dataset.v;AU.googleError='';render();}},
+  authtab:b=>{if(!AU.busy&&['login','register','google-register'].includes(b.dataset.v)){AU.view=b.dataset.v;AU.googleError='';AU.googleNeedsRegistration=false;window.PapalitaLegal?.reset();render();}},
   'google-login':b=>{void startGoogle(b.closest('form'));},
   forgot:()=>{if(AU.busy)return;AU.prefill=($('#li')?.value || '').trim();AU.view='forgot';render();$('#fe')?.focus();},
   terms:termsSheet,pwchange:pwChangeSheet,delacct:deleteAcctSheet,
@@ -2087,11 +2085,11 @@ const netUi = () => { const o = $('#offline'); if (o) o.hidden = navigator.onLin
 authDB().auth.onAuthStateChange((event)=>{
   if(event==='PASSWORD_RECOVERY')setTimeout(()=>{AU.view='reset';render();},0);
   if(event==='SIGNED_OUT'){
-    pendingPolicyUser=null;
     pendingGoogleProfile=null;
     takeGoogleAttempt();
     AU.googleDraft=undefined;
     AU.googleError='';
+    AU.googleNeedsRegistration=false;
     AU.googlePendingForm=null;
     AU.busy=false;
     window.PapalitaLegal?.reset();
