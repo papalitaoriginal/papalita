@@ -6,7 +6,7 @@
 <title>Papalita Admin</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="images/papalita_mark_color.png">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="styles.css">
 <style>
 body{background:#F6F7F9}
@@ -199,7 +199,7 @@ td b{font-weight:700}
 </style>
 
 <!-- PAPALITA ADMIN PRESENTATION START -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style id="papalita-admin-merchant">
 #pa-promo-form .field[hidden]{display:none}
 /* Presentation only. Existing admin forms, data services and mutations are retained. */
@@ -259,22 +259,45 @@ html[data-pa-theme=dark]{--pa-bg:#121a15;--pa-surface:#1c271f;--pa-soft:#253128;
 @media(max-width:700px){.pa-active .pa-workspace{padding:23px 16px 8px}.pa-active .pa-topbar{padding-left:16px;padding-right:16px}.pa-report-intro{font-size:11px;margin-bottom:18px}.pa-report-filters{padding:16px;gap:13px 12px}.pa-report-filters .pa-filter-period,.pa-report-filters .pa-filter-store{grid-column:1/-1}.pa-report-filters .btn{grid-column:1/-1;width:100%}.pa-report-filters .field .in{font-size:13px;min-height:42px}.pa-report-context{font-size:10px;gap:8px;margin-top:18px}.pa-report-context .btn{margin-left:auto}.pa-report-kpis .kpi small{font-size:9px}.pa-report-kpis .kpi b{font-size:22px}.pa-report-heading{gap:9px;flex-wrap:wrap}.pa-report-heading h2{font-size:14px}.pa-report-heading p{font-size:10px}.pa-report-chart svg{min-width:600px}.pa-report-chart{margin-left:-3px;margin-right:-3px}.pa-report-status-row{font-size:11px;gap:7px}.pa-report-status-row b{font-size:16px}.pa-report-status-grid{gap:0 17px}.pa-report-details summary{padding:16px}.pa-report-store-panel .pa-panel-heading{padding:17px 16px}.pa-report-store-panel h2{font-size:14px}.pa-active .pa-report-filters .field input.in{font-size:16px}.pa-active .pa-report-filters .field select.in{font-size:14px}}
 
 </style>
+<style id="portal-startup-style">
+#portal-startup{box-sizing:border-box;max-width:460px;margin:8vh auto 24px;padding:22px;color:#17352a;background:#fff;border:1px solid #dbe7de;border-radius:16px;font:16px/1.5 system-ui,sans-serif}
+#portal-startup h1{margin:0 0 8px;font-size:22px;color:inherit}
+#portal-startup p{margin:0 0 14px}
+#portal-startup button{padding:10px 16px;border:0;border-radius:8px;background:#087f45;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer}
+@media(max-width:520px){#portal-startup{margin-inline:16px}}
+</style>
+<link rel="stylesheet" href="store-subscriptions.css">
+<script src="js/store-subscriptions.js" defer></script>
 </head>
 <body>
 <div id="toasts"></div>
-<div id="root"></div>
+<div id="root">
+  <section id="portal-startup" aria-labelledby="portal-startup-title">
+    <h1 id="portal-startup-title">Papalita Admin</h1>
+    <p id="portal-startup-message" role="status">Opening the sign-in page…</p>
+    <button type="button" onclick="location.reload()">Reload page</button>
+    <noscript><p>Enable JavaScript in Chrome to sign in.</p></noscript>
+  </section>
+</div>
+<script>
+window.setTimeout(() => {
+  const message = document.getElementById('portal-startup-message');
+  if (message) message.textContent = 'Sign-in is taking longer than expected. Check your connection and reload this page.';
+}, 10000);
+</script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/supabase.js"></script>
-<script src="js/images.js"></script>
-<script src="js/data.js"></script>
-<script src="js/ops.js"></script>
-<script src="js/product-options.js?v=2"></script>
-<script src="js/partner-admin.js?v=20261110-accounts"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="js/config.js"></script>
+<script defer src="js/supabase.js"></script>
+<script defer src="js/images.js"></script>
+<script defer src="js/data.js"></script>
+<script defer src="js/ops.js"></script>
+<script defer src="js/product-options.js?v=2"></script>
+<script defer src="js/partner-admin.js?v=20261110-accounts"></script>
 
 <script>
-(()=>{'use strict';
+document.addEventListener('DOMContentLoaded', () => {
+'use strict';
 const LOGO={mark:'images/papalita_mark_color.png',white:'images/papalita_full_white.png'};
 
 /* Existing dashboard retained.
@@ -588,10 +611,22 @@ function gate(message=''){
   };
 }
 
+async function readPortalSession(request) {
+  let timer;
+  try {
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error('The saved session check timed out. Try signing in again.')), 9000);
+    });
+    return await Promise.race([request, timeout]);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 async function bootAuth(){
   try{
     const db=getAuthClient();
-    const result=await db.auth.getSession();
+    const result=await readPortalSession(db.auth.getSession());
 
     if(result.error)throw result.error;
 
@@ -632,6 +667,7 @@ const TABS=[
   ['partner-applications','Partner applications',1],
   ['applications','Store approvals',1],
   ['availability','Store availability',1],
+  ['subscriptions','Store subscriptions',1],
   ['inventory','All products (Supabase)',1],
   ['analytics','Analytics']
 ];
@@ -839,8 +875,8 @@ const paIcons={
  cash:'<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M5 9h1M18 15h1"/>',refund:'<path d="M3 9h10a7 7 0 1 1-6 11M3 9l5-5M3 9l5 5"/>'
 };
 const paIcon=n=>`<svg class="pa-icon" viewBox="0 0 24 24" aria-hidden="true">${paIcons[n]||paIcons.menu}</svg>`;
-const paLabels={overview:'Dashboard',orders:'Orders',inventory:'Products',menu:'Menu & Pricing',catering:'Catering requests',finance:'Finance & Payouts',analytics:'Reports','partner-applications':'Partner Applications',applications:'Store approvals',availability:'Store availability',stores:'Store contacts',users:'Users',cats:'Categories',promos:'Promo codes',cash:'Cash remittance',refunds:'Refund queue',fees:'Delivery fees',appearance:'Appearance'};
-const paIconNames={overview:'dashboard',inventory:'products',finance:'wallet',analytics:'report','partner-applications':'store',applications:'store',availability:'store',stores:'store',cats:'products',promos:'tag',cash:'cash',refunds:'refund',fees:'settings'};
+const paLabels={overview:'Dashboard',orders:'Orders',inventory:'Products',menu:'Menu & Pricing',catering:'Catering requests',finance:'Finance & Payouts',subscriptions:'Store subscriptions',analytics:'Reports','partner-applications':'Partner Applications',applications:'Store approvals',availability:'Store availability',stores:'Store contacts',users:'Users',cats:'Categories',promos:'Promo codes',cash:'Cash remittance',refunds:'Refund queue',fees:'Delivery fees',appearance:'Appearance'};
+const paIconNames={overview:'dashboard',inventory:'products',finance:'wallet',subscriptions:'wallet',analytics:'report','partner-applications':'store',applications:'store',availability:'store',stores:'store',cats:'products',promos:'tag',cash:'cash',refunds:'refund',fees:'settings'};
 let paPrefs={mode:'light',accent:'green'};
 try{paPrefs={...paPrefs,...JSON.parse(localStorage.getItem('papalita.admin.appearance.v1')||'{}')};}catch(_){}
 let paMobileOpen=false;
@@ -988,7 +1024,7 @@ draw=function(){
  if(!paAllowed(tab))tab='overview';
  const name=sess.role==='platform'?'Platform admin':(R(sess.rid)?.name||'Store manager');
  const label=paLabels[tab]||'Dashboard';document.title=`Papalita Admin · ${label}`;
- $('#root').innerHTML=`<div class="pa-shell"><div class="pa-menu-shade" data-pa-close></div><aside class="pa-sidebar" id="pa-navigation" aria-label="Main navigation"><button class="pa-icon-button pa-menu-close" data-pa-close aria-label="Close navigation">${paIcon('close')}</button><a class="pa-brand" href="#overview" data-pa-nav="overview"><img class="pa-mark" src="${LOGO.mark}" alt=""><span><strong>Papalita</strong><small>ADMIN PORTAL</small></span></a><div class="pa-workspace-label">${paIcon('store')}<span>${esc(sess.role==='platform'?'Platform workspace':'Store workspace')}</span></div><p class="pa-label">Workspace</p><nav>${['overview','orders','inventory','menu','catering','finance','analytics'].map(paNav).join('')}</nav>${paGroup('management','Store management',['partner-applications','applications','availability','stores','users'])}${paGroup('tools','More tools',['cats','promos','cash','refunds','fees'])}<div class="pa-sidebar-bottom">${paNav('appearance')}<a class="pa-nav" href="index.html">${paIcon('arrow')}Customer app</a><div class="pa-owner"><span class="pa-avatar">${esc(name.slice(0,1))}</span><div><strong>${esc(name)}</strong><small title="${esc(sess.email||'')}">${esc(sess.email||'Authorized account')}</small></div><button class="pa-icon-button pa-signout" data-pa-out aria-label="Sign out">${paIcon('logout')}</button></div></div></aside><div class="pa-main"><header class="pa-topbar"><div class="pa-breadcrumb"><button class="pa-icon-button pa-menu-toggle" id="pa-nav-toggle" data-pa-menu aria-label="Open navigation" aria-controls="pa-navigation" aria-expanded="false">${paIcon('hamburger')}</button><span>Workspace</span>${paIcon('right')}<strong>${esc(label)}</strong></div><div class="pa-top-actions"><span class="pa-date">${new Date().toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'})}</span><button class="pa-icon-button" data-pa-help aria-label="Help and support">${paIcon('help')}</button><button class="pa-icon-button pa-avatar" data-pa-account aria-label="Your account">${esc(name.slice(0,1))}</button></div></header><div class="pa-workspace"><main id="b"></main><footer class="pa-footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span>Admin workspace</span></footer></div></div></div>`;
+ $('#root').innerHTML=`<div class="pa-shell"><div class="pa-menu-shade" data-pa-close></div><aside class="pa-sidebar" id="pa-navigation" aria-label="Main navigation"><button class="pa-icon-button pa-menu-close" data-pa-close aria-label="Close navigation">${paIcon('close')}</button><a class="pa-brand" href="#overview" data-pa-nav="overview"><img class="pa-mark" src="${LOGO.mark}" alt=""><span><strong>Papalita</strong><small>ADMIN PORTAL</small></span></a><div class="pa-workspace-label">${paIcon('store')}<span>${esc(sess.role==='platform'?'Platform workspace':'Store workspace')}</span></div><p class="pa-label">Workspace</p><nav>${['overview','orders','inventory','menu','catering','finance','analytics'].map(paNav).join('')}</nav>${paGroup('management','Store management',['partner-applications','applications','availability','stores','subscriptions','users'])}${paGroup('tools','More tools',['cats','promos','cash','refunds','fees'])}<div class="pa-sidebar-bottom">${paNav('appearance')}<a class="pa-nav" href="index.html">${paIcon('arrow')}Customer app</a><div class="pa-owner"><span class="pa-avatar">${esc(name.slice(0,1))}</span><div><strong>${esc(name)}</strong><small title="${esc(sess.email||'')}">${esc(sess.email||'Authorized account')}</small></div><button class="pa-icon-button pa-signout" data-pa-out aria-label="Sign out">${paIcon('logout')}</button></div></div></aside><div class="pa-main"><header class="pa-topbar"><div class="pa-breadcrumb"><button class="pa-icon-button pa-menu-toggle" id="pa-nav-toggle" data-pa-menu aria-label="Open navigation" aria-controls="pa-navigation" aria-expanded="false">${paIcon('hamburger')}</button><span>Workspace</span>${paIcon('right')}<strong>${esc(label)}</strong></div><div class="pa-top-actions"><span class="pa-date">${new Date().toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'})}</span><button class="pa-icon-button" data-pa-help aria-label="Help and support">${paIcon('help')}</button><button class="pa-icon-button pa-avatar" data-pa-account aria-label="Your account">${esc(name.slice(0,1))}</button></div></header><div class="pa-workspace"><main id="b"></main><footer class="pa-footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span>Admin workspace</span></footer></div></div></div>`;
  $$('[data-pa-group]').forEach(el=>el.addEventListener('toggle',()=>{paGroups[el.dataset.paGroup]=el.open;}));
  const render=tab==='appearance'?paAppearance:(V[tab]||V.overview);
  const result=render();paPolish();
@@ -1493,6 +1529,16 @@ async function paLiveReportView(){
  const target=paLoading('Reports');try{const rows=await paLiveOrders();if(!target.isConnected)return;const selection=paReportSelection||paReportPreset('14');paRenderReports(target,rows,paLiveState.stores,selection);}catch(error){paFailure(target,error,{retry:'analytics'});}
 }
 
+V.subscriptions=()=>{
+  const target=paLoading('Store subscriptions', 'Loading store subscriptions…');
+  target.classList.add('ps-subscriptions');
+  if (!window.PapalitaStoreSubscriptions) {
+    target.textContent='Unable to load subscriptions. Reload this page to try again.';
+    return;
+  }
+  return window.PapalitaStoreSubscriptions.admin(target, getAuthClient(), toast);
+};
+
 V['partner-applications']=()=>{
   const target=paLoading('Partner Applications');
   if(sess?.role!=='platform'){target.textContent='Platform administrator access required.';return;}
@@ -1507,7 +1553,7 @@ V['partner-applications']=()=>{
 };
 
 bootAuth();
-})();
+}, { once: true });
 </script>
 </body>
 </html>

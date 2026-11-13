@@ -1,0 +1,118 @@
+.ps-subscriptions {
+  display: grid;
+  gap: 14px;
+  max-width: 820px;
+  line-height: 1.5;
+}
+
+.ps-subscriptions .ps-card {
+  min-width: 0;
+  padding: clamp(16px, 4vw, 24px);
+  border: 1px solid var(--pa-line, var(--border, #dce5dd));
+  border-radius: 12px;
+  background: var(--pa-surface, var(--surface, #fff));
+}
+
+.ps-subscriptions h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.ps-subscriptions p {
+  margin: 5px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ps-subscriptions [role="status"]:empty {
+  display: none;
+}
+
+.ps-subscriptions .ps-amount {
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.ps-subscriptions .ps-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ps-subscriptions form,
+.ps-subscriptions details {
+  margin-top: 12px;
+}
+
+.ps-subscriptions summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.ps-subscriptions .ps-button {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: var(--pa-accent-soft, var(--accent-soft, #edf6ee));
+  color: var(--pa-ink, var(--ink, #152e25));
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.ps-subscriptions .ps-button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.ps-subscriptions .ps-field {
+  display: grid;
+  gap: 6px;
+  max-width: 530px;
+  margin: 12px 0;
+  font-weight: 600;
+}
+
+.ps-subscriptions .ps-field[hidden] {
+  display: none;
+}
+
+.ps-subscriptions .ps-field :is(input, textarea, select) {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--pa-line, var(--border, #dce5dd));
+  border-radius: 8px;
+  background: var(--pa-soft, var(--bg, #f5f8f5));
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+}
+
+.ps-subscriptions .ps-history-row {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--pa-line, var(--border, #dce5dd));
+}
+
+#pp-store-notifications {
+  position: relative;
+}
+
+#pp-subscription-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #087f32);
+  box-shadow: 0 0 0 2px var(--surface, #fff);
+}
+
+#ps-notification-reminder {
+  margin-bottom: 16px;
+}

@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="images/papalita_mark_color.png">
 <meta name="theme-color" content="#087F32">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="styles.css">
 
 <style>
@@ -978,7 +978,7 @@ html body .papa-reference-shell .papa-filter:not(.active) { background: var(--me
 @media(max-width:1100px){.rf-kpis{grid-template-columns:repeat(2,1fr)}.rf-row{grid-template-columns:1fr}}
 @media(max-width:560px){.rf-kpis{grid-template-columns:1fr}.rf-actions{grid-template-columns:1fr}}
 </style>
-<script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script async src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <style id="papalita-portal-upgrade">
 html body .pp-shell{--bg:#f7f7f2;--surface:#fff;--ink:#22251f;--muted:#73766e;--border:#e8e9e2;--accent:#087f32;--accent-soft:#edf6ee;--yellow:#f1d46d;--shadow:0 2px 3px #20291a02;--side:#171d18;--side-ink:#b6beb6;--radius:14px;color-scheme:light;font-family:Inter,Arial,sans-serif;font-size:13px;color:var(--ink);background:var(--bg)}
 html body .pp-shell *{box-sizing:border-box}
@@ -1587,17 +1587,40 @@ html body .pp-shell .pp-product-card .pp-product-pick{padding:5px 12px;color:var
 html body .pp-shell .pp-product-bulk label:has(input:disabled),html body .pp-shell .pp-product-pick:has(input:disabled){cursor:default;opacity:.65}
 html body .pp-shell .pp-editor-footer [hidden]{display:none!important}
 </style>
+<style id="portal-startup-style">
+#portal-startup{box-sizing:border-box;max-width:460px;margin:8vh auto 24px;padding:22px;color:#17352a;background:#fff;border:1px solid #dbe7de;border-radius:16px;font:16px/1.5 system-ui,sans-serif}
+#portal-startup h1{margin:0 0 8px;font-size:22px;color:inherit}
+#portal-startup p{margin:0 0 14px}
+#portal-startup button{padding:10px 16px;border:0;border-radius:8px;background:#087f45;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer}
+@media(max-width:520px){#portal-startup{margin-inline:16px}}
+</style>
+<link rel="stylesheet" href="store-subscriptions.css?v=renewal-reminders">
+<script src="js/store-subscriptions.js?v=renewal-reminders" defer></script>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/supabase.js"></script>
-<script src="js/images.js"></script>
-<script src="js/data.js"></script>
-<script src="js/ops.js?v=merchant-orders-accept-v2"></script>
+<div id="root">
+  <section id="portal-startup" aria-labelledby="portal-startup-title">
+    <h1 id="portal-startup-title">Papalita Store Owner</h1>
+    <p id="portal-startup-message" role="status">Opening the sign-in page…</p>
+    <button type="button" onclick="location.reload()">Reload page</button>
+    <noscript><p>Enable JavaScript in Chrome to sign in.</p></noscript>
+  </section>
+</div>
 <script>
-(() => { 'use strict';
+window.setTimeout(() => {
+  const message = document.getElementById('portal-startup-message');
+  if (message) message.textContent = 'Sign-in is taking longer than expected. Check your connection and reload this page.';
+}, 10000);
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="js/config.js"></script>
+<script defer src="js/supabase.js"></script>
+<script defer src="js/images.js"></script>
+<script defer src="js/data.js"></script>
+<script defer src="js/ops.js?v=merchant-orders-accept-v2"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+'use strict';
 const LOGO={mark:'images/papalita_mark_color.png'};
 let papaUserEmail = '';
 let me = null, tab = 'dashboard', storeUuid = null, sellerStores = [], realCatering = [], db = null;
@@ -1724,13 +1747,14 @@ async function authorize(user){
   if(result.error)throw result.error;
   if(!result.data?.length)throw Error('No approved store is assigned to this seller account. Check stores.owner_id.');
   sellerStores=result.data;
-  await selectStore(result.data[0].id);
+  const initialPage = ['#settings', '#subscriptions'].includes(location.hash) ? location.hash.slice(1) : 'dashboard';
+  await selectStore(result.data[0].id, initialPage);
 }
-async function selectStore(id){
+async function selectStore(id, initialPage = 'dashboard'){
   const st=sellerStores.find(x=>x.id===id);if(!st)throw Error('Store not assigned to this account.');
   storeUuid=st.id;
   await fetchCatering();
-  tab='dashboard';
+  tab=initialPage;
   await papaLoad();
   papaStartOrderListener();
   void papaFetchOrders();
@@ -2422,17 +2446,36 @@ const exportCSV = function exportCSV(){let rows;if(state.page==='products'||stat
 const render = function render(){
     if(!storeUuid)return gate();if(document.querySelector(".pp-shell dialog[open]"))return;
     const sidebarScrollTop = $('#sidebar')?.scrollTop || 0;
-    state.page=getPage();
+    state.page=getPage();
+    const subscriptionPanel = $('#ps-merchant-subscription');
+    const savedPanel = state.page === 'subscriptions' && subscriptionPanel?.dataset.store === storeUuid
+      ? subscriptionPanel : null;
     const scope=storeUuid+':'+state.page;
     if(scope!==ppProductSelectionScope){ppSelectedProducts.clear();ppProductSelectionScope=scope;}
-    const pages={dashboard:['Dashboard','grid'],orders:['Orders','bag'],products:['Products','box'],menu:['Menu & Pricing','menu'],settings:['Store Settings','settings'],payouts:['Payouts','wallet'],reports:['Reports','chart'],appearance:['Appearance','palette'],inventory:['Inventory','box'],catering:['Catering Requests','coffee']};
+    const pages={dashboard:['Dashboard','grid'],orders:['Orders','bag'],products:['Products','box'],menu:['Menu & Pricing','menu'],settings:['Store Settings','settings'],subscriptions:['Subscription','wallet'],payouts:['Payouts','wallet'],reports:['Reports','chart'],appearance:['Appearance','palette'],inventory:['Inventory','box'],catering:['Catering Requests','coffee']};
     const nav=(p)=>`<a href="#${p}" ${state.page===p?'aria-current="page"':''} class="${state.page===p?'active':''}">${icon(pages[p][1])}${pages[p][0]}${p==='orders'&&state.orders.filter(o=>o.status==='pending').length?`<span class="nav-count">${state.orders.filter(o=>o.status==='pending').length}</span>`:''}</a>`;
     const st=state.store,owner=state.preview?'Review workspace':state.user.email;
-    $('#root').innerHTML=`<div class="pp-shell"><div class="layout"><button class="mobile-overlay" aria-label="Close navigation" data-action="close-nav"></button><aside class="sidebar" id="sidebar" aria-label="Main navigation"><div class="brand"><img src="images/papalita_mark_color.png" alt=""><div><strong>Papalita</strong><small>Merchant Portal</small></div></div><div class="store-switch">${avatar(st.name,st.logo_url)}<span class="store-identity"><button class="store-name" data-action="edit-store-name" aria-label="Edit store name" title="Edit store name">${esc(st.name)}</button><small>${esc(st.business_type||'Your local store')}</small></span></div><div class="side-label">WORKSPACE</div><nav class="nav">${['dashboard','orders','products','menu','payouts','reports'].map(nav).join('')}${cateringEnabled()?nav('catering'):''}</nav><div class="side-label">MANAGE YOUR STORE</div><nav class="nav">${nav('settings')}${nav('appearance')}</nav><div class="sidebar-bottom"><div class="side-help"><b>A little help goes a long way.</b><p>Find your way around your Papalita workspace.</p><button data-action="help">Explore quick guide ${icon('arrow')}</button></div><div class="side-owner">${avatar(state.preview?'Review':state.user.email,'')}<span><b>${state.preview?'Store owner preview':'Store owner'}</b><small>${esc(owner)}</small></span><button class="icon-button" data-action="account" aria-label="Account menu">${icon('more')}</button></div></div></aside><div class="work"><header class="topbar"><div class="flex"><button class="icon-button menu-toggle" aria-label="Open navigation" aria-expanded="false" data-action="open-nav">${icon('bars')}</button><div class="breadcrumb"><span>Workspace</span>${icon('chevron')}<b>${pages[state.page][0]}</b></div></div><div class="header-actions"><form class="global-search" id="global-search">${icon('search')}<input name="search" aria-label="Search orders" placeholder="Search orders…"><span class="key">↵</span></form><button class="icon-button" aria-label="Help and support" data-action="help">${icon('help')}</button><button class="icon-button" aria-label="Your account" data-action="account">${avatar(st.name,st.logo_url,'topbar-avatar')}</button></div></header>${state.preview?`<div class="review-strip"><div class="flex"><b>Design preview</b><span>·</span> Sample data. Preview changes never affect your store.</div></div>`:''}<main class="main" id="main" tabindex="-1">${state.loading?notice('Refreshing your store…'):''}${state.errors.products?notice('Products could not be loaded: '+esc(state.errors.products),'error'):''}${state.errors.orders?notice('Orders could not be loaded: '+esc(state.errors.orders),'error'):''}${({dashboard:dashboard,orders:papaOrders,products:productsPage,menu:ppPricingPage,settings:ppSettingsPage,payouts:payoutsPage,reports:reportsPage,appearance:appearancePage,inventory:papaInventory,catering:ppCateringPage}[state.page])()}<footer class="footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span><i class="dot"></i>${state.preview?'Preview workspace':state.realtime==='subscribed'?'Live updates connected':state.realtime==='polling'?'Refreshing every 12 seconds':'Connecting live updates…'}</span></footer></main></div></div></div>`;
-    ppNormalize($('#root'));bind();
+    $('#root').innerHTML=`<div class="pp-shell"><div class="layout"><button class="mobile-overlay" aria-label="Close navigation" data-action="close-nav"></button><aside class="sidebar" id="sidebar" aria-label="Main navigation"><div class="brand"><img src="images/papalita_mark_color.png" alt=""><div><strong>Papalita</strong><small>Merchant Portal</small></div></div><div class="store-switch">${avatar(st.name,st.logo_url)}<span class="store-identity"><button class="store-name" data-action="edit-store-name" aria-label="Edit store name" title="Edit store name">${esc(st.name)}</button><small>${esc(st.business_type||'Your local store')}</small></span></div><div class="side-label">WORKSPACE</div><nav class="nav">${['dashboard','orders','products','menu','payouts','reports'].map(nav).join('')}${cateringEnabled()?nav('catering'):''}</nav><div class="side-label">MANAGE YOUR STORE</div><nav class="nav">${nav('settings')}${nav('subscriptions')}${nav('appearance')}</nav><div class="sidebar-bottom"><div class="side-help"><b>A little help goes a long way.</b><p>Find your way around your Papalita workspace.</p><button data-action="help">Explore quick guide ${icon('arrow')}</button></div><div class="side-owner">${avatar(state.preview?'Review':state.user.email,'')}<span><b>${state.preview?'Store owner preview':'Store owner'}</b><small>${esc(owner)}</small></span><button class="icon-button" data-action="account" aria-label="Account menu">${icon('more')}</button></div></div></aside><div class="work"><header class="topbar"><div class="flex"><button class="icon-button menu-toggle" aria-label="Open navigation" aria-expanded="false" data-action="open-nav">${icon('bars')}</button><div class="breadcrumb"><span>Workspace</span>${icon('chevron')}<b>${pages[state.page][0]}</b></div></div><div class="header-actions"><form class="global-search" id="global-search">${icon('search')}<input name="search" aria-label="Search orders" placeholder="Search orders…"><span class="key">↵</span></form><button class="icon-button" aria-label="Help and support" data-action="help">${icon('help')}</button><button class="icon-button" id="pp-store-notifications" aria-label="Notifications" data-action="notifications">${icon('bell')}<span id="pp-subscription-badge" hidden></span></button><button class="icon-button" aria-label="Your account" data-action="account">${avatar(st.name,st.logo_url,'topbar-avatar')}</button></div></header>${state.preview?`<div class="review-strip"><div class="flex"><b>Design preview</b><span>·</span> Sample data. Preview changes never affect your store.</div></div>`:''}<main class="main" id="main" tabindex="-1">${state.loading?notice('Refreshing your store…'):''}${state.errors.products?notice('Products could not be loaded: '+esc(state.errors.products),'error'):''}${state.errors.orders?notice('Orders could not be loaded: '+esc(state.errors.orders),'error'):''}${({dashboard:dashboard,orders:papaOrders,products:productsPage,menu:ppPricingPage,settings:ppSettingsPage,subscriptions:ppSubscriptionPage,payouts:payoutsPage,reports:reportsPage,appearance:appearancePage,inventory:papaInventory,catering:ppCateringPage}[state.page])()}<footer class="footer"><span>© ${new Date().getFullYear()} Papalita · Good Food, Good Mood.</span><span><i class="dot"></i>${state.preview?'Preview workspace':state.realtime==='subscribed'?'Live updates connected':state.realtime==='polling'?'Refreshing every 12 seconds':'Connecting live updates…'}</span></footer></main></div></div></div>`;
+    ppNormalize($('#root'));bind();
+    ppRefreshReminderBadge();
+    const freshPanel = $('#ps-merchant-subscription');
+    if (freshPanel && savedPanel) {
+      freshPanel.replaceWith(savedPanel);
+    } else if (freshPanel) {
+      freshPanel.dataset.store = storeUuid;
+      if (window.PapalitaStoreSubscriptions) {
+        window.PapalitaStoreSubscriptions.merchant(freshPanel, db, storeUuid, toast);
+      } else {
+        freshPanel.textContent = 'Unable to load subscriptions. Reload this page to try again.';
+      }
+    }
     $('#sidebar').scrollTop = sidebarScrollTop;
     $$('img').forEach(im=>im.onerror=()=>{const replacement=document.createElement('span');replacement.innerHTML=icon('coffee');im.replaceWith(replacement);});
   };
+function ppSubscriptionPage(){
+  return pageHead('Subscription','Manage your free trial and monthly payments.')
+    + '<div id="ps-merchant-subscription" class="ps-subscriptions"><p role="status">Loading your subscription…</p></div>';
+}
 function ppSettingsPage(){
  const st=papaStore(),profile=papaProfile(),form=profile.slice(profile.indexOf('<form'));
  return pageHead('Store Settings','Your store, just the way customers should see it.',btn('Refresh','refresh','','refresh'))+`<div class="form-layout">${form}<aside class="stack"><section class="card"><div class="card-head"><h2>Customer preview</h2>${icon('eye')}</div><div class="store-preview-cover"><img src="${LOGO.mark}" alt=""></div><div class="store-preview-info">${avatar(st.name,st.logo_url)}<h3 id="pp-profile-name">${esc(st.name)}</h3><p id="pp-profile-description">${esc(st.description||'Tell customers about your store.')}</p><p>${icon('pin')} <span id="pp-profile-address">${esc(st.address||'Your store address')}</span></p><span class="pill completed"><span class="dot"></span>Approved store</span></div></section>${papaAvailabilityCard()}<section class="card status-card"><h2>Inventory</h2><p class="muted" style="font-size:11px;margin:10px 0">Keep stock and low-stock alerts up to date.</p>${btn('Manage inventory','inventory','small','box')}</section></aside></div>`;
@@ -2467,13 +2510,34 @@ function ppModal(title,sub,body){
  $('.pp-shell').append(m);ppNormalize(m);$$('[data-pp-close]',m).forEach(b=>b.onclick=()=>m.close());m.showModal();return m;
 }
 function ppAccount(){
- const m=ppModal('Your store account',esc(papaUserEmail),`<div class="account-actions">${btn('Store Settings','settings','','store')}${sellerStores.length>1?btn('Switch store','store-picker','','store'):''}${btn('Order alerts','notifications','','sound')}${btn('Appearance','appearance','','palette')}${btn('Sign out','logout','','logout')}</div>`);
+ const m=ppModal('Your store account',esc(papaUserEmail),`<div class="account-actions">${btn('Store Settings','settings','','store')}${sellerStores.length>1?btn('Switch store','store-picker','','store'):''}${btn('Notifications','notifications','','bell')}${btn('Appearance','appearance','','palette')}${btn('Sign out','logout','','logout')}</div>`);
  $$('[data-action]',m).forEach(b=>b.onclick=()=>{m.close();action(b.dataset.action);});
 }
+let ppReminderStore, ppReminderInbox;
+function ppCurrentReminderInbox(){
+  if (!storeUuid || !window.PapalitaStoreSubscriptions?.reminderInbox) return null;
+  if (ppReminderStore !== storeUuid) {
+    ppReminderStore = storeUuid;
+    const activeStore = storeUuid;
+    ppReminderInbox = window.PapalitaStoreSubscriptions.reminderInbox(db, storeUuid, () =>
+      storeUuid === activeStore ? $('#pp-subscription-badge') : null);
+  }
+  return ppReminderInbox;
+}
+function ppRefreshReminderBadge(){
+  if (document.visibilityState !== 'hidden') ppCurrentReminderInbox()?.updateBadge();
+}
+setInterval(ppRefreshReminderBadge, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', ppRefreshReminderBadge);
+
 function ppNotifications(){
  const n=papaLiveOrders.filter(o=>o.status==='pending').length;
- const m=ppModal('Order notifications',n+' new order'+(n===1?'':'s')+' waiting.',`<div class="between"><div><h3>New order sound</h3><p class="muted" style="font-size:11px;margin-top:6px">Play an alert when a new order arrives.</p></div><button class="switch" role="switch" aria-label="New order sound" aria-checked="${papaAudioEnabled}" id="pp-order-sound"></button></div><div class="form-actions"><button class="button primary" id="pp-view-new-orders">View new orders</button></div>`);
- $('#pp-order-sound').onclick=e=>{papaAudioEnabled=!papaAudioEnabled;e.currentTarget.setAttribute('aria-checked',String(papaAudioEnabled));if(papaAudioEnabled)papaBeep();};
+ const m=ppModal('Notifications',n+' new order'+(n===1?'':'s')+' waiting.',`<div id="ps-notification-reminder" class="ps-subscriptions" aria-live="polite"></div><div class="between"><div><h3>New order sound</h3><p class="muted" style="font-size:11px;margin-top:6px">Play an alert when a new order arrives.</p></div><button class="switch" role="switch" aria-label="New order sound" aria-checked="${papaAudioEnabled}" id="pp-order-sound"></button></div><div class="form-actions"><button class="button primary" id="pp-view-new-orders">View new orders</button></div>`);
+  const target = $('#ps-notification-reminder', m);
+  const inbox = ppCurrentReminderInbox();
+  if (inbox) void inbox.open(target, () => { m.close(); navigate('subscriptions'); });
+  else target.textContent = 'Unable to load subscription reminders. Reload the page to try again.';
+  $('#pp-order-sound').onclick=e=>{papaAudioEnabled=!papaAudioEnabled;e.currentTarget.setAttribute('aria-checked',String(papaAudioEnabled));if(papaAudioEnabled)papaBeep();};
  $('#pp-view-new-orders').onclick=()=>{m.close();papaOrderFilter='pending';navigate('orders');};
 }
 function ppStorePicker(){
@@ -2513,7 +2577,7 @@ function ppBindProductEditor(target){
 }
 function ppOpenOrder(id){tab='orders';render();papaOpenOrderDrawer(id);}
 function action(a){
- if(['dashboard','orders','products','menu','settings','payouts','reports','appearance','inventory','catering'].includes(a)){navigate(a);return;}
+ if(['dashboard','orders','products','menu','settings','subscriptions','payouts','reports','appearance','inventory','catering'].includes(a)){navigate(a);return;}
  const handlers={
   'open-nav':()=>{ppNavigationOpen=true;$('#sidebar').inert=false;$('#sidebar').classList.add('pp-open');$('.pp-mobile-overlay').classList.add('pp-open');$('[data-action=open-nav]').setAttribute('aria-expanded','true');},
   'close-nav':ppCloseNav,'edit-store-name':()=>{navigate('settings');$('#papa-name')?.focus();},
@@ -2521,7 +2585,7 @@ function action(a){
   'notifications':ppNotifications,'completed-orders':()=>{papaOrderFilter='completed';navigate('orders');},
   'availability':()=>void papaToggleStoreHeader(),'refresh':()=>void Promise.all([papaLoad(),papaFetchOrders(),fetchCatering()]).then(()=>render()).catch(e=>toast(e.message)),
   'export':exportCSV,'print':()=>window.print(),
-  'logout':async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;me=null;gate();},
+  'logout':async()=>{papaStopOrderListener();await db.auth.signOut();storeUuid=null;ppReminderStore=null;ppReminderInbox=null;me=null;gate();},
   'help':()=>ppModal('Your Papalita workspace','A quick guide for your day.',`<div class="stack"><p>Use Orders to accept, prepare and complete customer orders. Live notifications show incoming orders.</p><p>Products and Menu & Pricing use your existing product editor, including size and add-on options.</p><p>Store Settings updates your approved store profile, photo, hours and availability. Catering Requests appears when catering is enabled for an eligible store.</p><p>Payouts summarizes recorded payments. It does not initiate transfers.</p></div>`)
  };handlers[a]?.();
 }
@@ -2554,7 +2618,7 @@ renderOptionGroups=function(){ppOriginalOptionGroups();ppNormalize($('#sp-option
 const ppOriginalAppearance=papaApplyAppearance;
 papaApplyAppearance=function(){ppOriginalAppearance();applyPrefs();};
 draw=render;
-window.addEventListener('hashchange',()=>{if(!storeUuid)return;const page=location.hash.slice(1);if(['dashboard','orders','products','menu','settings','payouts','reports','appearance','inventory','catering'].includes(page))navigate(page);});
+window.addEventListener('hashchange',()=>{if(!storeUuid)return;const page=location.hash.slice(1);if(['dashboard','orders','products','menu','settings','subscriptions','payouts','reports','appearance','inventory','catering'].includes(page))navigate(page);});
 window.addEventListener('keydown',e=>{if(e.key==='Escape')ppCloseNav();});
 matchMedia('(max-width:760px)').addEventListener('change',e=>{const s=$('#sidebar');if(s)s.inert=e.matches&&!s.classList.contains('pp-open');});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(prefs.mode==='system')applyPrefs();});
@@ -2580,8 +2644,20 @@ papaShowNextPopup=function(){
 
 })();
 /* END PAPALITA MERCHANT INTERFACE UPGRADE */
-setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && ['new', 'prep', 'out', 'hist'].includes(tab)) draw(); }, 4000); (async()=>{try{db=client();const {data,error}=await db.auth.getUser();if(error||!data?.user){gate();return;}await authorize(data.user);}catch(e){gate(e.message);}})();
-})();
+async function readPortalSession(request) {
+  let timer;
+  try {
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => reject(new Error('The saved session check timed out. Try signing in again.')), 9000);
+    });
+    return await Promise.race([request, timeout]);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && ['new', 'prep', 'out', 'hist'].includes(tab)) draw(); }, 4000); (async()=>{try{db=client();const {data,error}=await readPortalSession(db.auth.getUser());if(error||!data?.user){gate();return;}await authorize(data.user);}catch(e){gate(e.message);}})();
+}, { once: true });
 </script>
 <script>
 (function(){
