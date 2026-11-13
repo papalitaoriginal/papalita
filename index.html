@@ -1420,19 +1420,25 @@ main {
   inset: 0;
   z-index: 100001;
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 14px;
-  background: rgba(0, 27, 19, .78);
+  margin: auto;
+  width: min(600px, calc(100% - 28px));
+  max-height: 92dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-#papalitaLegal.is-open {
-  display: flex;
+#papalitaLegal[open] {
+  display: block;
+}
+
+#papalitaLegal::backdrop {
+  background: rgba(0, 27, 19, .78);
 }
 
 #papalitaLegal .legal-panel {
-  width: min(560px, 100%);
+  width: 100%;
   max-height: 92dvh;
   background: white;
   border-radius: 20px;
@@ -1471,6 +1477,7 @@ main {
 
 #papalitaLegal .legal-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px;
   font-size: 13px;
@@ -1528,6 +1535,11 @@ main {
 
 #papalitaLegal .legal-footer button:disabled {
   opacity: .4;
+  cursor: not-allowed;
+}
+
+.pp-auth-form [data-policy-submit]:disabled {
+  opacity: .55;
   cursor: not-allowed;
 }
 </style>
@@ -2041,7 +2053,6 @@ main {
 <script src="js/customer-data.js?v=20261107-customer-v5"></script>
 <script src="js/order-status.js?v=20261107-customer-v5"></script>
 <script src="js/live-delivery-map.js?v=delivery-quotes-1"></script>
-<script src="js/app.js?v=20261112-receipt-thermal"></script>
 
 <script>
 (function () {
@@ -2081,6 +2092,7 @@ main {
 <!-- TERMS AND PRIVACY: ONE CONTINUOUS SCROLL -->
 <dialog
   id="papalitaLegal"
+  data-policy-version="2026-11-13"
   role="dialog"
   aria-modal="true"
   aria-labelledby="legalTitle"
@@ -2165,11 +2177,20 @@ main {
           with the participating merchant.
         </p>
 
-        <h3>7. Acceptable Use</h3>
+        <h3>7. Acceptable Use and Order Abuse</h3>
         <p>
-          Fraudulent orders, impersonation, harassment,
-          unauthorized access, and other forms of misuse
-          are prohibited.
+          Place orders you intend to receive and pay for. Intentionally placing
+          fake or prank orders, submitting false delivery details to disrupt a
+          delivery, impersonating another person, and repeatedly misusing
+          checkout or cash on delivery are prohibited.
+        </p>
+        <p>
+          When a report or order activity indicates possible abuse, authorized
+          Papalita staff may review the registered email address and relevant
+          account and order records. Papalita may contact you to confirm the
+          order, hold or cancel the affected order, or restrict ordering or
+          suspend the account if the review confirms misuse. Contact Papalita
+          support if you believe a decision was made in error.
         </p>
 
         <h3>8. Service Availability</h3>
@@ -2212,6 +2233,14 @@ main {
           coordination, customer support, fraud prevention,
           and service improvement.
         </p>
+        <p>
+          To investigate suspected order abuse, authorized Papalita staff may
+          review the email address registered with Papalita, relevant orders and
+          timestamps, delivery and contact details, and related support reports.
+          Papalita limits this review to information needed to assess and resolve
+          the issue and uses your registered email address to identify the
+          account and contact you about the report when needed.
+        </p>
 
         <h3>3. Sharing of Information</h3>
         <p>
@@ -2250,7 +2279,8 @@ main {
         <p>
           The platform may use browser storage to maintain
           user sessions, preferences, and application
-          functionality.
+          functionality, including the version of these policies you accepted
+          on this device.
         </p>
 
         <h3>8. Contact and Privacy Requests</h3>
@@ -2287,7 +2317,8 @@ main {
   </div>
 </dialog>
 
-<script src="js/customer-legal.js?v=20261110-auth-3"></script>
+<script src="js/customer-legal.js?v=20261113-customer-terms"></script>
+<script src="js/app.js?v=20261113-customer-terms"></script>
 
 <script src="./js/notifications.js?v=20261107-customer-v5" defer></script>
 </body>
