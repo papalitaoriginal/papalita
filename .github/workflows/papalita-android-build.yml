@@ -1,0 +1,75 @@
+name: Build Papalita Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      customer_origin:
+        description: Published HTTPS customer app origin (without a path)
+        required: true
+        type: string
+      version_code:
+        description: Play version code (increase this for each new upload)
+        required: true
+        default: '1'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out Android source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          sparse-checkout: 03-Android
+
+      - name: Prepare Gradle and Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_17_X64/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --proto '=https' --retry 3 \
+            --output gradle-8.13-bin.zip https://services.gradle.org/distributions/gradle-8.13-bin.zip
+          echo '20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78  gradle-8.13-bin.zip' | sha256sum --check
+          unzip -q gradle-8.13-bin.zip
+          echo "$RUNNER_TEMP/gradle-8.13/bin" >> "$GITHUB_PATH"
+
+      - name: Verify SDK and build release bundle
+        shell: bash
+        working-directory: 03-Android
+        env:
+          CUSTOMER_ORIGIN: ${{ inputs.customer_origin }}
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$CUSTOMER_ORIGIN" =~ ^https://[A-Za-z0-9.-]+\.[A-Za-z]{2,}/?$ ]]; then
+            echo 'Enter the published HTTPS site URL without a path or query.'
+            exit 1
+          fi
+          if [[ ! "$VERSION_CODE" =~ ^[1-9][0-9]{0,9}$ ]] || (( VERSION_CODE > 2100000000 )); then
+            echo 'Enter a version code from 1 to 2100000000.'
+            exit 1
+          fi
+          if [[ ! -f "$ANDROID_HOME/platforms/android-36/android.jar" || ! -d "$ANDROID_HOME/build-tools/35.0.0" ]]; then
+            sdkmanager --install "platforms;android-36" "build-tools;35.0.0"
+          fi
+          gradle --no-daemon :app:bundleRelease \
+            "-PpapalitaOrigin=${CUSTOMER_ORIGIN%/}" "-PpapalitaVersionCode=$VERSION_CODE"
+          mkdir -p "$RUNNER_TEMP/papalita"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/papalita/papalita-unsigned.aab"
+
+      - name: Save unsigned AAB
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Papalita-unsigned-AAB
+          path: ${{ runner.temp }}/papalita/papalita-unsigned.aab
+          if-no-files-found: error
+          retention-days: 7
