@@ -1,0 +1,34 @@
+plugins {
+    id 'com.android.application' version '8.13.2'
+}
+
+def origin = providers.gradleProperty('papalitaOrigin').get().replaceFirst('/+$', '')
+def uri = new URI(origin)
+if (uri.scheme != 'https' || uri.host == null || uri.port != -1 ||
+        uri.path || uri.query != null || uri.fragment != null || uri.userInfo != null) {
+    throw new GradleException('papalitaOrigin must be the HTTPS origin of the customer app, without a path.')
+}
+def statement = groovy.json.JsonOutput.toJson([[
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: [namespace: 'web', site: origin]
+]])
+def androidStatement = statement.replace('"', Character.toString((char) 92) + '"')
+
+android {
+    namespace 'app.papalita.customer'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'app.papalita.customer'
+        minSdk 24
+        targetSdk 36
+        versionCode providers.gradleProperty('papalitaVersionCode').get().toInteger()
+        versionName providers.gradleProperty('papalitaVersionName').get()
+        resValue 'string', 'launch_url', origin + '/index.html'
+        resValue 'string', 'asset_statements', androidStatement
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+}
