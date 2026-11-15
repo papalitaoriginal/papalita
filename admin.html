@@ -1552,8 +1552,13 @@ V['partner-applications']=()=>{
   });
 };
 
+window.PapalitaDropoffPayments?.mount({
+ root:$('#root'), getViewerId:()=>sess?.role==='platform'?sess.userId:null,
+ getClient:getAuthClient, esc, notify:toast, openDialog:paDialog, confirm:paConfirm
+});
 bootAuth();
 }, { once: true });
 </script>
+<script src="js/dropoff-payments.js?v=20261115-payments"></script>
 </body>
 </html>

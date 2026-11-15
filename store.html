@@ -2656,6 +2656,10 @@ async function readPortalSession(request) {
   }
 }
 
+window.PapalitaDropoffPayments?.mount({
+ root:$('#root'), storePortal:true, getViewerId:()=>storeUuid,
+ getClient:client, esc, notify:toast
+});
 setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && ['new', 'prep', 'out', 'hist'].includes(tab)) draw(); }, 4000); (async()=>{try{db=client();const {data,error}=await readPortalSession(db.auth.getUser());if(error||!data?.user){gate();return;}await authorize(data.user);}catch(e){gate(e.message);}})();
 }, { once: true });
 </script>
@@ -2668,5 +2672,6 @@ setInterval(() => { if (me && tab!=='cat' && !/INPUT|SELECT|TEXTAREA/.test(docum
  window.addEventListener('load',renderIcons);
 })();
 </script>
+<script src="js/dropoff-payments.js?v=20261115-payments"></script>
 </body>
 </html>
