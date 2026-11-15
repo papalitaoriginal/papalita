@@ -1,9 +1,9 @@
 /* In-app notifications for payments at rider drop-off. */
-(() => {
-  'use strict';
+'use strict';
 
-  const storePortal=document.currentScript.dataset.portal==='store';
-  const root=document.getElementById('root');
+window.PapalitaDropoffPayments=Object.freeze({mount:({
+  root,storePortal=false,getViewerId,getClient,esc,notify,openDialog,confirm
+}) => {
   const money=new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'});
   const localTime=new Intl.DateTimeFormat('en-PH',{timeZone:'Asia/Manila',dateStyle:'medium',timeStyle:'short'});
   const activityLabels={
@@ -69,8 +69,7 @@
     const activeUser=userId;
     refreshPromise=(async()=>{
       try {
-        const dbClient=storePortal?client():getAuthClient();
-        const {data,error}=await dbClient.rpc('papalita_dropoff_payments',storePortal?{p_store_id:storeUuid}:{});
+        const {data,error}=await getClient().rpc('papalita_dropoff_payments',storePortal?{p_store_id:activeUser}:{});
         if(userId!==activeUser)return;
         if(error||!Array.isArray(data?.payments))throw error||Error('Payments could not load.');
         const prev=snapshot;
@@ -79,7 +78,7 @@
           const prior=new Set(prev.payments.map(row=>row.order_id+row.state+row.updated_at));
           const incoming=data.payments.filter(row=>(storePortal||['cash_collected','gcash_pending'].includes(row.state))
             &&!prior.has(row.order_id+row.state+row.updated_at));
-          if(incoming.length)toast(incoming.length===1
+          if(incoming.length)notify(incoming.length===1
             ?activityLabels[incoming[0].state]+' · Order #'+incoming[0].order_id.slice(0,8)
             :'New rider payment updates');
         }
@@ -98,7 +97,7 @@
   }
 
   function openPayments() {
-    const current=dialog=paDialog('Rider payments',`
+    const current=dialog=openDialog('Rider payments',`
       <p class="mu sm">Pending GCash requests and up to 50 recent rider payment updates.</p>
       <button type="button" class="btn s sm" data-cod-refresh>Refresh</button>
       <p data-cod-result role="status"></p>
@@ -117,13 +116,13 @@
       const orderLabel='order #'+row.order_id.slice(0,8);
       busy=true;
       try {
-        const confirmed=await paConfirm(received?'Verify GCash payment?':'Close GCash request?',
+        const confirmed=await confirm(received?'Verify GCash payment?':'Close GCash request?',
           received?'Confirm that '+money.format(row.amount)+' reached Papalita’s GCash for '+orderLabel+'.'
             :'Confirm no GCash was received for '+orderLabel+'. The rider can choose again.',
           received?'Verify received payment':'Close request');
         if(!confirmed||!current.open||!current.isConnected)return;
         status.textContent='Saving…';
-        const {data,error}=await getAuthClient().rpc('papalita_admin_review_gcash',{
+        const {data,error}=await getClient().rpc('papalita_admin_review_gcash',{
           p_order_id:row.order_id,p_received:received,p_requested_at:row.updated_at
         });
         if(error||data!==true)throw error||Error('The review could not be saved.');
@@ -163,7 +162,7 @@
   }
 
   function mount() {
-    const nextUser=storePortal?storeUuid:(sess?.role==='platform'?sess.userId:null);
+    const nextUser=getViewerId();
     if(nextUser!==userId){
       userId=nextUser;
       snapshot=undefined;
@@ -192,4 +191,4 @@
   mount();
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});
   setInterval(refresh,10000);
-})();
+}});
