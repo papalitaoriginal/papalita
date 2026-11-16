@@ -2187,8 +2187,8 @@ function papaSettings(){return `<div class="papa-heading"><div><h1>Store setting
 async function papaUpload(file, kind, storeId){
  if(!file)return null;
  if(file.size>5*1024*1024)throw Error('Photo must be 5 MB or smaller');
- const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];
- if(!ext)throw Error('Please use JPEG, PNG or WebP');
+ const extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];
+ if(!extension)throw Error('Please use JPEG, PNG or WebP');
 
  const {data,error}=await db.auth.getSession();
  if(error||!data.session)throw Error('Sign in again to upload a photo.');
@@ -2202,16 +2202,10 @@ async function papaUpload(file, kind, storeId){
  });
  const result=await response.json().catch(()=>null);
  if(response.ok&&result?.publicUrl)return result.publicUrl;
- if(![404,405].includes(response.status)&&result?.code!=='photo_storage_unconfigured'){
-  throw Error(result?.error||'Photo upload failed. Try again.');
+ if ([404, 405].includes(response.status)) {
+  throw Error('The merchant photo upload endpoint is missing from this deployment.');
  }
-
- const bucket=db.storage.from(kind==='product'?'product-images':'store-images');
- const name=crypto.randomUUID()+'.'+ext;
- const path=`${storeId}/${kind==='logo'?'logo-':''}${name}`;
- const upload=await bucket.upload(path,file,{contentType:file.type,upsert:false});
- if(upload.error)throw Error('Photo upload failed: '+upload.error.message);
- return bucket.getPublicUrl(path).data.publicUrl;
+ throw Error(result?.error || 'Photo upload failed. Try again.');
 }
 async function papaBind(){
  $$('[data-papa-filter]').forEach(b=>b.onclick=()=>{papaOrderFilter=b.dataset.papaFilter;draw()});
