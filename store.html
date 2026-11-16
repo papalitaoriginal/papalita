@@ -2240,21 +2240,58 @@ async function papaLoad(){const seq=++papaLoadSeq;try{await papaFetchProducts();
 
 let sellerOptionGroups=[];
 const optionId=()=> 'opt_'+Math.random().toString(36).slice(2,10);
-function optionTemplate(){return [
- {id:optionId(),label:'Size',type:'radio',req:true,ch:[{n:'Small',p:0},{n:'Medium',p:15},{n:'Large',p:30}]}
-]}
+const isPricedSizeGroup = group => group.type === 'radio' && group.req && group.label.trim().toLowerCase() === 'size';
+const pesos = amount => Math.round(Number(amount) * 100) / 100;
+function optionTemplate(){
+ const price = Number($('#sp-price').value) || 0;
+ return [{id:optionId(),label:'Size',type:'radio',req:true,ch:[{n:'10 oz',p:price},{n:'12 oz',p:price}]}];
+}
+function loadProductOptions(product){
+ const groups = Array.isArray(product.options) ? JSON.parse(JSON.stringify(product.options)) : [];
+ for(const group of groups){
+  if(isPricedSizeGroup(group)) for(const choice of group.ch) choice.p = pesos(Number(product.price) + Number(choice.p || 0));
+ }
+ return groups;
+}
+function syncOptionPriceFields(host){
+ const sizes = sellerOptionGroups.find(isPricedSizeGroup);
+ const basePrice = $('#sp-price');
+ basePrice.disabled = Boolean(sizes);
+ $('#sp-price-hint').hidden = !sizes;
+ if(sizes){
+  const prices = sizes.ch.map(choice => pesos(choice.p));
+  basePrice.value = prices.length && prices.every(price => price > 0) ? Math.min(...prices) : '';
+ }
+ for(const field of $$('[data-oc-price]',host)){
+  const group = sellerOptionGroups[Number(field.dataset.ocPrice.split(':')[0])];
+  const label = isPricedSizeGroup(group) ? 'Full size price in pesos' : 'Extra charge in pesos';
+  field.setAttribute('aria-label',label);
+  field.title = label;
+  field.placeholder = isPricedSizeGroup(group) ? 'Size price' : 'Add ₱';
+ }
+}
 function renderOptionGroups(){const host=$('#sp-option-groups');if(!host)return;
- host.innerHTML=sellerOptionGroups.map((g,gi)=>`<div style="margin-bottom:12px;padding:12px;background:var(--merchant-surface);border:1px solid var(--merchant-border);border-radius:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Option group ${gi+1}</b><button type="button" class="btn d sm" data-og-remove="${gi}">Remove</button></div><div class="two" style="margin-bottom:8px"><div class="field"><label>Group name</label><input class="in" data-og-label="${gi}" value="${esc(g.label)}" placeholder="e.g. Size"></div><div class="field"><label>Type</label><select class="in" data-og-type="${gi}"><option value="radio" ${g.type==='radio'?'selected':''}>Choose one</option><option value="checkbox" ${g.type==='checkbox'?'selected':''}>Choose multiple</option></select></div></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px"><input type="checkbox" data-og-req="${gi}" ${g.req?'checked':''}> Required selection</label><div>${g.ch.map((c,ci)=>`<div style="display:flex;gap:8px;margin-bottom:8px"><input class="in" style="flex:1" data-oc-name="${gi}:${ci}" value="${esc(c.n)}" placeholder="Choice name"><input class="in" style="width:100px;flex:none" type="number" min="0" step="0.01" data-oc-price="${gi}:${ci}" value="${Number(c.p)||0}" placeholder="Add ₱"><button type="button" class="btn d sm" data-oc-remove="${gi}:${ci}">✕</button></div>`).join('')}</div><button type="button" class="btn s sm" data-oc-add="${gi}">+ Add choice</button></div>`).join('');
+ host.innerHTML=sellerOptionGroups.map((g,gi)=>`<div style="margin-bottom:12px;padding:12px;background:var(--merchant-surface);border:1px solid var(--merchant-border);border-radius:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>Option group ${gi+1}</b><button type="button" class="btn d sm" data-og-remove="${gi}">Remove</button></div><div class="two" style="margin-bottom:8px"><div class="field"><label>Group name</label><input class="in" data-og-label="${gi}" value="${esc(g.label)}" placeholder="e.g. Size"></div><div class="field"><label>Type</label><select class="in" data-og-type="${gi}"><option value="radio" ${g.type==='radio'?'selected':''}>Choose one</option><option value="checkbox" ${g.type==='checkbox'?'selected':''}>Choose multiple</option></select></div></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px"><input type="checkbox" data-og-req="${gi}" ${g.req?'checked':''}> Required selection</label><div>${g.ch.map((c,ci)=>`<div style="display:flex;gap:8px;margin-bottom:8px"><input class="in" style="flex:1" data-oc-name="${gi}:${ci}" value="${esc(c.n)}" placeholder="Choice name"><input class="in" style="width:100px;flex:none" type="number" min="0" step="0.01" data-oc-price="${gi}:${ci}" value="${Number(c.p)||0}" aria-label="Extra charge in pesos" placeholder="Add ₱"><button type="button" class="btn d sm" data-oc-remove="${gi}:${ci}">✕</button></div>`).join('')}</div><button type="button" class="btn s sm" data-oc-add="${gi}">+ Add choice</button></div>`).join('');
+ syncOptionPriceFields(host);
  host.querySelectorAll('[data-og-remove]').forEach(b=>b.onclick=()=>{sellerOptionGroups.splice(+b.dataset.ogRemove,1);renderOptionGroups()});
  host.querySelectorAll('[data-oc-add]').forEach(b=>b.onclick=()=>{sellerOptionGroups[+b.dataset.ocAdd].ch.push({n:'',p:0});renderOptionGroups()});
  host.querySelectorAll('[data-oc-remove]').forEach(b=>b.onclick=()=>{const [g,c]=b.dataset.ocRemove.split(':').map(Number);sellerOptionGroups[g].ch.splice(c,1);renderOptionGroups()});
- host.querySelectorAll('[data-og-label]').forEach(e=>e.oninput=()=>{sellerOptionGroups[+e.dataset.ogLabel].label=e.value});
- host.querySelectorAll('[data-og-type]').forEach(e=>e.onchange=()=>{sellerOptionGroups[+e.dataset.ogType].type=e.value});
- host.querySelectorAll('[data-og-req]').forEach(e=>e.onchange=()=>{sellerOptionGroups[+e.dataset.ogReq].req=e.checked});
+ host.querySelectorAll('[data-og-label]').forEach(e=>e.oninput=()=>{sellerOptionGroups[+e.dataset.ogLabel].label=e.value;syncOptionPriceFields(host)});
+ host.querySelectorAll('[data-og-type]').forEach(e=>e.onchange=()=>{sellerOptionGroups[+e.dataset.ogType].type=e.value;syncOptionPriceFields(host)});
+ host.querySelectorAll('[data-og-req]').forEach(e=>e.onchange=()=>{sellerOptionGroups[+e.dataset.ogReq].req=e.checked;syncOptionPriceFields(host)});
  host.querySelectorAll('[data-oc-name]').forEach(e=>e.oninput=()=>{const [g,c]=e.dataset.ocName.split(':').map(Number);sellerOptionGroups[g].ch[c].n=e.value});
- host.querySelectorAll('[data-oc-price]').forEach(e=>e.oninput=()=>{const [g,c]=e.dataset.ocPrice.split(':').map(Number);sellerOptionGroups[g].ch[c].p=Number(e.value)});
+ host.querySelectorAll('[data-oc-price]').forEach(e=>e.oninput=()=>{const [g,c]=e.dataset.ocPrice.split(':').map(Number);sellerOptionGroups[g].ch[c].p=Number(e.value);syncOptionPriceFields(host)});
 }
 function validatedProductOptions(){return sellerOptionGroups.map(g=>{const label=g.label.trim();if(!label)throw Error('Every option group needs a name.');if(!g.ch.length)throw Error(label+' needs at least one choice.');const ch=g.ch.map(c=>{const n=c.n.trim(),p=Number(c.p);if(!n||!Number.isFinite(p)||p<0)throw Error('Check choices and additional prices in '+label);return {n,p};});return {id:g.id||optionId(),label,type:g.type==='checkbox'?'checkbox':'radio',req:!!g.req,ch}})}
+function applySizePrices(product){
+ const groups = product.options.filter(isPricedSizeGroup);
+ if(!groups.length) return;
+ if(groups.length > 1) throw Error('Use one required Size group per product.');
+ const choices = groups[0].ch;
+ if(choices.some(choice => pesos(choice.p) <= 0)) throw Error('Enter the full price for every size.');
+ product.price = Math.min(...choices.map(choice => pesos(choice.p)));
+ for(const choice of choices) choice.p = pesos(choice.p - product.price);
+}
 async function renderSellerProducts(){
   const target=$('#papalita-products'), id=storeUuid;
   if(!target||!id)return;
@@ -2264,7 +2301,7 @@ async function renderSellerProducts(){
     if(!target.isConnected||id!==storeUuid)return;
     const rows=q.data||[];
     target.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h3 style="margin:0">My products</h3><p style="margin:4px 0 0;font-size:13px;color:var(--merchant-muted)">Manage your store's menu.</p></div><button class="btn s sm" id="reload-products">Refresh</button></div>
-    <form id="seller-product-form" class="papa-card" style="padding:24px;margin-bottom:24px"><h3 id="seller-form-title" style="margin:0 0 16px">Add product</h3><input type="hidden" id="seller-product-id"><div class="two"><div class="field"><label>Name</label><input class="in" id="sp-name" required maxlength="120"></div><div class="field"><label>Category</label><input class="in" id="sp-cat" required></div><div class="field"><label>Price (₱)</label><input class="in" id="sp-price" type="number" step="0.01" min="0.01" required></div><div class="field"><label>Stock</label><input class="in" id="sp-stock" type="number" min="0" step="1" value="0" required></div></div><div class="field"><label>Description</label><textarea class="in" id="sp-desc" rows="2"></textarea></div><div class="field"><label>Photo (optional, max 5 MB)</label><input class="in" id="sp-file" type="file" accept="image/jpeg,image/png,image/webp"></div><div style="margin:24px 0;padding:20px;background:var(--merchant-canvas);border-radius:12px;border:1px solid var(--merchant-border)"><h3 style="margin:0 0 8px;font-size:15px">Product Customization</h3><p style="margin:0 0 16px;font-size:13px;color:var(--merchant-muted)">Add options like size, sugar level, or add-ons.</p><div id="sp-option-groups"></div><div style="display:flex;gap:10px;margin-top:12px"><button type="button" class="btn s sm" id="sp-add-group">+ Add option group</button><button type="button" class="btn s sm" id="sp-cafe-template">Use starter template</button></div></div><div class="field"><label>Visibility</label><select class="in" id="sp-status"><option value="active">Published</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div><div style="display:flex;gap:12px;margin-top:20px"><button class="btn p" id="sp-save">Save product</button><button class="btn s" type="button" id="sp-clear">Clear form</button></div><p class="err" id="sp-error"></p></form>
+    <form id="seller-product-form" class="papa-card" style="padding:24px;margin-bottom:24px"><h3 id="seller-form-title" style="margin:0 0 16px">Add product</h3><input type="hidden" id="seller-product-id"><div class="two"><div class="field"><label>Name</label><input class="in" id="sp-name" required maxlength="120"></div><div class="field"><label>Category</label><input class="in" id="sp-cat" required></div><div class="field"><label>Price (₱)</label><input class="in" id="sp-price" type="number" step="0.01" min="0.01" required><small id="sp-price-hint" hidden>Set by the lowest size price.</small></div><div class="field"><label>Stock</label><input class="in" id="sp-stock" type="number" min="0" step="1" value="0" required></div></div><div class="field"><label>Description</label><textarea class="in" id="sp-desc" rows="2"></textarea></div><div class="field"><label>Photo (optional, max 5 MB)</label><input class="in" id="sp-file" type="file" accept="image/jpeg,image/png,image/webp"></div><div style="margin:24px 0;padding:20px;background:var(--merchant-canvas);border-radius:12px;border:1px solid var(--merchant-border)"><h3 style="margin:0 0 8px;font-size:15px">Product Customization</h3><p style="margin:0 0 16px;font-size:13px;color:var(--merchant-muted)">For a required Size group with Choose one, enter the full price of each size. Enter only the extra charge for milk and other add-ons.</p><div id="sp-option-groups"></div><div style="display:flex;gap:10px;margin-top:12px"><button type="button" class="btn s sm" id="sp-add-group">+ Add option group</button><button type="button" class="btn s sm" id="sp-cafe-template">Use starter template</button></div></div><div class="field"><label>Visibility</label><select class="in" id="sp-status"><option value="active">Published</option><option value="draft">Draft</option><option value="inactive">Inactive</option></select></div><div style="display:flex;gap:12px;margin-top:20px"><button class="btn p" id="sp-save">Save product</button><button class="btn s" type="button" id="sp-clear">Clear form</button></div><p class="err" id="sp-error"></p></form>
     <div class="papa-card papa-table-wrapper"><table class="rf-table"><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><br><small style="color:var(--merchant-muted)">${esc(x.category||'')}</small></td><td>${peso(x.price)}</td><td>${Number(x.stock)||0}</td><td><span style="padding:4px 8px;background:var(--merchant-canvas);border-radius:4px;font-size:12px;font-weight:600">${esc(x.status)}</span></td><td><button class="btn s sm" data-edit-product="${x.id}">Edit</button> <button class="btn d sm" data-delete-product="${x.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--merchant-muted)">No products yet.</td></tr>'}</tbody></table></div>`;
     const clear=()=>{$('#seller-product-form').reset();$('#seller-product-id').value='';$('#seller-form-title').textContent='Add product';sellerOptionGroups=[];renderOptionGroups();};
     $('#sp-add-group').onclick=()=>{sellerOptionGroups.push({id:optionId(),label:'',type:'radio',req:false,ch:[{n:'',p:0}]});renderOptionGroups();};
@@ -2272,7 +2309,7 @@ async function renderSellerProducts(){
     renderOptionGroups();
     $('#sp-clear').onclick=clear;
     $('#reload-products').onclick=renderSellerProducts;
-    $$('[data-edit-product]').forEach(b=>b.onclick=()=>{const x=rows.find(p=>p.id===b.dataset.editProduct);if(!x)return;$('#seller-product-id').value=x.id;$('#sp-name').value=x.name;$('#sp-cat').value=x.category||'';$('#sp-price').value=x.price;$('#sp-stock').value=x.stock;$('#sp-desc').value=x.description||'';$('#sp-status').value=x.status||'draft';sellerOptionGroups=Array.isArray(x.options)?JSON.parse(JSON.stringify(x.options)):[];renderOptionGroups();$('#seller-form-title').textContent='Edit product';$('#seller-product-form').scrollIntoView({behavior:'smooth'});});
+    $$('[data-edit-product]').forEach(b=>b.onclick=()=>{const x=rows.find(p=>p.id===b.dataset.editProduct);if(!x)return;$('#seller-product-id').value=x.id;$('#sp-name').value=x.name;$('#sp-cat').value=x.category||'';$('#sp-price').value=x.price;$('#sp-stock').value=x.stock;$('#sp-desc').value=x.description||'';$('#sp-status').value=x.status||'draft';sellerOptionGroups=loadProductOptions(x);renderOptionGroups();$('#seller-form-title').textContent='Edit product';$('#seller-product-form').scrollIntoView({behavior:'smooth'});});
     $$('[data-delete-product]',target).forEach(b=>b.onclick=async()=>{
       if(!confirm('Delete this product permanently?'))return;
       b.disabled=true;
@@ -2283,6 +2320,7 @@ async function renderSellerProducts(){
     $('#seller-product-form').onsubmit=async e=>{e.preventDefault();const btn=$('#sp-save'),errorText=$('#sp-error');if(btn.disabled)return;btn.disabled=true;errorText.textContent='';try{
       const productId=$('#seller-product-id').value;
       const row={store_id:id,name:$('#sp-name').value.trim(),category:$('#sp-cat').value.trim(),price:Number($('#sp-price').value),stock:Number($('#sp-stock').value),description:$('#sp-desc').value.trim(),status:$('#sp-status').value,options:validatedProductOptions(),updated_at:new Date().toISOString()};
+      applySizePrices(row);
       if(!row.name||!row.category||!(row.price>0)||!Number.isInteger(row.stock)||row.stock<0)throw Error('Check product inputs');
       const url=await papaUpload($('#sp-file').files[0],'product',id);
       if(url)row.image_url=url;
