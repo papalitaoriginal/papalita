@@ -112,7 +112,21 @@ const cartCount = () => S.cart.lines.reduce((a, l) => a + l.qty, 0);
 // Backward-compatible migration: old carts had one rid for all lines.
 S.cart.lines.forEach(l => { if (!l.rid) l.rid = S.cart.rid || (ITEM(l.itemId) || {}).rest?.id; });
 S.cart.lines=S.cart.lines.filter(l=>ITEM(l.itemId)&&R(l.rid));
-const cartGroups = (cart = S.cart) => { const groups = new Map(); for (const line of cart.lines) { const rid = String(line.rid || cart.rid || ''); if (!groups.has(rid)) groups.set(rid, []); groups.get(rid).push(line); } return [...groups].map(([rid, lines]) => ({ rid, rest: R(rid), lines, sub: lines.reduce((sum, l) => sum + l.unit * l.qty, 0) })); };
+const cartGroups = (cart = S.cart) => {
+  const groups = new Map();
+  for (const line of cart.lines) {
+    const rid = String(line.rid || cart.rid || '');
+    if (!groups.has(rid)) groups.set(rid, []);
+    const item = ITEM(line.itemId)?.item;
+    const pricedLine = item?.opts?.some(isSizeChoice)
+      ? { ...line, unit: unitPrice(item, line.sel || {}) }
+      : line;
+    groups.get(rid).push(pricedLine);
+  }
+  return [...groups].map(([rid, lines]) => ({
+    rid, rest: R(rid), lines, sub: lines.reduce((sum, line) => sum + line.unit * line.qty, 0)
+  }));
+};
 
 const notify = (type, t, b, who) => { S.notes.unshift({ id: uid('n'), type, t, b, at: Date.now(), read: false, uid: who || S.user.id }); save(); };
 
@@ -161,6 +175,7 @@ function watchStoreAvailability(repaint) {
 const hoursText = r => r.hours[0] === '00:00' && r.hours[1] === '24:00' ? 'Open 24 hours' : `${fmtT(r.hours[0])} – ${fmtT(r.hours[1])}`;
 
 const defSel = item => { const s = {}; (item.opts||[]).forEach(g => { if (g.req && g.ch?.length) s[g.id] = [g.ch[0].n]; }); return s; };
+const isSizeChoice = group => group.type === 'radio' && group.req && String(group.label || '').trim().toLowerCase() === 'size';
 const unitPrice = (item, sel) => Number(item.price) + (item.opts||[]).reduce((a, g) => a + (sel[g.id] || []).reduce((b, n) => b + Number((g.ch.find(c => c.n === n) || {}).p || 0), 0), 0);
 const selText = l => Object.values(l.sel || {}).flat().join(', ');
 const activeVouchers = (now = Date.now()) => window.PROMOS.filter(p => p.active !== false && Date.parse(p.expires_at) > now)
@@ -562,11 +577,14 @@ function instructionPlaceholder(item, rest) {
 /* ---------- item sheet ---------- */
 function openItem(id, editKey) {
   const { item, rest } = ITEM(id), ed = editKey && S.cart.lines.find(l => l.key === editKey), st = { sel: ed ? JSON.parse(JSON.stringify(ed.sel)) : defSel(item), qty: ed ? ed.qty : 1, note: ed ? ed.note : '' };
-  const el = openSheet(`<div style="margin-top:0">${photo(item.img, `${item.name} from ${rest.name}`, { ar: '16/10', w: 900, eager: 1 })}</div><div class="pd"><div class="row sp"><h2 style="font-size:24px">${esc(item.name)}</h2><b style="font-size:20px">${peso(item.price)}</b></div><p class="mu" style="margin:6px 0 10px">${esc(item.desc)}</p><div class="row g sm"><span class="mu">${esc(rest.name)}</span></div></div>
-  <form class="pd" style="padding-top:0" novalidate>${item.opts.map(g => `<fieldset style="border:0;padding:0;margin:14px 0 0"><legend style="font-weight:800;margin-bottom:8px">${esc(g.label)} ${g.req ? '<span class="status n">Required</span>' : '<span class="mu sm">Optional</span>'}</legend>${g.ch.map(c => `<label class="opt"><input type="${g.type === 'radio' ? 'radio' : 'checkbox'}" name="${esc(g.id)}" value="${esc(c.n)}" ${(st.sel[g.id] || []).includes(c.n) ? 'checked' : ''}><span class="grow">${esc(c.n)}</span><span class="mu">${c.p ? '+' + peso(c.p) : 'Free'}</span></label>`).join('')}</fieldset>`).join('')}
+  const el = openSheet(`<div style="margin-top:0">${photo(item.img, `${item.name} from ${rest.name}`, { ar: '16/10', w: 900, eager: 1 })}</div><div class="pd"><div class="row sp"><h2 style="font-size:24px">${esc(item.name)}</h2><b style="font-size:20px" data-size-price>${peso(item.price)}</b></div><p class="mu" style="margin:6px 0 10px">${esc(item.desc)}</p><div class="row g sm"><span class="mu">${esc(rest.name)}</span></div></div>
+  <form class="pd" style="padding-top:0" novalidate>${item.opts.map(g => `<fieldset style="border:0;padding:0;margin:14px 0 0"><legend style="font-weight:800;margin-bottom:8px">${esc(g.label)} ${g.req ? '<span class="status n">Required</span>' : '<span class="mu sm">Optional</span>'}</legend>${g.ch.map(c => `<label class="opt"><input type="${g.type === 'radio' ? 'radio' : 'checkbox'}" name="${esc(g.id)}" value="${esc(c.n)}" ${(st.sel[g.id] || []).includes(c.n) ? 'checked' : ''}><span class="grow">${esc(c.n)}</span><span class="mu">${isSizeChoice(g) ? peso(Number(item.price) + Number(c.p || 0)) : c.p ? '+' + peso(c.p) : 'Free'}</span></label>`).join('')}</fieldset>`).join('')}
   <div class="field" style="margin-top:16px"><label for="note">Special instructions</label><textarea class="in" id="note" maxlength="200" placeholder="${esc(instructionPlaceholder(item, rest))}">${esc(st.note)}</textarea></div></form>
   <div class="sticky-foot row"><div class="qty" role="group" aria-label="Quantity"><button data-sa="dec" aria-label="Decrease quantity">${ic('minus', 18)}</button><b data-qty aria-live="polite">${st.qty}</b><button data-sa="inc" aria-label="Increase quantity">${ic('plus', 18)}</button></div><button class="btn p grow" data-sa="add" ${item.available ? '' : 'disabled'}><span data-tot></span></button></div>`, { label: item.name });
   const upd = () => { const f = $('form', el); st.sel = {}; item.opts.forEach(g => { st.sel[g.id] = $$(`input[name=${g.id}]:checked`, f).map(i => i.value); }); st.note = $('#note', el).value.trim(); $('[data-qty]', el).textContent = st.qty;
+    const size = item.opts.find(isSizeChoice);
+    const choice = size?.ch.find(c => c.n === st.sel[size.id]?.[0]);
+    $('[data-size-price]', el).textContent = peso(Number(item.price) + Number(choice?.p || 0));
     $('[data-tot]', el).textContent = `${ed ? 'Update' : 'Add to cart'} · ${peso(unitPrice(item, st.sel) * st.qty)}`; };
   el.addEventListener('input', upd); el.addEventListener('change', upd); upd();
   el.addEventListener('click', e => { const b = e.target.closest('[data-sa]'); if (!b) return; const a = b.dataset.sa;
