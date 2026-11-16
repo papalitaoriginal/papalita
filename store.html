@@ -2184,7 +2184,35 @@ function papaBindAppearance(){
  });
 }
 function papaSettings(){return `<div class="papa-heading"><div><h1>Store settings</h1><p>Control store availability and store information.</p></div></div>${papaAvailabilityCard()}<section class="papa-card" style="padding:24px"><h2>Store profile</h2><p style="color:var(--merchant-muted);margin-bottom:16px">Edit contact details, photos and opening hours in Store Profile.</p><button class="btn s" data-jump="profile">Go to store profile</button></section>`;}
-async function papaUpload(file,kind){if(!file)return null;if(file.size>5*1024*1024)throw Error('Photo must be 5 MB or smaller');const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];if(!ext)throw Error('Please use JPEG, PNG or WebP');const path=`${storeUuid}/${kind}-${crypto.randomUUID()}.${ext}`;const q=await db.storage.from('store-images').upload(path,file,{contentType:file.type,upsert:false});if(q.error)throw Error('Photo upload failed: '+q.error.message+' (check store-images Storage RLS)');return db.storage.from('store-images').getPublicUrl(path).data.publicUrl;}
+async function papaUpload(file, kind, storeId){
+ if(!file)return null;
+ if(file.size>5*1024*1024)throw Error('Photo must be 5 MB or smaller');
+ const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type];
+ if(!ext)throw Error('Please use JPEG, PNG or WebP');
+
+ const {data,error}=await db.auth.getSession();
+ if(error||!data.session)throw Error('Sign in again to upload a photo.');
+ const uploadUrl=new URL('/api/merchant-photo',location.origin);
+ uploadUrl.search=new URLSearchParams({store:storeId,kind});
+ const response=await fetch(uploadUrl,{
+  method:'POST',
+  headers:{Authorization:`Bearer ${data.session.access_token}`,'Content-Type':file.type},
+  body:file,
+  redirect:'error'
+ });
+ const result=await response.json().catch(()=>null);
+ if(response.ok&&result?.publicUrl)return result.publicUrl;
+ if(![404,405].includes(response.status)&&result?.code!=='photo_storage_unconfigured'){
+  throw Error(result?.error||'Photo upload failed. Try again.');
+ }
+
+ const bucket=db.storage.from(kind==='product'?'product-images':'store-images');
+ const name=crypto.randomUUID()+'.'+ext;
+ const path=`${storeId}/${kind==='logo'?'logo-':''}${name}`;
+ const upload=await bucket.upload(path,file,{contentType:file.type,upsert:false});
+ if(upload.error)throw Error('Photo upload failed: '+upload.error.message);
+ return bucket.getPublicUrl(path).data.publicUrl;
+}
 async function papaBind(){
  $$('[data-papa-filter]').forEach(b=>b.onclick=()=>{papaOrderFilter=b.dataset.papaFilter;draw()});
  $$('[data-wf-settab]').forEach(b=>b.onclick=()=>{papaSetTab=b.dataset.wfSettab;draw()});
@@ -2194,7 +2222,7 @@ async function papaBind(){
  $$('[data-jump]').forEach(b=>b.onclick=()=>{tab=b.dataset.jump;draw()});
  const refresh=$('#papa-refresh');if(refresh)refresh.onclick=()=>Promise.all([papaLoad(),papaFetchOrders()]).catch(e=>toast(e.message));
  const typeSelect=$('#papa-type');if(typeSelect)typeSelect.onchange=()=>{const field=$('#papa-catering-setting');if(field){const allowed=papaCateringEligible({business_type:typeSelect.value});field.hidden=!allowed;if(!allowed)$('#papa-catering-enabled').checked=false;}};
- const form=$('#papa-profile-form');if(form)form.onsubmit=async e=>{e.preventDefault();const btn=$('#papa-save-profile');btn.disabled=true;const err=$('#papa-profile-error');err.textContent='';try{const phone=$('#papa-phone').value.trim();if(phone&&!/^(09\d{9}|\+639\d{9})$/.test(phone))throw Error('Enter a valid Philippine mobile number');const changes={name:$('#papa-name').value.trim(),business_type:$('#papa-type').value,catering_enabled:papaCateringEligible({business_type:$('#papa-type').value})&&$('#papa-catering-enabled').checked,description:$('#papa-description').value.trim(),address:$('#papa-address').value.trim(),phone,open_time:$('#papa-open').value,close_time:$('#papa-close').value};if(!changes.name||!changes.address)throw Error('Name and address are required');const logo=await papaUpload($('#papa-logo-file').files[0],'logo');if(logo)changes.logo_url=logo;const q=await db.from('stores').update(changes).eq('id',storeUuid).eq('status','approved').select('*').single();if(q.error)throw q.error;Object.assign(papaStore(),q.data);toast('Store profile saved!');draw()}catch(ex){err.textContent=ex.message}finally{btn.disabled=false}};
+ const form=$('#papa-profile-form');if(form)form.onsubmit=async e=>{e.preventDefault();const btn=$('#papa-save-profile');if(btn.disabled)return;btn.disabled=true;const storeId=storeUuid;const err=$('#papa-profile-error');err.textContent='';try{const phone=$('#papa-phone').value.trim();if(phone&&!/^(09\d{9}|\+639\d{9})$/.test(phone))throw Error('Enter a valid Philippine mobile number');const changes={name:$('#papa-name').value.trim(),business_type:$('#papa-type').value,catering_enabled:papaCateringEligible({business_type:$('#papa-type').value})&&$('#papa-catering-enabled').checked,description:$('#papa-description').value.trim(),address:$('#papa-address').value.trim(),phone,open_time:$('#papa-open').value,close_time:$('#papa-close').value};if(!changes.name||!changes.address)throw Error('Name and address are required');const logo=await papaUpload($('#papa-logo-file').files[0],'logo',storeId);if(logo)changes.logo_url=logo;const q=await db.from('stores').update(changes).eq('id',storeId).eq('status','approved').select('*').single();if(q.error)throw q.error;if(storeUuid===storeId){Object.assign(papaStore(),q.data);toast('Store profile saved!');draw()}}catch(ex){err.textContent=ex.message}finally{btn.disabled=false}};
  $$('[data-save-stock]').forEach(b=>b.onclick=async()=>{const tr=b.closest('tr');const stock=Number(tr.querySelector('[data-stock]').value),threshold=Number(tr.querySelector('[data-threshold]').value);if(!Number.isInteger(stock)||stock<0||!Number.isInteger(threshold)||threshold<0)return toast('Enter valid nonnegative whole numbers');b.disabled=true;try{const q=await db.from('products').update({stock,low_stock_threshold:threshold}).eq('id',tr.dataset.invId).eq('store_id',storeUuid).select('id');if(q.error)throw q.error;if(!q.data?.length)throw Error('Update blocked by RLS');toast('Stock updated');await papaLoad()}catch(e){toast(e.message)}finally{b.disabled=false}});
  
  const reasonSelect=$('#papa-closure-reason');
@@ -2258,16 +2286,19 @@ async function renderSellerProducts(){
       catch(e){toast(e.message);}
       finally{b.disabled=false;}
     });
-    $('#seller-product-form').onsubmit=async e=>{e.preventDefault();const btn=$('#sp-save');if(btn.disabled)return;btn.disabled=true;$('#sp-error').textContent='';try{
-      const file=$('#sp-file').files[0];let url=null;
-      if(file){if(file.size>5*1024*1024)throw Error('Image must be under 5 MB');if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Only JPEG, PNG or WebP');const path=storeUuid+'/'+crypto.randomUUID()+'.'+(file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg');const up=await db.storage.from('product-images').upload(path,file,{contentType:file.type,upsert:false});if(up.error)throw up.error;url=db.storage.from('product-images').getPublicUrl(path).data.publicUrl;}
-      const row={store_id:storeUuid,name:$('#sp-name').value.trim(),category:$('#sp-cat').value.trim(),price:Number($('#sp-price').value),stock:Number($('#sp-stock').value),description:$('#sp-desc').value.trim(),status:$('#sp-status').value,options:validatedProductOptions(),updated_at:new Date().toISOString()};
-      if(url)row.image_url=url;
-      if(!row.name||!row.category||!(row.price>0)||!Number.isInteger(row.stock)||row.stock<0)throw Error('Check product inputs');
-      const id=$('#seller-product-id').value;
-      const q=id?await db.from('products').update(row).eq('id',id).eq('store_id',storeUuid).select('id'):await db.from('products').insert(row).select('id');
-      if(q.error)throw q.error;if(!q.data?.length)throw Error('Not permitted by Supabase RLS');toast('Product saved');renderSellerProducts();
-    }catch(err){$('#sp-error').textContent=err.message;}finally{btn.disabled=false;}};
+    $('#seller-product-form').onsubmit=async e=>{e.preventDefault();const btn=$('#sp-save'),errorText=$('#sp-error');if(btn.disabled)return;btn.disabled=true;errorText.textContent='';try{
+      const productId=$('#seller-product-id').value;
+      const row={store_id:id,name:$('#sp-name').value.trim(),category:$('#sp-cat').value.trim(),price:Number($('#sp-price').value),stock:Number($('#sp-stock').value),description:$('#sp-desc').value.trim(),status:$('#sp-status').value,options:validatedProductOptions(),updated_at:new Date().toISOString()};
+      if(!row.name||!row.category||!(row.price>0)||!Number.isInteger(row.stock)||row.stock<0)throw Error('Check product inputs');
+      const url=await papaUpload($('#sp-file').files[0],'product',id);
+      if(url)row.image_url=url;
+      const q=productId
+        ?await db.from('products').update(row).eq('id',productId).eq('store_id',id).select('id')
+        :await db.from('products').insert(row).select('id');
+      if(q.error)throw q.error;
+      if(!q.data?.length)throw Error('Not permitted by Supabase RLS');
+      if(storeUuid===id){toast('Product saved');renderSellerProducts();}
+    }catch(err){errorText.textContent=err.message;}finally{btn.disabled=false;}};
     return target;
   }catch(err){if(target.isConnected)target.textContent='Could not load products: '+err.message;}
 }

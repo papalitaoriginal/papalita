@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/api/merchant-photo", "/merchant-media/*"],
+  "exclude": []
+}

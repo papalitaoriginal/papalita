@@ -5,7 +5,7 @@ const layouts = {
   customer: {
     required: ['index.html', 'admin.html', 'store.html', 'manifest.webmanifest', 'sw.js', 'js/app.js'],
     optional: [
-      'rider.html', 'rider.webmanifest', 'rider-sw.js', 'offline.html',
+      'rider.html', 'rider.webmanifest', 'rider-sw.js', 'offline.html', '_routes.json',
       'privacy.html', 'terms.html', 'delete-account.html', 'account-deletion.html',
       'customer-auth.css', 'customer-polish.css', 'merchant-wharf-theme.css', 'store-subscriptions.css',
       'js/customer-data.js', 'js/customer-install.js', 'js/customer-legal.js', 'js/customer-motion.js',
