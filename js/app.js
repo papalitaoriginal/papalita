@@ -385,19 +385,37 @@ const fillPopular = () => {
 const foodVisual = () => {
   const seen = new Set();
   const rounds = [];
+  const takePhoto = image => {
+    const url = window.photoUrl(image);
+    if (!url || seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  };
   for (const rest of RS) {
     let round = 0;
     for (const item of rest.items) {
-      if (!item.available) continue;
-      const url = window.photoUrl(item.img);
-      if (!url || seen.has(url)) continue;
-      seen.add(url);
-      (rounds[round++] ??= []).push({item, rest});
+      if (!item.available || !takePhoto(item.img)) continue;
+      (rounds[round++] ??= []).push({image: item.img, title: item.name, store: rest.name});
     }
   }
   const choices = rounds.flat();
+  // A slide showcases a photo. Stock and opening hours are checked when ordering.
+  if (choices.length < 2) {
+    for (const rest of RS) {
+      for (const item of rest.items) {
+        if (!takePhoto(item.img)) continue;
+        choices.push({image: item.img, title: item.name, store: rest.name});
+      }
+    }
+  }
+  if (choices.length < 2) {
+    for (const rest of RS) {
+      const image = rest.cover || rest.logo_url;
+      if (takePhoto(image)) choices.push({image, title: rest.name});
+    }
+  }
   if (!choices.length) return `<div class="pp-hero-logo"><img src="images/papalita_mark_color.png" alt="Papalita"></div>`;
-  return `<div class="pp-food-slides" data-food-slideshow aria-label="Food from the Papalita menu">${choices.map(({item,rest},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(item.img,`${item.name} from ${rest.name}`,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(item.name)}</b><small>${esc(rest.name)}</small></div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Food photos">${choices.map(({item},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(item.name)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
+  return `<div class="pp-food-slides" data-food-slideshow aria-label="Photos from local Papalita stores">${choices.map(({image,title,store},i)=>`<div class="pp-food-slide ${i===0?'pp-slide-active':''}" data-food-slide aria-hidden="${i!==0}" ${i?'inert':''}>${photo(image,store ? title + ' from ' + store : title,{eager:i===0,w:780})}<div class="pp-food-caption"><b>${esc(title)}</b>${store ? `<small>${esc(store)}</small>` : ''}</div></div>`).join('')}${choices.length>1?`<div class="pp-food-controls" aria-label="Slideshow photos">${choices.map(({title},i)=>`<button type="button" data-slide-index="${i}" aria-label="Show ${esc(title)}" aria-pressed="${i===0}"></button>`).join('')}</div>`:''}</div>`;
 };
 const voucherMoney = n => Number.isInteger(n) ? '₱' + n.toLocaleString('en-PH') : peso(n);
 const voucherTitle = promo => promo.type==='ship'?'Free delivery':promo.type==='percent'?`${promo.value}% off your order`:`${voucherMoney(promo.value)} off your order`;
